@@ -299,7 +299,8 @@ final class ChatViewModel {
                         draftUserText: "",
                         summary: summary,
                         keepRange: firstKeepableIndex..<currentMessageCount
-                    )
+                    ),
+                    tools: toolDefinitions
                 )
                 await cacheContextSize(messageID: userMessageID, tokens: projectedTotal)
                 _ = assistantMessageID
@@ -349,7 +350,8 @@ final class ChatViewModel {
             modelID: modelID,
             sampling: providerRecord.sampling,
             instructions: instructions,
-            inputs: inputs
+            inputs: inputs,
+            tools: toolDefinitions
         )
     }
 
@@ -357,7 +359,8 @@ final class ChatViewModel {
         modelID: String,
         sampling: ProviderSamplingDefaults,
         instructions: String,
-        inputs: [InputItem]
+        inputs: [InputItem],
+        tools: [ToolDefinition]
     ) -> ChatRequest {
         ChatRequest(
             model: modelID,
@@ -369,7 +372,7 @@ final class ChatViewModel {
             maxOutputTokens: sampling.maxOutputTokens,
             reasoningEffort: conversation.reasoningEffort,
             parallelToolCalls: sampling.parallelToolCalls,
-            tools: [],
+            tools: tools,
             toolChoice: .auto,
             store: false
         )
