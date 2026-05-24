@@ -174,7 +174,33 @@ private struct ProviderCard: View {
                     Text("\(models.count) model\(models.count == 1 ? "" : "s") detected")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                } else if let current = record.defaultModel {
+                    LabeledRow(label: "Default model") {
+                        TextField("model-id", text: Binding(
+                            get: { record.defaultModel ?? "" },
+                            set: {
+                                var updated = record
+                                updated.defaultModel = $0.isEmpty ? nil : $0
+                                record = updated
+                            }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                    }
+                    Text("Currently \(current). Click Test connection to discover models.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
+
+                Divider().padding(.vertical, 4)
+
+                SamplingSection(sampling: Binding(
+                    get: { record.sampling },
+                    set: {
+                        var updated = record
+                        updated.sampling = $0
+                        record = updated
+                    }
+                ))
             }
             .padding(.vertical, 6)
         }
@@ -337,6 +363,194 @@ private struct CollectionsTab: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+private struct SamplingSection: View {
+    @Binding var sampling: ProviderSamplingDefaults
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Sampling defaults")
+                .font(.callout.bold())
+            Text("Used for every chat that talks to this provider.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            OptionalNumericRow(
+                label: "Temperature",
+                placeholder: "default",
+                value: Binding(get: { sampling.temperature }, set: { sampling.temperature = $0 }),
+                range: 0.0...2.0,
+                step: 0.05,
+                format: "%.2f"
+            )
+            OptionalNumericRow(
+                label: "top_p",
+                placeholder: "default",
+                value: Binding(get: { sampling.topP }, set: { sampling.topP = $0 }),
+                range: 0.0...1.0,
+                step: 0.01,
+                format: "%.2f"
+            )
+            OptionalIntRow(
+                label: "Max output tokens",
+                placeholder: "server default",
+                value: Binding(get: { sampling.maxOutputTokens }, set: { sampling.maxOutputTokens = $0 }),
+                defaultValue: 2048
+            )
+
+            Picker("Reasoning effort", selection: Binding(
+                get: { ReasoningEffortChoice(sampling.reasoningEffort) },
+                set: { sampling.reasoningEffort = $0.effort }
+            )) {
+                ForEach(ReasoningEffortChoice.allCases) { choice in
+                    Text(choice.displayName).tag(choice)
+                }
+            }
+            .pickerStyle(.menu)
+
+            Stepper(value: Binding(
+                get: { sampling.maxToolIterations },
+                set: { sampling.maxToolIterations = max(1, min($0, 32)) }
+            ), in: 1...32) {
+                HStack {
+                    Text("Max tool iterations")
+                    Spacer()
+                    Text("\(sampling.maxToolIterations)").foregroundStyle(.secondary)
+                }
+            }
+
+            Toggle("Parallel tool calls", isOn: Binding(
+                get: { sampling.parallelToolCalls },
+                set: { sampling.parallelToolCalls = $0 }
+            ))
+        }
+    }
+}
+
+private enum ReasoningEffortChoice: Hashable, CaseIterable, Identifiable {
+    case `default`, minimal, low, medium, high
+
+    init(_ effort: ReasoningEffort?) {
+        switch effort {
+        case .none: self = .default
+        case .minimal: self = .minimal
+        case .low: self = .low
+        case .medium: self = .medium
+        case .high: self = .high
+        }
+    }
+
+    var effort: ReasoningEffort? {
+        switch self {
+        case .default: return nil
+        case .minimal: return .minimal
+        case .low: return .low
+        case .medium: return .medium
+        case .high: return .high
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .default: return "Default"
+        case .minimal: return "Minimal"
+        case .low: return "Low"
+        case .medium: return "Medium"
+        case .high: return "High"
+        }
+    }
+
+    var id: String { displayName }
+}
+
+private struct OptionalNumericRow: View {
+    let label: String
+    let placeholder: String
+    @Binding var value: Double?
+    let range: ClosedRange<Double>
+    let step: Double
+    let format: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(label)
+                Spacer()
+                Toggle("Override", isOn: Binding(
+                    get: { value != nil },
+                    set: { isOn in
+                        if isOn {
+                            if value == nil { value = (range.lowerBound + range.upperBound) / 2 }
+                        } else {
+                            value = nil
+                        }
+                    }
+                ))
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .labelsHidden()
+            }
+            if let current = value {
+                HStack {
+                    Slider(value: Binding(
+                        get: { current },
+                        set: { value = $0 }
+                    ), in: range, step: step)
+                    Text(String(format: format, current))
+                        .font(.callout.monospaced())
+                        .frame(minWidth: 50, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text(placeholder)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct OptionalIntRow: View {
+    let label: String
+    let placeholder: String
+    @Binding var value: Int?
+    let defaultValue: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(label)
+                Spacer()
+                Toggle("Override", isOn: Binding(
+                    get: { value != nil },
+                    set: { isOn in
+                        value = isOn ? (value ?? defaultValue) : nil
+                    }
+                ))
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .labelsHidden()
+            }
+            if let current = value {
+                Stepper(value: Binding(
+                    get: { current },
+                    set: { value = $0 }
+                ), in: 1...1_000_000, step: 256) {
+                    HStack {
+                        Text("\(current)")
+                            .font(.callout.monospaced())
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                }
+            } else {
+                Text(placeholder)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 

@@ -7,6 +7,10 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
     public var defaultModel: String?
     public var capability: ProviderCapability
     public var modelOverrides: [ModelOverride]
+    /// Sampling + tool defaults applied to every chat that uses this
+    /// provider. Optional so older state files (without this field) load
+    /// cleanly; resolved to `.init()` at runtime when absent.
+    public var sampling: ProviderSamplingDefaults
 
     public init(
         id: ProviderID,
@@ -14,7 +18,8 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         baseURL: URL,
         defaultModel: String? = nil,
         capability: ProviderCapability = .init(),
-        modelOverrides: [ModelOverride] = []
+        modelOverrides: [ModelOverride] = [],
+        sampling: ProviderSamplingDefaults = .init()
     ) {
         self.id = id
         self.displayName = displayName
@@ -22,6 +27,54 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         self.defaultModel = defaultModel
         self.capability = capability
         self.modelOverrides = modelOverrides
+        self.sampling = sampling
+    }
+
+    // Custom Decodable to tolerate missing `sampling` on old state files.
+    private enum CodingKeys: String, CodingKey {
+        case id, displayName, baseURL, defaultModel, capability, modelOverrides, sampling
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(ProviderID.self, forKey: .id)
+        self.displayName = try c.decode(String.self, forKey: .displayName)
+        self.baseURL = try c.decode(URL.self, forKey: .baseURL)
+        self.defaultModel = try c.decodeIfPresent(String.self, forKey: .defaultModel)
+        self.capability = try c.decodeIfPresent(ProviderCapability.self, forKey: .capability) ?? .init()
+        self.modelOverrides = try c.decodeIfPresent([ModelOverride].self, forKey: .modelOverrides) ?? []
+        self.sampling = try c.decodeIfPresent(ProviderSamplingDefaults.self, forKey: .sampling) ?? .init()
+    }
+}
+
+/// Sampling + tool-loop defaults configured per provider in Settings.
+/// All chats inherit these directly at request time; there are no per-chat
+/// overrides.
+public struct ProviderSamplingDefaults: Sendable, Hashable, Codable {
+    public var temperature: Double?
+    public var topP: Double?
+    public var maxOutputTokens: Int?
+    public var reasoningEffort: ReasoningEffort?
+    public var parallelToolCalls: Bool
+    public var maxToolIterations: Int
+    public var defaultEnabledBuiltInTools: Set<String>
+
+    public init(
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        maxOutputTokens: Int? = nil,
+        reasoningEffort: ReasoningEffort? = nil,
+        parallelToolCalls: Bool = true,
+        maxToolIterations: Int = 8,
+        defaultEnabledBuiltInTools: Set<String> = ["web_search", "web_fetch", "rag_search"]
+    ) {
+        self.temperature = temperature
+        self.topP = topP
+        self.maxOutputTokens = maxOutputTokens
+        self.reasoningEffort = reasoningEffort
+        self.parallelToolCalls = parallelToolCalls
+        self.maxToolIterations = maxToolIterations
+        self.defaultEnabledBuiltInTools = defaultEnabledBuiltInTools
     }
 }
 

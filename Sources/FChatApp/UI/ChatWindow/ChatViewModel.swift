@@ -25,13 +25,13 @@ final class ChatViewModel {
     func send() {
         guard !draftText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         guard let environment else { return }
-        guard let providerRecord = environment.providerRecords.first(where: { $0.id == conversation.settings.providerID }) else {
-            lastError = "Configured provider is missing."
+        guard let providerRecord = environment.currentProvider() else {
+            lastError = "No provider configured. Open Settings → Providers."
             return
         }
-        let trimmedModel = conversation.settings.model.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedModel = (providerRecord.defaultModel ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedModel.isEmpty else {
-            lastError = "No model selected. Open the Inspector (toolbar, top-right) and pick one."
+            lastError = "No default model set for provider \(providerRecord.displayName). Open Settings → Providers and pick one."
             return
         }
 
@@ -48,9 +48,14 @@ final class ChatViewModel {
         let registry = environment.toolRegistry
         let promptLanguage = environment.promptLanguage
         let llm = environment.makeRuntimeProvider(for: providerRecord)
-        let runner = ChatTurnRunner(provider: llm, registry: registry, maxIterations: conversation.settings.maxToolIterations)
+        let runner = ChatTurnRunner(provider: llm, registry: registry, maxIterations: providerRecord.sampling.maxToolIterations)
 
-        let initialRequest = buildRequest(userText: userText, language: promptLanguage, registry: registry)
+        let initialRequest = buildRequest(
+            userText: userText,
+            language: promptLanguage,
+            providerRecord: providerRecord,
+            modelID: trimmedModel
+        )
 
         isStreaming = true
         lastError = nil
@@ -97,7 +102,12 @@ final class ChatViewModel {
         return "\(error)"
     }
 
-    private func buildRequest(userText: String, language: PromptLanguage, registry: ToolRegistry) -> ChatRequest {
+    private func buildRequest(
+        userText: String,
+        language: PromptLanguage,
+        providerRecord: ProviderRecord,
+        modelID: String
+    ) -> ChatRequest {
         var historyInput: [InputItem] = []
         let prompt = LocalizedSystemPrompt(
             language: language,
@@ -118,16 +128,17 @@ final class ChatViewModel {
         // 404s on the second turn. Trading a slightly larger payload for
         // portability is the right call until we add per-provider capability
         // detection.
+        let sampling = providerRecord.sampling
         return ChatRequest(
-            model: conversation.settings.model,
+            model: modelID,
             input: historyInput,
-            instructions: conversation.settings.systemPrompt ?? prompt.render(),
+            instructions: prompt.render(),
             previousResponseID: nil,
-            temperature: conversation.settings.temperature,
-            topP: conversation.settings.topP,
-            maxOutputTokens: conversation.settings.maxOutputTokens,
-            reasoningEffort: conversation.settings.reasoningEffort,
-            parallelToolCalls: conversation.settings.parallelToolCalls,
+            temperature: sampling.temperature,
+            topP: sampling.topP,
+            maxOutputTokens: sampling.maxOutputTokens,
+            reasoningEffort: sampling.reasoningEffort,
+            parallelToolCalls: sampling.parallelToolCalls,
             tools: [],
             toolChoice: .auto,
             store: false
