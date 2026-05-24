@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Conversation: Identifiable, Sendable, Hashable {
+public struct Conversation: Identifiable, Sendable, Hashable, Codable {
     public let id: ConversationID
     public var title: String
     public var createdAt: Date
@@ -28,13 +28,17 @@ public struct Conversation: Identifiable, Sendable, Hashable {
     }
 }
 
-public struct Message: Identifiable, Sendable, Hashable {
+public struct Message: Identifiable, Sendable, Hashable, Codable {
     public let id: MessageID
     public var role: MessageRole
     public var contentItems: [MessageContent]
     public var usage: UsageInfo?
     public var createdAt: Date
     public var responseID: String?
+    /// Wall-clock seconds from the first streamed delta to the moment the
+    /// response ended (or `usage` was reported). Used to compute tokens/sec
+    /// for display.
+    public var generationDuration: TimeInterval?
 
     public init(
         id: MessageID = .init(),
@@ -42,7 +46,8 @@ public struct Message: Identifiable, Sendable, Hashable {
         contentItems: [MessageContent],
         usage: UsageInfo? = nil,
         createdAt: Date = .now,
-        responseID: String? = nil
+        responseID: String? = nil,
+        generationDuration: TimeInterval? = nil
     ) {
         self.id = id
         self.role = role
@@ -50,6 +55,12 @@ public struct Message: Identifiable, Sendable, Hashable {
         self.usage = usage
         self.createdAt = createdAt
         self.responseID = responseID
+        self.generationDuration = generationDuration
+    }
+
+    public var tokensPerSecond: Double? {
+        guard let usage, let duration = generationDuration, duration > 0 else { return nil }
+        return Double(usage.outputTokens) / duration
     }
 
     public var plainText: String {

@@ -12,8 +12,8 @@ struct MessageView: View {
                 ForEach(Array(message.contentItems.enumerated()), id: \.offset) { _, item in
                     contentView(for: item)
                 }
-                if let usage = message.usage {
-                    Text("\(usage.inputTokens) → \(usage.outputTokens) tokens")
+                if message.usage != nil || message.generationDuration != nil {
+                    Text(metricsLine)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -21,6 +21,27 @@ struct MessageView: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 6)
+    }
+
+    private var metricsLine: String {
+        var parts: [String] = []
+        if let usage = message.usage {
+            parts.append("\(usage.inputTokens) → \(usage.outputTokens) tokens")
+            if let cached = usage.cachedInputTokens, cached > 0 {
+                parts.append("\(cached) cached")
+            }
+            if let reasoning = usage.reasoningTokens, reasoning > 0 {
+                parts.append("\(reasoning) reasoning")
+            }
+        }
+        if let duration = message.generationDuration, duration > 0 {
+            parts.append(String(format: "%.1fs", duration))
+            if let tps = message.tokensPerSecond, tps.isFinite {
+                let format = tps >= 100 ? "%.0f tok/s" : "%.1f tok/s"
+                parts.append(String(format: format, tps))
+            }
+        }
+        return parts.joined(separator: " · ")
     }
 
     private var roleBadge: some View {
@@ -42,8 +63,13 @@ struct MessageView: View {
     private func contentView(for item: MessageContent) -> some View {
         switch item {
         case .text(let text):
-            Text(text)
-                .textSelection(.enabled)
+            if message.role == .user {
+                Text(text)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                MarkdownView(source: text)
+            }
         case .reasoningSummary(let text):
             ReasoningBlock(text: text)
         case .toolCall(let rec):

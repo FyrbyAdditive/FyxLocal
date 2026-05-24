@@ -18,15 +18,26 @@ final class AppEnvironment {
     let ingestor: FileIngestor
     let pageExtractor: any PageExtractor
     let searchProvider: any WebSearchProvider
-    var providerRecords: [ProviderRecord]
-    var conversations: [Conversation]
-    var selectedConversationID: ConversationID?
-    var promptLanguage: PromptLanguage
+    let stateStore: AppStateStore
+    var providerRecords: [ProviderRecord] {
+        didSet { scheduleSave() }
+    }
+    var conversations: [Conversation] {
+        didSet { scheduleSave() }
+    }
+    var selectedConversationID: ConversationID? {
+        didSet { scheduleSave() }
+    }
+    var promptLanguage: PromptLanguage {
+        didSet { scheduleSave() }
+    }
     var sidebarSelection: SidebarSelection?
 
     /// Cached `/models` results per provider, keyed by ProviderID.
     var detectedModels: [ProviderID: [ModelInfo]] = [:]
     var providerStatus: [ProviderID: ProviderConnectionStatus] = [:]
+
+    private var saveTask: Task<Void, Never>?
 
     init() {
         self.secretStore = KeychainStore()
@@ -35,10 +46,50 @@ final class AppEnvironment {
         self.ingestor = FileIngestor()
         self.pageExtractor = WebKitPageExtractor()
         self.searchProvider = DuckDuckGoProvider()
-        self.providerRecords = AppEnvironment.defaultProviders()
-        self.conversations = []
-        self.promptLanguage = PromptLanguage.resolve()
-        self.sidebarSelection = nil
+        self.stateStore = AppStateStore()
+        // Restore from disk if present; otherwise fall back to defaults.
+        if let snapshot = self.stateStore.load() {
+            self.providerRecords = snapshot.providers.isEmpty ? AppEnvironment.defaultProviders() : snapshot.providers
+            self.conversations = snapshot.conversations
+            self.selectedConversationID = snapshot.selectedConversationID
+            self.promptLanguage = snapshot.promptLanguage
+        } else {
+            self.providerRecords = AppEnvironment.defaultProviders()
+            self.conversations = []
+            self.selectedConversationID = nil
+            self.promptLanguage = PromptLanguage.resolve()
+        }
+        if let id = self.selectedConversationID, self.conversations.contains(where: { $0.id == id }) {
+            self.sidebarSelection = .conversation(id)
+        } else {
+            self.sidebarSelection = nil
+        }
+    }
+
+    /// Coalesces writes so that a burst of changes (e.g. streaming chunks
+    /// updating a conversation message-by-message) results in at most one
+    /// disk write every ~400ms.
+    func scheduleSave() {
+        saveTask?.cancel()
+        saveTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled, let self else { return }
+            self.persistNow()
+        }
+    }
+
+    func persistNow() {
+        let snapshot = PersistedAppState(
+            providers: providerRecords,
+            conversations: conversations,
+            selectedConversationID: selectedConversationID,
+            promptLanguage: promptLanguage
+        )
+        do {
+            try stateStore.save(snapshot)
+        } catch {
+            FileHandle.standardError.write(Data("[FChat] persist failed: \(error)\n".utf8))
+        }
     }
 
     func currentProvider() -> ProviderRecord? {

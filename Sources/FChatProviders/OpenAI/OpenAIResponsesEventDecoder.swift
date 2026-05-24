@@ -3,7 +3,15 @@ import FChatCore
 
 /// Decodes raw SSE events from the OpenAI Responses API into `StreamEvent`.
 /// Tolerant of unknown event types (they are dropped silently).
-public struct OpenAIResponsesEventDecoder {
+///
+/// vLLM and a few other servers emit `function_call_arguments.delta`/`.done`
+/// events that carry only `item_id`, not `call_id`. We keep a per-stream
+/// `item_id → call_id` map populated from `output_item.added` so downstream
+/// tool-call deltas can be re-projected to the canonical `call_id` the rest
+/// of the runtime keys by.
+public final class OpenAIResponsesEventDecoder {
+    private var callIDByItemID: [String: String] = [:]
+    private var nameByItemID: [String: String] = [:]
     public init() {}
 
     public func decode(_ sse: SSEEvent) throws -> StreamEvent? {
@@ -37,20 +45,32 @@ public struct OpenAIResponsesEventDecoder {
             if payload.item.type == "function_call",
                let name = payload.item.name,
                let callID = payload.item.call_id {
-                return .toolCallStarted(itemID: payload.item.id ?? UUID().uuidString, callID: callID, name: name)
+                let itemID = payload.item.id ?? UUID().uuidString
+                callIDByItemID[itemID] = callID
+                nameByItemID[itemID] = name
+                return .toolCallStarted(itemID: itemID, callID: callID, name: name)
             }
             return nil
 
         case "response.function_call_arguments.delta":
             let payload = try JSONDecoder().decode(FunctionCallArgsDeltaPayload.self, from: data)
-            return .toolCallArgumentsDelta(itemID: payload.item_id, callID: payload.call_id ?? payload.item_id, delta: payload.delta)
+            let resolvedCallID = payload.call_id
+                ?? callIDByItemID[payload.item_id]
+                ?? payload.item_id
+            return .toolCallArgumentsDelta(itemID: payload.item_id, callID: resolvedCallID, delta: payload.delta)
 
         case "response.function_call_arguments.done":
             let payload = try JSONDecoder().decode(FunctionCallArgsDonePayload.self, from: data)
+            let resolvedCallID = payload.call_id
+                ?? callIDByItemID[payload.item_id]
+                ?? payload.item_id
+            let resolvedName = payload.name
+                ?? nameByItemID[payload.item_id]
+                ?? ""
             return .toolCallCompleted(
                 itemID: payload.item_id,
-                callID: payload.call_id ?? payload.item_id,
-                name: payload.name ?? "",
+                callID: resolvedCallID,
+                name: resolvedName,
                 arguments: payload.arguments
             )
 

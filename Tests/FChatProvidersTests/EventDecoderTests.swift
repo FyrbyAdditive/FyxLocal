@@ -38,6 +38,28 @@ struct OpenAIResponsesEventDecoderTests {
         #expect(delta == "Thinking")
     }
 
+    @Test func vLLMStyleFunctionCallArgsResolveCallIDFromItemID() throws {
+        // vLLM emits .delta / .done events WITHOUT a `call_id` field — only
+        // `item_id`. The decoder must remember the mapping from the prior
+        // `output_item.added` and project the canonical call_id forward.
+        let started = SSEEvent(event: "response.output_item.added", data: #"{"type":"response.output_item.added","item":{"id":"be324","type":"function_call","name":"web_search","call_id":"call_xyz","arguments":"","status":"in_progress"}}"#)
+        let startEvent = try decoder.decode(started)
+        guard case .toolCallStarted(_, let startedCallID, _) = startEvent else { Issue.record("expected toolCallStarted"); return }
+        #expect(startedCallID == "call_xyz")
+
+        let delta = SSEEvent(event: "response.function_call_arguments.delta", data: #"{"type":"response.function_call_arguments.delta","item_id":"be324","delta":"{\"q\":\"x\"}"}"#)
+        let deltaEvent = try decoder.decode(delta)
+        guard case .toolCallArgumentsDelta(_, let deltaCallID, let deltaText) = deltaEvent else { Issue.record("expected toolCallArgumentsDelta"); return }
+        #expect(deltaCallID == "call_xyz")
+        #expect(deltaText == #"{"q":"x"}"#)
+
+        let done = SSEEvent(event: "response.function_call_arguments.done", data: #"{"type":"response.function_call_arguments.done","item_id":"be324","arguments":"{\"q\":\"x\"}"}"#)
+        let doneEvent = try decoder.decode(done)
+        guard case .toolCallCompleted(_, let doneCallID, let doneName, _) = doneEvent else { Issue.record("expected toolCallCompleted"); return }
+        #expect(doneCallID == "call_xyz")
+        #expect(doneName == "web_search")
+    }
+
     @Test func functionCallArgsDeltaAndDone() throws {
         let started = SSEEvent(event: "response.output_item.added", data: #"{"type":"response.output_item.added","item":{"id":"f1","type":"function_call","name":"web_search","call_id":"call_abc"}}"#)
         let startEvent = try decoder.decode(started)

@@ -1,6 +1,6 @@
 import Foundation
 
-public enum PromptLanguage: String, Sendable, Hashable, CaseIterable {
+public enum PromptLanguage: String, Sendable, Hashable, CaseIterable, Codable {
     case english = "en"
     case swedish = "sv"
 

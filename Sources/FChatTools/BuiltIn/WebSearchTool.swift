@@ -32,17 +32,36 @@ public struct WebSearchTool: Tool {
             let query: String
             let max_results: Int?
         }
-        guard let data = arguments.data(using: .utf8),
+        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalised = trimmed.isEmpty ? "{}" : trimmed
+        guard let data = normalised.data(using: .utf8),
               let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
-            throw ToolInvocationError.badArguments(arguments)
+            let message = #"{"error":"Could not parse arguments. Expected JSON of the form {\"query\": string, \"max_results\"?: integer}. Got: \#(escape(arguments))"}"#
+            return ToolOutput(outputJSON: message, isError: true, display: .markdown)
+        }
+        let cleanQuery = parsed.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanQuery.isEmpty else {
+            return ToolOutput(outputJSON: #"{"error":"query is empty"}"#, isError: true, display: .markdown)
         }
         let limit = max(1, min(parsed.max_results ?? defaultMaxResults, 20))
-        let results = try await provider.search(query: parsed.query, maxResults: limit)
-        let payload = WebSearchResultsPayload(query: parsed.query, results: results)
-        let json = try JSONEncoder().encode(payload)
-        let str = String(data: json, encoding: .utf8) ?? "{}"
-        return ToolOutput(outputJSON: str, display: .markdown)
+        do {
+            let results = try await provider.search(query: cleanQuery, maxResults: limit)
+            let payload = WebSearchResultsPayload(query: cleanQuery, results: results)
+            let json = try JSONEncoder().encode(payload)
+            let str = String(data: json, encoding: .utf8) ?? "{}"
+            return ToolOutput(outputJSON: str, display: .markdown)
+        } catch {
+            let message = #"{"error":"web_search failed: \#(escape(error.localizedDescription))"}"#
+            return ToolOutput(outputJSON: message, isError: true, display: .markdown)
+        }
     }
+}
+
+private func escape(_ text: String) -> String {
+    text
+        .replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "\"", with: "\\\"")
+        .replacingOccurrences(of: "\n", with: " ")
 }
 
 private struct WebSearchResultsPayload: Encodable {

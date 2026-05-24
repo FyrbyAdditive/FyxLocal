@@ -20,16 +20,21 @@ struct WebSearchToolTests {
         #expect(await stub.lastQuery == "swift")
     }
 
-    @Test func badArgumentsThrows() async {
+    @Test func badArgumentsReturnsErrorOutput() async throws {
+        // Bad args should surface as a structured error result (not throw)
+        // so the model receives a hint on the next iteration instead of the
+        // turn dying.
         let tool = WebSearchTool(provider: StubSearch(results: []))
-        do {
-            _ = try await tool.invoke(arguments: "not json")
-            Issue.record("expected throw")
-        } catch let err as ToolInvocationError {
-            #expect(err == .badArguments("not json"))
-        } catch {
-            Issue.record("unexpected error \(error)")
-        }
+        let output = try await tool.invoke(arguments: "not json")
+        #expect(output.isError == true)
+        #expect(output.outputJSON.contains("Could not parse arguments"))
+    }
+
+    @Test func emptyQueryReturnsErrorOutput() async throws {
+        let tool = WebSearchTool(provider: StubSearch(results: []))
+        let output = try await tool.invoke(arguments: #"{"query":"   "}"#)
+        #expect(output.isError == true)
+        #expect(output.outputJSON.contains("query is empty"))
     }
 
     @Test func definitionMentionsSwedishInSwedishMode() {

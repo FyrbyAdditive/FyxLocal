@@ -7,12 +7,15 @@ import FChatTools
 @MainActor
 @Observable
 final class ChatViewModel {
-    var conversation: Conversation
+    var conversation: Conversation {
+        didSet { environment?.update(conversation) }
+    }
     var draftText: String = ""
     var isStreaming: Bool = false
     var lastError: String?
     private weak var environment: AppEnvironment?
     private var streamTask: Task<Void, Never>?
+    private var firstDeltaAt: Date?
 
     init(conversation: Conversation, environment: AppEnvironment) {
         self.conversation = conversation
@@ -51,6 +54,7 @@ final class ChatViewModel {
 
         isStreaming = true
         lastError = nil
+        firstDeltaAt = nil
         streamTask = Task { [weak self, assistantIndex] in
             guard let self else { return }
             do {
@@ -133,6 +137,14 @@ final class ChatViewModel {
     private func apply(event: ChatTurnEvent, assistantIndex: Int) async {
         guard conversation.messages.indices.contains(assistantIndex) else { return }
         var message = conversation.messages[assistantIndex]
+        // Start the generation clock the first time any content arrives so
+        // tokens/sec excludes server queueing + first-token latency.
+        switch event {
+        case .textDelta, .textCompleted, .reasoningSummaryDelta, .toolCallStarted, .toolCallReady:
+            if firstDeltaAt == nil { firstDeltaAt = .now }
+        default:
+            break
+        }
         switch event {
         case .responseStarted(let id):
             conversation.previousResponseID = id
@@ -185,20 +197,40 @@ final class ChatViewModel {
                 }
             }
         case .toolCallReady(let callID, let name, let arguments):
+            // Arguments fully arrived but the tool itself hasn't run yet —
+            // keep the spinner going (.running) until .toolResult lands.
             if let i = message.contentItems.lastIndex(where: { item in
                 if case .toolCall(let rec) = item { return rec.id == callID }
                 return false
             }) {
-                message.contentItems[i] = .toolCall(ToolCallRecord(id: callID, name: name, argumentsJSON: arguments, status: .succeeded))
+                message.contentItems[i] = .toolCall(ToolCallRecord(id: callID, name: name, argumentsJSON: arguments, status: .running))
             } else {
-                message.contentItems.append(.toolCall(ToolCallRecord(id: callID, name: name, argumentsJSON: arguments, status: .succeeded)))
+                message.contentItems.append(.toolCall(ToolCallRecord(id: callID, name: name, argumentsJSON: arguments, status: .running)))
             }
         case .toolResult(let callID, let output):
+            if let i = message.contentItems.lastIndex(where: { item in
+                if case .toolCall(let rec) = item { return rec.id == callID }
+                return false
+            }), case .toolCall(let rec) = message.contentItems[i] {
+                message.contentItems[i] = .toolCall(ToolCallRecord(
+                    id: rec.id,
+                    name: rec.name,
+                    argumentsJSON: rec.argumentsJSON,
+                    status: output.isError ? .failed : .succeeded
+                ))
+            }
             message.contentItems.append(.toolResult(ToolResultRecord(callID: callID, outputJSON: output.outputJSON, isError: output.isError, display: output.display)))
         case .usage(let usage):
             message.usage = usage
+            if let start = firstDeltaAt {
+                message.generationDuration = Date.now.timeIntervalSince(start)
+            }
         case .completed, .maxIterationsReached:
-            break
+            // Some servers omit `usage` from the SSE stream; still finalise
+            // the clock so the UI stops the "streaming" treatment cleanly.
+            if message.generationDuration == nil, let start = firstDeltaAt {
+                message.generationDuration = Date.now.timeIntervalSince(start)
+            }
         }
         conversation.messages[assistantIndex] = message
         conversation.updatedAt = .now

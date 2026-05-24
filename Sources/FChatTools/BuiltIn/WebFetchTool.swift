@@ -29,13 +29,30 @@ public struct WebFetchTool: Tool {
 
     public func invoke(arguments: String) async throws -> ToolOutput {
         struct Args: Decodable { let url: String }
-        guard let data = arguments.data(using: .utf8),
-              let parsed = try? JSONDecoder().decode(Args.self, from: data),
-              let url = URL(string: parsed.url) else {
-            throw ToolInvocationError.badArguments(arguments)
+        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalised = trimmed.isEmpty ? "{}" : trimmed
+        guard let data = normalised.data(using: .utf8),
+              let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
+            let message = #"{"error":"Could not parse arguments. Expected {\"url\": string}. Got: \#(escapeWebFetch(arguments))"}"#
+            return ToolOutput(outputJSON: message, isError: true, display: .markdown)
         }
-        let extracted = try await extractor.extract(url: url, timeout: defaultTimeout)
-        let json = try JSONEncoder().encode(extracted)
-        return ToolOutput(outputJSON: String(data: json, encoding: .utf8) ?? "{}", display: .markdown)
+        guard let url = URL(string: parsed.url.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return ToolOutput(outputJSON: #"{"error":"Invalid URL: \#(escapeWebFetch(parsed.url))"}"#, isError: true, display: .markdown)
+        }
+        do {
+            let extracted = try await extractor.extract(url: url, timeout: defaultTimeout)
+            let json = try JSONEncoder().encode(extracted)
+            return ToolOutput(outputJSON: String(data: json, encoding: .utf8) ?? "{}", display: .markdown)
+        } catch {
+            let message = #"{"error":"web_fetch failed: \#(escapeWebFetch(error.localizedDescription))"}"#
+            return ToolOutput(outputJSON: message, isError: true, display: .markdown)
+        }
     }
+}
+
+private func escapeWebFetch(_ text: String) -> String {
+    text
+        .replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "\"", with: "\\\"")
+        .replacingOccurrences(of: "\n", with: " ")
 }
