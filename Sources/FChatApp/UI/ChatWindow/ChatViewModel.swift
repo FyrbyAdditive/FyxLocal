@@ -131,10 +131,12 @@ final class ChatViewModel {
         // portability is the right call until we add per-provider capability
         // detection.
         let sampling = providerRecord.sampling
+        let temporal = TemporalContext(language: language).render()
+        let instructions = prompt.render() + "\n\n" + temporal
         return ChatRequest(
             model: modelID,
             input: historyInput,
-            instructions: prompt.render(),
+            instructions: instructions,
             previousResponseID: nil,
             temperature: sampling.temperature,
             topP: sampling.topP,
