@@ -1,0 +1,44 @@
+# Swift / SwiftPM build artifacts
+.build/
+.swiftpm/
+Packages/
+*.xcodeproj/
+*.xcworkspace/
+*.playground/
+DerivedData/
+
+# App bundle assembled by scripts/make-app.sh
+build/
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+
+# Local test artifacts
+*.log
+*.profraw
+*.profdata
+
+# IDE / editor
+.idea/
+*.swp
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Secrets / local config
+.env
+.env.local
+*.local.json
+secrets/
+
+# Coverage
+coverage/
+*.gcda
+*.gcno

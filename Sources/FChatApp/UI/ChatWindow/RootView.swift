@@ -1,0 +1,58 @@
+import SwiftUI
+import FChatCore
+
+struct RootView: View {
+    @Bindable var environment: AppEnvironment
+
+    var body: some View {
+        NavigationSplitView {
+            SidebarView(environment: environment)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 340)
+        } detail: {
+            switch environment.sidebarSelection {
+            case .conversation(let id):
+                ChatDetailView(environment: environment, conversationID: id)
+            case .settings:
+                SettingsView(environment: environment)
+            case .collections:
+                CollectionsManagerView(environment: environment)
+            case nil:
+                EmptyPlaceholderView()
+            }
+        }
+        .task {
+            if environment.conversations.isEmpty {
+                environment.newConversation(title: "New chat")
+            }
+            await environment.registerBuiltInTools()
+        }
+    }
+}
+
+struct CollectionsManagerView: View {
+    @Bindable var environment: AppEnvironment
+    var body: some View {
+        VStack {
+            Text("Collections")
+                .font(.title.bold())
+            Text("Coming soon — manage your local document collections here.")
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+    }
+}
+
+struct EmptyPlaceholderView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "bubble.left.and.bubble.right.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.secondary)
+            Text("Select or start a conversation")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}

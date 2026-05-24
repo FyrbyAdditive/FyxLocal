@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:F-Chat}",
+            "name": "Debug FChat",
+            "target": "FChat",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug FChat"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:F-Chat}",
+            "name": "Release FChat",
+            "target": "FChat",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release FChat"
+        }
+    ]
+}
