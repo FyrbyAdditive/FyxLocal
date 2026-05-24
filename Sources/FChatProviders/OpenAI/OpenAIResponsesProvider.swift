@@ -38,18 +38,30 @@ public struct OpenAIResponsesProvider: LLMProvider {
             struct Model: Decodable {
                 let id: String
                 let owned_by: String?
+                // Different servers report the context window under different
+                // names. Try the lot in priority order.
                 let context_window: Int?
+                let max_model_len: Int? // vLLM
+                let context_length: Int? // llama.cpp, ollama, some others
+                let max_context_length: Int?
                 let max_output_tokens: Int?
+                let max_tokens: Int?
             }
             let data: [Model]
         }
         let parsed = try JSONDecoder().decode(ListResponse.self, from: data)
         return parsed.data.map { m in
-            ModelInfo(
+            let serverWindow = m.context_window
+                ?? m.max_model_len
+                ?? m.context_length
+                ?? m.max_context_length
+            let resolvedWindow = serverWindow ?? KnownModelCatalog.contextWindow(for: m.id)
+            let serverMaxOut = m.max_output_tokens ?? m.max_tokens
+            return ModelInfo(
                 id: m.id,
                 displayName: m.id,
-                contextWindow: m.context_window,
-                maxOutputTokens: m.max_output_tokens
+                contextWindow: resolvedWindow,
+                maxOutputTokens: serverMaxOut
             )
         }
     }

@@ -490,7 +490,7 @@ private struct ContextSection: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Context window")
                 .font(.callout.bold())
-            Text("Controls auto-compaction. Older messages are summarized away when the projected request crosses the threshold.")
+            Text("Older messages are summarized away when the projected request would leave less than the reserve free for the reply.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
@@ -539,19 +539,16 @@ private struct ContextSection: View {
                     .foregroundStyle(.secondary)
             }
 
-            HStack {
-                Text("Auto-compact at")
-                    .frame(width: 160, alignment: .trailing)
-                    .foregroundStyle(.secondary)
-                    .font(.callout)
-                Slider(value: Binding(
-                    get: { context.compactThreshold },
-                    set: { context.compactThreshold = max(0.5, min(0.95, $0)) }
-                ), in: 0.5...0.95, step: 0.05)
-                Text("\(Int(context.compactThreshold * 100))%")
-                    .font(.callout.monospaced())
-                    .frame(minWidth: 50, alignment: .trailing)
-                    .foregroundStyle(.secondary)
+            Stepper(value: Binding(
+                get: { context.outputReserve },
+                set: { context.outputReserve = max(256, min(64_000, $0)) }
+            ), in: 256...64_000, step: 512) {
+                HStack {
+                    Text("Reserve for reply (tokens)")
+                    Spacer()
+                    Text(context.outputReserve.formatted())
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Stepper(value: Binding(

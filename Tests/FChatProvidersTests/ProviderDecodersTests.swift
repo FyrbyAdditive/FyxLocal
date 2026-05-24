@@ -19,6 +19,52 @@ struct ProviderDecodersTests {
         #expect(models[1].contextWindow == nil)
     }
 
+    @Test func decodesVLLMMaxModelLen() throws {
+        // vLLM emits max_model_len rather than context_window. The decoder
+        // must pick it up so we don't fall through to the 8k fallback for
+        // every self-hosted setup.
+        let json = #"""
+        {"object":"list","data":[
+            {"id":"cyankiwi/MiniMax-M2.7-AWQ-4bit","owned_by":"vllm","max_model_len":196608}
+        ]}
+        """#
+        let models = try OpenAIResponsesProvider.decodeModels(json.data(using: .utf8)!)
+        #expect(models.first?.contextWindow == 196608)
+    }
+
+    @Test func decodesContextLengthAlias() throws {
+        // llama.cpp / ollama style.
+        let json = #"""
+        {"data":[{"id":"qwen2.5:32b","context_length":32768}]}
+        """#
+        let models = try OpenAIResponsesProvider.decodeModels(json.data(using: .utf8)!)
+        #expect(models.first?.contextWindow == 32768)
+    }
+
+    @Test func contextWindowTakesPriorityOverOtherFields() throws {
+        // When multiple aliases are present, context_window wins.
+        let json = #"""
+        {"data":[{"id":"x","context_window":100,"max_model_len":200,"context_length":300}]}
+        """#
+        let models = try OpenAIResponsesProvider.decodeModels(json.data(using: .utf8)!)
+        #expect(models.first?.contextWindow == 100)
+    }
+
+    @Test func fallsBackToCatalogForKnownHostedModel() throws {
+        // OpenAI's actual /v1/models doesn't include a window field;
+        // the catalog should fill that in.
+        let json = #"{"data":[{"id":"gpt-4o-mini","owned_by":"openai"}]}"#
+        let models = try OpenAIResponsesProvider.decodeModels(json.data(using: .utf8)!)
+        #expect(models.first?.contextWindow == 128_000)
+    }
+
+    @Test func unknownModelStaysNil() throws {
+        // No server hint, no catalog entry → nil (ContextBudget will use 8k fallback).
+        let json = #"{"data":[{"id":"someones/exotic-model-v0.1"}]}"#
+        let models = try OpenAIResponsesProvider.decodeModels(json.data(using: .utf8)!)
+        #expect(models.first?.contextWindow == nil)
+    }
+
     @Test func decodesEmbeddingsAndSortsByIndex() throws {
         let json = #"""
         {"data":[

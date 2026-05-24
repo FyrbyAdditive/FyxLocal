@@ -54,22 +54,48 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
 
 /// Auto-compaction knobs per provider.
 ///
-/// `hardCap`, when nil, means "use the model's `max_model_len` reported by
-/// the server, or fall back to a safe default if missing".
+/// `hardCap`, when nil, means "use the model's reported context window from
+/// `/models` (e.g. vLLM's `max_model_len`), or the known-model catalogue
+/// fallback, or a safe 8k default".
 public struct ProviderContextSettings: Sendable, Hashable, Codable {
     /// User-supplied ceiling. nil → use the server's model-reported value.
     public var hardCap: Int?
-    /// Fraction of the effective budget at which auto-compaction kicks in.
-    /// 0.8 by default; range checked to [0.5, 0.95].
-    public var compactThreshold: Double
+    /// Tokens kept available for the model's reply. The auto-compaction
+    /// trigger is `effectiveWindow - outputReserve`: when the projected
+    /// input would push us past that point, we compact before sending so
+    /// there's always room for the reply.
+    public var outputReserve: Int
     /// How many of the most recent messages we keep verbatim when compacting.
     /// The rest get summarized into a single synthetic system message.
     public var recentKeepCount: Int
 
-    public init(hardCap: Int? = nil, compactThreshold: Double = 0.8, recentKeepCount: Int = 6) {
+    public init(hardCap: Int? = nil, outputReserve: Int = 4096, recentKeepCount: Int = 6) {
         self.hardCap = hardCap
-        self.compactThreshold = max(0.5, min(0.95, compactThreshold))
+        self.outputReserve = max(256, min(64_000, outputReserve))
         self.recentKeepCount = max(2, min(64, recentKeepCount))
+    }
+
+    // Custom decoder: tolerate the old `compactThreshold` field by ignoring
+    // it. New `outputReserve` defaults to 4096 when missing. Both old and
+    // new states load cleanly.
+    private enum CodingKeys: String, CodingKey {
+        case hardCap, outputReserve, recentKeepCount
+        case compactThreshold // legacy; ignored on read, never written
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let cap = try c.decodeIfPresent(Int.self, forKey: .hardCap)
+        let reserve = try c.decodeIfPresent(Int.self, forKey: .outputReserve) ?? 4096
+        let keep = try c.decodeIfPresent(Int.self, forKey: .recentKeepCount) ?? 6
+        self.init(hardCap: cap, outputReserve: reserve, recentKeepCount: keep)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(hardCap, forKey: .hardCap)
+        try c.encode(outputReserve, forKey: .outputReserve)
+        try c.encode(recentKeepCount, forKey: .recentKeepCount)
     }
 }
 

@@ -45,21 +45,27 @@ struct TokenMeter: View {
         }
     }
 
+    /// Ratio used to flip the chip's colour. Denominator is the usable
+    /// input budget (window minus the output reserve), not the raw window,
+    /// so the chip turns red as we approach the compaction trigger — not
+    /// just as we approach the theoretical maximum.
     private var ratio: Double {
-        guard let projection, let budget, budget.effectiveWindow > 0 else { return 0 }
-        return Double(projection.totalTokens) / Double(budget.effectiveWindow)
+        guard let projection, let budget, budget.safeInputBudget > 0 else { return 0 }
+        return Double(projection.totalTokens) / Double(budget.safeInputBudget)
     }
 
     private var labelText: String {
         if isCompacting { return "Compacting…" }
         guard let projection, let budget else { return "—" }
+        // Denominator stays as the full window so users see the honest
+        // model maximum; colour and helpText explain the reserve.
         return "\(formatTokens(projection.totalTokens)) / \(formatTokens(budget.effectiveWindow))"
     }
 
     private var helpText: String {
-        guard projection != nil, let budget else { return "Context usage" }
+        guard let projection, let budget else { return "Context usage" }
         let pct = Int((ratio * 100).rounded())
-        return "\(pct)% of context window used. Budget source: \(budget.sourceLabel). Click for details."
+        return "\(projection.totalTokens.formatted()) tokens used of \(budget.safeInputBudget.formatted()) safe input budget (\(pct)%). Window: \(budget.effectiveWindow.formatted()), reserve: \(budget.outputReserve.formatted()). Click for details."
     }
 
     private var fillColor: Color {
@@ -103,9 +109,10 @@ struct TokenMeterPopover: View {
                 .font(.headline)
 
             if let budget {
-                LabeledRow(label: "Budget", value: "\(budget.effectiveWindow.formatted()) tokens")
+                LabeledRow(label: "Window", value: "\(budget.effectiveWindow.formatted()) tokens")
                 LabeledRow(label: "Source", value: budget.sourceLabel)
-                LabeledRow(label: "Auto-compact at", value: "\(budget.compactionTrigger.formatted()) tokens")
+                LabeledRow(label: "Reserved for reply", value: "\(budget.outputReserve.formatted())")
+                LabeledRow(label: "Compacts when input ≥", value: "\(budget.compactionTrigger.formatted())")
             } else {
                 Text("No budget detected. Pick a provider and a default model in Settings.")
                     .font(.caption)
