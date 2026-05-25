@@ -24,6 +24,7 @@ struct SidebarView: View {
                     if !environment.conversations.isEmpty {
                         Text("\(environment.conversations.count)")
                             .foregroundStyle(.secondary)
+                            .padding(.trailing, 6)
                     }
                 }
             }
