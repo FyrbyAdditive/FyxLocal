@@ -230,6 +230,73 @@ struct RequestPayloadBuilderTests {
         #expect(firstClearedCount == secondClearedCount)
     }
 
+    // MARK: - todayHeader
+
+    @Test func assembleWithoutTodayHeaderIsUnchanged() {
+        let convo = makeConversation(messages: [
+            Message(role: .user, contentItems: [.text("hi")]),
+        ])
+        let plain = builder.assemble(conversation: convo, draftUserText: "")
+        let opted = builder.assemble(conversation: convo, draftUserText: "", todayHeader: nil)
+        #expect(plain == opted)
+    }
+
+    @Test func assemblePrependsTodayHeaderToLatestUserMessage() {
+        let convo = makeConversation(messages: [
+            Message(role: .user, contentItems: [.text("first")]),
+            Message(role: .assistant, contentItems: [.text("reply")]),
+            Message(role: .user, contentItems: [.text("second")]),
+        ])
+        let items = builder.assemble(
+            conversation: convo,
+            draftUserText: "",
+            todayHeader: "[Today is Tue 2026-05-26]"
+        )
+        // Three message items total. Walk through to confirm the LAST user
+        // message got the prefix and the FIRST user message did not.
+        var userTexts: [String] = []
+        for item in items {
+            if case .message(let role, let content) = item, role == .user,
+               case .inputText(let s) = content.first {
+                userTexts.append(s)
+            }
+        }
+        #expect(userTexts.count == 2)
+        #expect(userTexts[0] == "first")
+        #expect(userTexts[1] == "[Today is Tue 2026-05-26]\nsecond")
+    }
+
+    @Test func assembleTodayHeaderNoOpWhenNoUserMessage() {
+        // No user message in history → header is silently ignored.
+        let convo = makeConversation(messages: [
+            Message(role: .assistant, contentItems: [.text("just a note")]),
+        ])
+        let items = builder.assemble(
+            conversation: convo,
+            draftUserText: "",
+            todayHeader: "[Today is Tue 2026-05-26]"
+        )
+        // No item should contain the header anywhere.
+        for item in items {
+            if case .message(_, let content) = item {
+                for part in content {
+                    if case .inputText(let s) = part {
+                        #expect(!s.contains("Today is"))
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func assembleTodayHeaderEmptyStringIsTreatedAsNoop() {
+        let convo = makeConversation(messages: [
+            Message(role: .user, contentItems: [.text("hi")]),
+        ])
+        let plain = builder.assemble(conversation: convo, draftUserText: "")
+        let empty = builder.assemble(conversation: convo, draftUserText: "", todayHeader: "")
+        #expect(plain == empty)
+    }
+
     @Test func assembleKeepRangeRespectsClearing() {
         // If keepRange already drops older history, the clearer sees fewer
         // items and only clears within the kept window.

@@ -116,8 +116,14 @@ final class ChatViewModel {
             includeToolGuidance: true,
             includeRAGGuidance: !conversation.settings.attachedCollections.isEmpty
         )
-        let temporal = TemporalContext(language: language).render()
-        return prompt.render() + "\n\n" + temporal
+        // No temporal context here: a fresh ISO timestamp in the system
+        // prompt invalidates vLLM's prefix cache on every send. The date
+        // is now injected as an invisible "[Today is ...]" header on the
+        // most recent user message at wire-encoding time (day-bucketed,
+        // so the prefix on prior user turns stays byte-stable across
+        // re-sends). Sub-day precision is available via the opt-in
+        // `current_time` tool.
+        return prompt.render()
     }
 
     // MARK: - Send
@@ -331,6 +337,11 @@ final class ChatViewModel {
             keepRecentResults: 2,
             tokenizer: tokenizer
         )
+        // Day-bucketed "[Today is ...]" header to prepend, invisibly, to
+        // the latest user message at the wire layer. Keeps the system
+        // prompt byte-stable across the entire session so vLLM's prefix
+        // cache survives across turns. See TemporalContext for rationale.
+        let todayHeader = TemporalContext(language: language).renderDayHeader()
 
         // Determine the active compaction state: keep range starts after the
         // most recent compaction's upper bound, if any.
@@ -378,7 +389,8 @@ final class ChatViewModel {
                         draftUserText: "",
                         summary: summary,
                         keepRange: firstKeepableIndex..<currentMessageCount,
-                        clearOptions: clearOptions
+                        clearOptions: clearOptions,
+                        todayHeader: todayHeader
                     ),
                     tools: toolDefinitions
                 )
@@ -413,7 +425,8 @@ final class ChatViewModel {
             draftUserText: "",
             summary: summary,
             keepRange: keepLowerBound..<currentMessageCount,
-            clearOptions: clearOptions
+            clearOptions: clearOptions,
+            todayHeader: todayHeader
         )
         // Re-project with the now-current shape and cache for the footer.
         let finalProjection = builder.project(

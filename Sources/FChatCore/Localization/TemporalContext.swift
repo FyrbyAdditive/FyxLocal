@@ -23,6 +23,50 @@ public struct TemporalContext: Sendable {
         self.language = language
     }
 
+    /// Short day-bucketed header for inline prepend on user messages, e.g.
+    /// `"[Today is Tuesday, May 26, 2026]"`. Stable for the entire local-day
+    /// — calling this with two `date` values 30 minutes apart returns the
+    /// same string. That stability is what makes it safe to prepend to a
+    /// user message without invalidating any prefix cache: subsequent
+    /// re-sends of the same conversation produce byte-identical bytes for
+    /// every prior user turn.
+    public func renderDayHeader() -> String {
+        let f = DateFormatter()
+        f.locale = locale
+        f.timeZone = timeZone
+        f.dateStyle = .full
+        f.timeStyle = .none
+        switch language {
+        case .english:
+            return "[Today is \(f.string(from: date))]"
+        case .swedish:
+            return "[Idag är \(f.string(from: date))]"
+        }
+    }
+
+    /// Full sub-second precision rendering as a small JSON object, suitable
+    /// as the output of a `current_time` tool. Includes ISO-8601, a
+    /// human-readable string, and the named timezone.
+    public func renderFullJSON() -> String {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withTimeZone]
+        let iso = isoFormatter.string(from: date)
+
+        let humanFormatter = DateFormatter()
+        humanFormatter.locale = locale
+        humanFormatter.timeZone = timeZone
+        humanFormatter.dateStyle = .full
+        humanFormatter.timeStyle = .medium
+        let human = humanFormatter.string(from: date)
+
+        let tzName = timeZone.identifier
+        let escape: (String) -> String = { s in
+            s.replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+        }
+        return "{\"iso8601\":\"\(escape(iso))\",\"human\":\"\(escape(human))\",\"timezone\":\"\(escape(tzName))\"}"
+    }
+
     public func render() -> String {
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withTimeZone]

@@ -34,7 +34,8 @@ public struct RequestPayloadBuilder: Sendable {
         draftUserText: String,
         summary: String? = nil,
         keepRange: Range<Int>? = nil,
-        clearOptions: ClearOptions? = nil
+        clearOptions: ClearOptions? = nil,
+        todayHeader: String? = nil
     ) -> [InputItem] {
         var input: [InputItem] = []
 
@@ -67,7 +68,39 @@ public struct RequestPayloadBuilder: Sendable {
             input = applyClearing(to: input, options: clearOptions)
         }
 
+        if let todayHeader, !todayHeader.isEmpty {
+            input = prependTodayHeader(to: input, header: todayHeader)
+        }
+
         return input
+    }
+
+    /// Find the most recent `.message(role: .user, ...)` item and prepend the
+    /// day-bucketed header to its first `.inputText` content part. Other
+    /// user messages in the history stay untouched — prefix-cache-stable.
+    /// Silently no-ops when the assembled input has no user message.
+    private func prependTodayHeader(to items: [InputItem], header: String) -> [InputItem] {
+        // Walk backwards looking for the latest user message with at least
+        // one inputText content part.
+        for i in stride(from: items.count - 1, through: 0, by: -1) {
+            guard case .message(let role, var content) = items[i], role == .user else { continue }
+            // Find the first inputText content part in this message and
+            // prepend the header. If the user sent an image-only message
+            // we'd have no text to prepend to; insert a text part instead.
+            if let textIdx = content.firstIndex(where: {
+                if case .inputText = $0 { return true } else { return false }
+            }) {
+                if case .inputText(let existing) = content[textIdx] {
+                    content[textIdx] = .inputText("\(header)\n\(existing)")
+                }
+            } else {
+                content.insert(.inputText(header), at: 0)
+            }
+            var mutated = items
+            mutated[i] = .message(role: role, content: content)
+            return mutated
+        }
+        return items
     }
 
     /// Lower a single chat message into one or more InputItems. Critically,

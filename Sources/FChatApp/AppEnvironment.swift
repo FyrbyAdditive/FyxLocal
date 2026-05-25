@@ -245,9 +245,14 @@ final class AppEnvironment {
                 return self.attachedCollectionsForActiveChat
             }
         ))
+        // current_time is opt-in (not in defaultEnabledTools) so the system
+        // prompt prefix stays cache-friendly for users who don't need
+        // sub-day time precision. They enable it via Settings → Tools.
+        let currentTime = CurrentTimeTool()
         await toolRegistry.register(webSearch)
         await toolRegistry.register(webFetch)
         await toolRegistry.register(rag)
+        await toolRegistry.register(currentTime)
     }
 
     static func defaultProviders() -> [ProviderRecord] {
