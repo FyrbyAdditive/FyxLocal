@@ -51,5 +51,16 @@ struct ChatDetailView: View {
                 viewModel = ChatViewModel(conversation: conversation, environment: environment)
             }
         }
+        // Sidebar rename writes directly into environment.conversations[i],
+        // which doesn't propagate back into the active view model's copy.
+        // When the environment's title for this chat changes externally and
+        // diverges from what the view model currently shows, pull it in so
+        // the inspector + nav-title stay in sync.
+        .onChange(of: environment.conversation(conversationID)?.title) { _, newTitle in
+            guard let newTitle, let vm = viewModel else { return }
+            if vm.conversation.title != newTitle {
+                vm.conversation.title = newTitle
+            }
+        }
     }
 }

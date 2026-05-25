@@ -39,10 +39,22 @@ final class ChatViewModel {
     /// (always the tail). Without this, every ~150ms debounce tick during a
     /// long reply re-tokenises the whole transcript on the main actor.
     private let tokenCountCache = MessageTokenCountCache()
+    /// True once the auto-titler has fired for this chat (success or not).
+    /// Prevents the titler from running again on subsequent turns even if
+    /// the user later renames the chat back to the default string.
+    private var didAutoTitle: Bool = false
 
     init(conversation: Conversation, environment: AppEnvironment) {
         self.conversation = conversation
         self.environment = environment
+        // Suppress auto-titling on chats loaded from disk: if the title is
+        // already something other than the default, or the conversation
+        // already has assistant content, the titler has already had its
+        // chance (or the user manually set the name).
+        let hasAssistantReply = conversation.messages.contains { $0.role == .assistant && !$0.contentItems.isEmpty }
+        if conversation.title != "New chat" || hasAssistantReply {
+            self.didAutoTitle = true
+        }
         // Kick the first projection so the meter has a value at view open.
         Task { @MainActor in self.refreshProjectionNow() }
     }
@@ -198,6 +210,39 @@ final class ChatViewModel {
             self.isStreaming = false
             self.environment?.update(self.conversation)
             self.refreshProjectionNow()
+            self.maybeAutoTitle(providerRecord: providerRecord, modelID: trimmedModel, language: promptLanguage)
+        }
+    }
+
+    /// Fire the auto-titler exactly once per chat, on the first successful
+    /// assistant turn, when the user hasn't already named the chat. Runs on
+    /// a detached task so a slow titler doesn't keep the streamTask alive.
+    private func maybeAutoTitle(providerRecord: ProviderRecord, modelID: String, language: PromptLanguage) {
+        guard !didAutoTitle else { return }
+        guard conversation.title == "New chat" else { return }
+        guard let firstUser = conversation.messages.first(where: { $0.role == .user })?.plainText,
+              !firstUser.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let firstAssistant = conversation.messages.first(where: { $0.role == .assistant })?.plainText,
+              !firstAssistant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return }
+        didAutoTitle = true
+
+        let environment = self.environment
+        let provider = environment?.makeRuntimeProvider(for: providerRecord)
+        guard let provider else { return }
+        Task.detached(priority: .background) { [weak self, firstUser, firstAssistant] in
+            let titler = ConversationTitler(provider: provider, modelID: modelID, language: language)
+            do {
+                let title = try await titler.title(forFirstUser: firstUser, firstAssistant: firstAssistant)
+                await MainActor.run {
+                    guard let self else { return }
+                    // Recheck the guard — user may have renamed during the LLM call.
+                    guard self.conversation.title == "New chat" else { return }
+                    self.conversation.title = title
+                }
+            } catch {
+                FileHandle.standardError.write(Data("[FChat] auto-title failed: \(error)\n".utf8))
+            }
         }
     }
 

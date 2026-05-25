@@ -9,10 +9,14 @@ struct InspectorView: View {
         Form {
             Section("Conversation") {
                 LabeledContent("Title") {
-                    Text(viewModel.conversation.title)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.trailing)
+                    TextField(
+                        "",
+                        text: $viewModel.conversation.title,
+                        prompt: Text("New chat")
+                    )
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
                 }
                 LabeledContent("Created") {
                     Text(viewModel.conversation.createdAt, format: .dateTime)
