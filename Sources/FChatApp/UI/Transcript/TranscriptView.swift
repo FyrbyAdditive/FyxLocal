@@ -6,27 +6,95 @@ struct TranscriptView: View {
     var failureForMessageID: MessageID? = nil
     var failureMessage: String? = nil
     var onRetry: (() -> Void)? = nil
-    @State private var scrollPosition: ScrollPosition = .init(idType: MessageID.self)
     /// Indices of compaction record ids whose dropped originals are currently
     /// expanded by the user. Empty by default — originals are collapsed.
     @State private var expandedCompactions: Set<UUID> = []
+    /// True when streaming deltas should auto-scroll the view to the
+    /// bottom. Flips off only when the user actively scrolls up; flips
+    /// back on when the user scrolls down to within `bottomThreshold` of
+    /// the bottom (or sends a new message — handled separately).
+    ///
+    /// Critically this does NOT flip based on geometry alone — content
+    /// growth during streaming naturally increases the distance from the
+    /// bottom, and reading that as "user is scrolled up" would close the
+    /// gate forever. We only react to user-initiated scrolls via
+    /// `onScrollPhaseChange`.
+    @State private var isAnchoredToBottom: Bool = true
+
+    /// Latest scroll geometry, updated by `onScrollGeometryChange`. Used
+    /// inside `onScrollPhaseChange` to decide whether the user's
+    /// just-ended scroll left us at the bottom or somewhere above.
+    @State private var latestDistanceFromBottom: CGFloat = 0
+
+    /// Distance (pts) from the bottom of the scroll content within which
+    /// we still consider the user "anchored".
+    private let bottomThreshold: CGFloat = 40
+
+    /// Stable id for the bottom sentinel; we scroll to this rather than to
+    /// the last message because the sentinel is always at the literal
+    /// bottom of the content, including any per-message footer + padding.
+    private let bottomSentinelID = "transcript-bottom-sentinel"
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 4) {
-                content
-                if conversation.messages.isEmpty {
-                    EmptyChatView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 80)
+        // Cheap fingerprint of the rendered transcript: any change here
+        // means we should consider auto-scrolling. Captures both new-message
+        // append (count change, id change) AND streaming deltas to the
+        // current message (plainText length change).
+        let fingerprint = "\(conversation.messages.count):"
+            + "\(conversation.messages.last?.id.rawValue.uuidString ?? "-"):"
+            + "\(conversation.messages.last?.plainText.count ?? 0)"
+
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVStack(alignment: .leading, spacing: 4) {
+                    content
+                    if conversation.messages.isEmpty {
+                        EmptyChatView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 80)
+                    }
+                    // Invisible sentinel always at the bottom; we scroll
+                    // to this rather than to the last message id so we
+                    // catch the per-message footer + padding too.
+                    Color.clear.frame(height: 1).id(bottomSentinelID)
+                }
+                .padding(.vertical, DesignTokens.panelPadding)
+            }
+            // Passive geometry observation: remember the current distance
+            // from the bottom so onScrollPhaseChange can read it. Does
+            // NOT touch isAnchoredToBottom — geometry changes during
+            // streaming are content growth, not user intent.
+            .onScrollGeometryChange(for: CGFloat.self, of: { geometry in
+                geometry.contentSize.height
+                    - (geometry.contentOffset.y + geometry.containerSize.height)
+            }, action: { _, distance in
+                latestDistanceFromBottom = distance
+            })
+            // The actual gate for "is auto-follow engaged". Driven solely
+            // by user-initiated scrolls — when a scroll gesture (trackpad,
+            // mouse-wheel, scrollbar drag) ends, recompute whether we're
+            // at the bottom and update the flag.
+            .onScrollPhaseChange { _, newPhase in
+                // .idle = gesture ended (or no gesture in progress).
+                // Other phases (.interacting, .tracking, .decelerating,
+                // .animating) are mid-flight; the user's intent isn't
+                // settled until idle.
+                if newPhase == .idle {
+                    isAnchoredToBottom = latestDistanceFromBottom <= bottomThreshold
                 }
             }
-            .padding(.vertical, DesignTokens.panelPadding)
-        }
-        .scrollPosition($scrollPosition, anchor: .bottom)
-        .onChange(of: conversation.messages.last?.id) { _, newID in
-            if let newID {
-                scrollPosition.scrollTo(id: newID, anchor: .bottom)
+            .onChange(of: fingerprint) { _, _ in
+                // Auto-follow on any content change, but only if we're
+                // currently anchored. Defaults to true so the very first
+                // message in a fresh chat scrolls into view even before
+                // any scroll-geometry event has fired.
+                guard isAnchoredToBottom else { return }
+                proxy.scrollTo(bottomSentinelID, anchor: .bottom)
+            }
+            .onAppear {
+                // First paint of an existing chat: jump to the bottom so
+                // we open at the latest message rather than the top.
+                proxy.scrollTo(bottomSentinelID, anchor: .bottom)
             }
         }
     }

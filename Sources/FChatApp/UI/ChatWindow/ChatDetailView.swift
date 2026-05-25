@@ -17,6 +17,10 @@ struct ChatDetailView: View {
                         failureMessage: viewModel.lastError,
                         onRetry: { viewModel.retryLastFailedMessage() }
                     )
+                    // Force SwiftUI to treat each chat as a fresh subtree
+                    // so the ScrollView's preserved scroll offset doesn't
+                    // bleed across chat switches.
+                    .id(conversationID)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     Divider()
                     ComposerView(viewModel: viewModel)
