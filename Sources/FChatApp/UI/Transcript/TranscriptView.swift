@@ -1,6 +1,17 @@
 import SwiftUI
 import FChatCore
 
+/// Chat transcript with sticky-bottom semantics implemented via inverted scroll.
+///
+/// The whole `ScrollView` is rotated 180°, and each row is rotated back. In the
+/// flipped coordinate space the visual bottom (latest message) maps to scroll
+/// offset 0 — so "stay pinned to the bottom" is just "stay at offset 0", which
+/// SwiftUI's `ScrollView` does for free when content grows. No `scrollTo`
+/// gymnastics, no user-vs-programmatic scroll detection, no race against
+/// streaming deltas.
+///
+/// This is the same architecture used by iMessage, ChatGPT.app, and
+/// `vellum-ai/vellum-assistant` (MIT, the pattern that inspired this port).
 struct TranscriptView: View {
     let conversation: Conversation
     var failureForMessageID: MessageID? = nil
@@ -9,188 +20,145 @@ struct TranscriptView: View {
     /// Indices of compaction record ids whose dropped originals are currently
     /// expanded by the user. Empty by default — originals are collapsed.
     @State private var expandedCompactions: Set<UUID> = []
-    /// True when streaming deltas should auto-scroll to the bottom.
-    ///
-    /// State machine, driven entirely by scroll-geometry deltas:
-    ///
-    /// - **Re-engage (false → true)**: any time current `distance ≤
-    ///   bottomThreshold`. Covers the user scrolling all the way down,
-    ///   content shrinking back inside the viewport, and our own
-    ///   `scrollTo` landing at the bottom (idempotent).
-    ///
-    /// - **Disengage (true → false)**: any time `contentOffset.y`
-    ///   decreases by more than `userScrollUpEpsilon`. Our own
-    ///   `scrollTo(.bottom)` never moves offset backward (only forward,
-    ///   toward larger offsets), so a backward delta is unambiguously
-    ///   a user-initiated scroll up.
-    ///
-    /// - Otherwise: flag unchanged. Content growing below us with no
-    ///   user input keeps `following == true`, and the next fingerprint
-    ///   change will fire `scrollTo` and reseat us at the bottom.
-    @State private var following: Bool = true
-
-    /// Last observed `contentOffset.y`. Sentinel value `-1` = no prior
-    /// sample (we won't run the disengage check until we have one to
-    /// compare against).
-    @State private var lastOffsetY: CGFloat = -1
-
-    /// Distance (pts) from the bottom of the scroll content within which
-    /// we consider the user "at the bottom" and re-engage auto-follow.
-    private let bottomThreshold: CGFloat = 40
-    /// Minimum backward offset delta to count as a user-initiated scroll
-    /// up. Guards against floating-point jitter and any tiny system
-    /// adjustments. Generous trackpad scrolls easily exceed this.
-    private let userScrollUpEpsilon: CGFloat = 6
-
-    /// Stable id for the bottom sentinel; we scroll to this rather than to
-    /// the last message because the sentinel is always at the literal
-    /// bottom of the content, including any per-message footer + padding.
-    private let bottomSentinelID = "transcript-bottom-sentinel"
+    /// Viewport height, captured from the ScrollView geometry. Used to give
+    /// the content a `minHeight` so an under-full transcript pins to the
+    /// visual top (= the flipped layout's bottom) instead of free-floating.
+    @State private var viewportHeight: CGFloat = 0
 
     var body: some View {
-        // Cheap fingerprint of the rendered transcript: any change here
-        // means we should consider auto-scrolling. Captures both new-message
-        // append (count change, id change) AND streaming deltas to the
-        // current message (plainText length change).
-        let fingerprint = "\(conversation.messages.count):"
-            + "\(conversation.messages.last?.id.rawValue.uuidString ?? "-"):"
-            + "\(conversation.messages.last?.plainText.count ?? 0)"
+        // Render rows newest-first; the .flipped() below visually re-reverses
+        // so the user sees them oldest-first with newest at the visual bottom.
+        let rows = buildRows()
 
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
-                LazyVStack(alignment: .leading, spacing: 4) {
-                    content
-                    if conversation.messages.isEmpty {
-                        EmptyChatView()
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 80)
-                    }
-                    // Invisible sentinel always at the bottom; we scroll
-                    // to this rather than to the last message id so we
-                    // catch the per-message footer + padding too.
-                    Color.clear.frame(height: 1).id(bottomSentinelID)
+        ScrollView(.vertical, showsIndicators: true) {
+            LazyVStack(alignment: .leading, spacing: 4) {
+                ForEach(rows) { row in
+                    rowView(for: row)
+                        .flipped()
                 }
-                .padding(.vertical, DesignTokens.panelPadding)
-            }
-            // Single geometry-delta state machine for the `following`
-            // flag. See the @State doc-comment above for the full case
-            // table. Summary:
-            //   distance ≤ threshold        → engage (always)
-            //   offset moved backward       → disengage (user scrolled up)
-            //   anything else               → leave flag alone
-            .onScrollGeometryChange(for: ScrollSample.self, of: { geometry in
-                ScrollSample(
-                    offsetY: geometry.contentOffset.y,
-                    contentHeight: geometry.contentSize.height,
-                    containerHeight: geometry.containerSize.height
-                )
-            }, action: { _, current in
-                let distance = current.contentHeight - (current.offsetY + current.containerHeight)
-                if distance <= bottomThreshold {
-                    // At (or past) the bottom for any reason: user scrolled
-                    // down, content shrank to fit, our scrollTo landed, or
-                    // it's the first sample on an empty/short chat. Engage.
-                    following = true
-                } else if lastOffsetY >= 0,
-                          current.offsetY < lastOffsetY - userScrollUpEpsilon {
-                    // Offset moved backward (up the document). Our own
-                    // scrollTo only ever moves offset forward, so this can
-                    // only be user-initiated. The user wants to read older
-                    // content; stop yanking them on every delta.
-                    following = false
+                if conversation.messages.isEmpty {
+                    EmptyChatView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 80)
+                        .flipped()
                 }
-                // Otherwise: content grew below us (case A in the comment),
-                // our scrollTo caught up (case B), or content shrank without
-                // crossing threshold. In all of these `following` should
-                // be unchanged.
-                lastOffsetY = current.offsetY
-            })
-            .onChange(of: fingerprint) { _, _ in
-                // Auto-follow on any content change while engaged. Default
-                // value of `following` is true so the very first message in
-                // a fresh chat scrolls into view even before any
-                // scroll-geometry event has had a chance to fire.
-                guard following else { return }
-                proxy.scrollTo(bottomSentinelID, anchor: .bottom)
             }
-            .onAppear {
-                // First paint of an existing chat: jump to the bottom so
-                // we open at the latest message rather than the top.
-                proxy.scrollTo(bottomSentinelID, anchor: .bottom)
+            .padding(.vertical, DesignTokens.panelPadding)
+            // Pin under-full content to the visual top (= post-flip `.bottom`)
+            // so a fresh chat with one short message anchors cleanly to the
+            // top of the empty area instead of floating in the middle.
+            .frame(minHeight: viewportHeight, alignment: .bottom)
+        }
+        .onScrollGeometryChange(for: CGFloat.self, of: { $0.containerSize.height }) { _, h in
+            viewportHeight = h
+        }
+        .flipped()
+    }
+
+    // MARK: - Row model
+
+    /// Flat list of rows in *newest-first* order (so the ScrollView, once
+    /// flipped, presents them oldest-first with newest at the visual bottom).
+    private enum Row: Identifiable {
+        case message(Message, contextTokens: Int?, failure: String?, retry: (() -> Void)?)
+        case droppedMessage(Message)
+        case compactionMarker(CompactionRecord, isExpanded: Bool)
+
+        var id: AnyHashable {
+            switch self {
+            case .message(let m, _, _, _):      return AnyHashable(m.id)
+            case .droppedMessage(let m):        return AnyHashable("dropped-\(m.id.rawValue)")
+            case .compactionMarker(let r, _):   return AnyHashable("marker-\(r.id)")
             }
         }
     }
 
-    /// Walks the message list and intersperses CompactionMarkers wherever
-    /// a record's `toIndex` matches the current position. Dropped messages
-    /// (those inside `fromIndex..<toIndex`) are shown dimmed when the
-    /// marker is expanded, hidden when collapsed.
-    @ViewBuilder
-    private var content: some View {
-        // Build a quick lookup: at index N, are there any compaction(s)
-        // whose dropped block ends here? If so, render the marker before
-        // the message at N.
+    private func buildRows() -> [Row] {
         let recordsByEnd: [Int: [CompactionRecord]] = Dictionary(
             grouping: conversation.compactions, by: \.toIndex
         )
 
-        ForEach(Array(conversation.messages.enumerated()), id: \.element.id) { index, message in
-            // Marker between drop and keep regions.
+        var rows: [Row] = []
+        rows.reserveCapacity(conversation.messages.count + conversation.compactions.count)
+
+        for (index, message) in conversation.messages.enumerated() {
+            // A marker sits *before* the first kept message after a dropped block.
             if let records = recordsByEnd[index] {
-                ForEach(records) { record in
-                    CompactionMarker(
-                        record: record,
-                        isExpanded: expandedCompactions.contains(record.id),
-                        onToggle: {
-                            if expandedCompactions.contains(record.id) {
-                                expandedCompactions.remove(record.id)
-                            } else {
-                                expandedCompactions.insert(record.id)
-                            }
-                        }
-                    )
-                    .padding(.horizontal, DesignTokens.panelPadding)
-                    .padding(.vertical, 4)
+                for record in records {
+                    rows.append(.compactionMarker(record, isExpanded: expandedCompactions.contains(record.id)))
                 }
             }
 
-            let inDropped = conversation.compactions.contains { record in
-                index >= record.fromIndex && index < record.toIndex
-            }
             let recordContainingThis = conversation.compactions.first { record in
                 index >= record.fromIndex && index < record.toIndex
             }
-            let isExpanded = recordContainingThis.map { expandedCompactions.contains($0.id) } ?? false
-
-            if inDropped {
-                if isExpanded {
-                    MessageView(message: message)
-                        .opacity(0.55)
-                        .padding(.horizontal, DesignTokens.panelPadding)
-                        .id(message.id)
+            if let record = recordContainingThis {
+                if expandedCompactions.contains(record.id) {
+                    rows.append(.droppedMessage(message))
                 }
-                // Collapsed: hide the message entirely; the marker is the only
-                // affordance.
+                // Collapsed: skip the message; only the marker is visible.
             } else {
-                MessageView(
-                    message: message,
+                rows.append(.message(
+                    message,
                     contextTokens: conversation.contextTokensByMessage[message.id],
-                    failureError: failureForMessageID == message.id ? failureMessage : nil,
-                    onRetry: failureForMessageID == message.id ? onRetry : nil
-                )
+                    failure: failureForMessageID == message.id ? failureMessage : nil,
+                    retry: failureForMessageID == message.id ? onRetry : nil
+                ))
+            }
+        }
+
+        // Reverse so the LazyVStack renders newest first; .flipped() then puts
+        // them at the visual bottom in the original chronological order.
+        return rows.reversed()
+    }
+
+    @ViewBuilder
+    private func rowView(for row: Row) -> some View {
+        switch row {
+        case .message(let message, let contextTokens, let failure, let retry):
+            MessageView(
+                message: message,
+                contextTokens: contextTokens,
+                failureError: failure,
+                onRetry: retry
+            )
+            .padding(.horizontal, DesignTokens.panelPadding)
+            .id(message.id)
+
+        case .droppedMessage(let message):
+            MessageView(message: message)
+                .opacity(0.55)
                 .padding(.horizontal, DesignTokens.panelPadding)
                 .id(message.id)
-            }
+
+        case .compactionMarker(let record, let isExpanded):
+            CompactionMarker(
+                record: record,
+                isExpanded: isExpanded,
+                onToggle: {
+                    if expandedCompactions.contains(record.id) {
+                        expandedCompactions.remove(record.id)
+                    } else {
+                        expandedCompactions.insert(record.id)
+                    }
+                }
+            )
+            .padding(.horizontal, DesignTokens.panelPadding)
+            .padding(.vertical, 4)
         }
     }
 }
 
-/// Snapshot of the scroll view geometry. Equatable so
-/// `onScrollGeometryChange` can dedupe; passed as the observed value.
-private struct ScrollSample: Equatable {
-    var offsetY: CGFloat
-    var contentHeight: CGFloat
-    var containerHeight: CGFloat
+// MARK: - Flipped modifier
+
+/// Rotates a view 180° and mirrors it horizontally so that text reads correctly
+/// after a parent flip. Apply once to the ScrollView, once to each row, and the
+/// rotations cancel for content while inverting the scroll axis.
+extension View {
+    fileprivate func flipped() -> some View {
+        rotationEffect(.degrees(180))
+            .scaleEffect(x: -1, y: 1, anchor: .center)
+    }
 }
 
 private struct EmptyChatView: View {
