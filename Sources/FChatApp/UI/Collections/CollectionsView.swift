@@ -133,6 +133,22 @@ struct CollectionsView: View {
             selectedDocumentID = nil
             Task { await loadDocuments() }
         }
+        // Reload the documents pane whenever an ingest completes for the
+        // current collection — the queue updates reactively but `documents`
+        // is local @State that needs a fresh fetch from the store.
+        .onChange(of: succeededIngestCount) { _, _ in
+            Task { await loadDocuments() }
+        }
+    }
+
+    /// Live count of succeeded ingest entries for the selected collection.
+    /// Drives a documents-pane refresh whenever it ticks up.
+    private var succeededIngestCount: Int {
+        guard let collectionID = selectedCollectionID,
+              let queue = environment.ingestQueue else { return 0 }
+        return queue.entries.reduce(0) { acc, entry in
+            (entry.collectionID == collectionID && entry.status == .succeeded) ? acc + 1 : acc
+        }
     }
 
     // MARK: - Middle pane: documents
