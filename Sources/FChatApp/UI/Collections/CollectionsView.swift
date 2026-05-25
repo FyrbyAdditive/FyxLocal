@@ -354,7 +354,6 @@ private struct IngestDropTarget: View {
 
     @State private var isTargeted: Bool = false
     @State private var showFilePicker: Bool = false
-    @State private var showFolderPicker: Bool = false
     @State private var lastSkipMessage: String?
 
     var body: some View {
@@ -368,11 +367,8 @@ private struct IngestDropTarget: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            HStack(spacing: 8) {
-                Button("Choose files…") { showFilePicker = true }
-                Button("Choose folder…") { showFolderPicker = true }
-            }
-            .controlSize(.small)
+            Button("Choose files or folder…") { showFilePicker = true }
+                .controlSize(.small)
             if let skipped = lastSkipMessage {
                 Text(skipped)
                     .font(.caption2)
@@ -394,18 +390,12 @@ private struct IngestDropTarget: View {
             handle(providers: providers)
             return true
         }
+        // Allow both individual files and whole folders in one picker.
+        // `.item` covers any file leaf; `.folder` makes folders selectable
+        // as a leaf (Open button enabled) rather than just navigable into.
         .fileImporter(
             isPresented: $showFilePicker,
-            allowedContentTypes: [.pdf, .plainText, .data, .item],
-            allowsMultipleSelection: true
-        ) { result in
-            if case .success(let urls) = result {
-                enqueueExpanded(urls)
-            }
-        }
-        .fileImporter(
-            isPresented: $showFolderPicker,
-            allowedContentTypes: [.folder],
+            allowedContentTypes: [.item, .folder],
             allowsMultipleSelection: true
         ) { result in
             if case .success(let urls) = result {
