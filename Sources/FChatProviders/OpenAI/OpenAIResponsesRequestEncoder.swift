@@ -28,8 +28,15 @@ public struct OpenAIResponsesRequestEncoder {
         if let maxTokens = request.maxOutputTokens {
             json["max_output_tokens"] = maxTokens
         }
-        if let effort = request.reasoningEffort {
-            json["reasoning"] = ["effort": effort.rawValue]
+        if request.reasoningEffort != nil || request.reasoningSummary != nil {
+            var reasoning: [String: Any] = [:]
+            if let effort = request.reasoningEffort {
+                reasoning["effort"] = effort.rawValue
+            }
+            if let summary = request.reasoningSummary {
+                reasoning["summary"] = summary.rawValue
+            }
+            json["reasoning"] = reasoning
         }
         if !request.tools.isEmpty {
             json["tools"] = try encodeTools(request.tools)

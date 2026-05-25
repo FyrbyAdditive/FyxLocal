@@ -10,6 +10,11 @@ public struct ChatRequest: Sendable, Hashable {
     public var topP: Double?
     public var maxOutputTokens: Int?
     public var reasoningEffort: ReasoningEffort?
+    /// Asks the server to stream a summary of the model's chain-of-thought
+    /// as `response.reasoning_summary_text.delta` events. Without this set,
+    /// reasoning happens silently on the server and we just see a gap
+    /// between `responseStarted` and the first `textDelta`.
+    public var reasoningSummary: ReasoningSummary?
     public var parallelToolCalls: Bool
     public var tools: [ToolDefinition]
     public var toolChoice: ToolChoice
@@ -25,6 +30,7 @@ public struct ChatRequest: Sendable, Hashable {
         topP: Double? = nil,
         maxOutputTokens: Int? = nil,
         reasoningEffort: ReasoningEffort? = nil,
+        reasoningSummary: ReasoningSummary? = nil,
         parallelToolCalls: Bool = true,
         tools: [ToolDefinition] = [],
         toolChoice: ToolChoice = .auto,
@@ -39,12 +45,20 @@ public struct ChatRequest: Sendable, Hashable {
         self.topP = topP
         self.maxOutputTokens = maxOutputTokens
         self.reasoningEffort = reasoningEffort
+        self.reasoningSummary = reasoningSummary
         self.parallelToolCalls = parallelToolCalls
         self.tools = tools
         self.toolChoice = toolChoice
         self.store = store
         self.includeEncryptedReasoning = includeEncryptedReasoning
     }
+}
+
+/// Verbosity of the reasoning summary stream. `.auto` lets the server pick.
+public enum ReasoningSummary: String, Sendable, Hashable {
+    case auto
+    case concise
+    case detailed
 }
 
 public enum InputItem: Sendable, Hashable {

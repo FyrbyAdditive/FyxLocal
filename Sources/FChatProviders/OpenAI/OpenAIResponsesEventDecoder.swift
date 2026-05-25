@@ -32,7 +32,12 @@ public final class OpenAIResponsesEventDecoder {
             return .textCompleted(itemID: payload.item_id, fullText: payload.text)
 
         case "response.reasoning_summary_text.delta",
-             "response.reasoning_summary.delta":
+             "response.reasoning_summary.delta",
+             // vLLM / MiniMax stream the full chain-of-thought as
+             // `reasoning_text.delta` rather than a separate summary. Same
+             // payload shape; surface it as a reasoning delta so the UI
+             // ReasoningBlock renders it live.
+             "response.reasoning_text.delta":
             let payload = try JSONDecoder().decode(ReasoningSummaryDeltaPayload.self, from: data)
             return .reasoningSummaryDelta(itemID: payload.item_id, delta: payload.delta)
 
