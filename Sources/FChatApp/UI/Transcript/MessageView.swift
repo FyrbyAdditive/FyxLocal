@@ -28,6 +28,27 @@ struct MessageView: View {
 
     var body: some View {
         let isActivelyThinking = computeIsActivelyThinking()
+        // Pre-pair tool results with the call they belong to, so a
+        // `.toolCall` row renders both halves in one combined box and the
+        // matching `.toolResult` row is skipped during iteration.
+        // RequestPayloadBuilder still lowers them as separate input items
+        // when re-sending history — this pairing is purely visual.
+        let resultsByCallID: [String: ToolResultRecord] = Dictionary(
+            message.contentItems.compactMap { item -> (String, ToolResultRecord)? in
+                if case .toolResult(let r) = item { return (r.callID, r) }
+                return nil
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        // Set of call ids that DO have a preceding `.toolCall` item — those
+        // results are folded into the combined box; the rest fall through
+        // to the defensive standalone render.
+        let pairedCallIDs: Set<String> = Set(
+            message.contentItems.compactMap { item -> String? in
+                if case .toolCall(let r) = item { return r.id }
+                return nil
+            }
+        )
         HStack(alignment: .top, spacing: 12) {
             roleBadge
                 .frame(width: 32, height: 32)
@@ -36,7 +57,12 @@ struct MessageView: View {
                     ThinkingPill()
                 }
                 ForEach(Array(message.contentItems.enumerated()), id: \.offset) { _, item in
-                    contentView(for: item, isActivelyThinking: isActivelyThinking)
+                    contentView(
+                        for: item,
+                        isActivelyThinking: isActivelyThinking,
+                        resultsByCallID: resultsByCallID,
+                        pairedCallIDs: pairedCallIDs
+                    )
                 }
                 if let failureError, let onRetry {
                     FailureRetryBanner(message: failureError, onRetry: onRetry)
@@ -100,7 +126,12 @@ struct MessageView: View {
     }
 
     @ViewBuilder
-    private func contentView(for item: MessageContent, isActivelyThinking: Bool) -> some View {
+    private func contentView(
+        for item: MessageContent,
+        isActivelyThinking: Bool,
+        resultsByCallID: [String: ToolResultRecord],
+        pairedCallIDs: Set<String>
+    ) -> some View {
         switch item {
         case .text(let text):
             if message.role == .user {
@@ -113,9 +144,17 @@ struct MessageView: View {
         case .reasoningSummary(let text):
             ReasoningBlock(text: text, isActive: isActivelyThinking)
         case .toolCall(let rec):
-            ToolCallBlock(call: rec, result: nil)
+            ToolCallResultBlock(call: rec, result: resultsByCallID[rec.id])
         case .toolResult(let result):
-            ToolResultBlock(result: result)
+            // Already folded into the matching call's combined box above.
+            // Defensive fallback: if no call ever appeared for this result
+            // (data corruption / out-of-order arrival), render it standalone
+            // so the user still sees the data.
+            if pairedCallIDs.contains(result.callID) {
+                EmptyView()
+            } else {
+                ToolCallResultBlock(call: nil, result: result)
+            }
         case .image(let data, _):
 #if canImport(AppKit)
             if let nsImage = NSImage(data: data) {
@@ -189,37 +228,121 @@ struct ThinkingPill: View {
     }
 }
 
-struct ToolCallBlock: View {
-    let call: ToolCallRecord
+/// One collapsible box per tool invocation, holding both the call (args)
+/// and the matching result (output) if it has arrived. Replaces what used
+/// to be two stacked boxes per tool turn. The data model still stores
+/// `.toolCall` and `.toolResult` as separate `MessageContent` items so
+/// `RequestPayloadBuilder.messageItems(for:)` can lower them into the
+/// distinct OpenAI Responses input items the wire requires — pairing is
+/// purely visual, handled by `MessageView`.
+struct ToolCallResultBlock: View {
+    /// Optional so a stranded `.toolResult` with no matching `.toolCall`
+    /// still renders defensively as a result-only box.
+    let call: ToolCallRecord?
     let result: ToolResultRecord?
     @State private var expanded = false
 
+    /// If the result reports an error, treat the whole invocation as failed
+    /// even when the call's own status field still says `.succeeded`. This
+    /// keeps the visual feedback consistent regardless of which side the
+    /// failure originated from.
+    private var effectiveStatus: ToolStatus {
+        if let result, result.isError { return .failed }
+        return call?.status ?? .succeeded
+    }
+
+    private var displayName: String {
+        call?.name ?? "Tool result"
+    }
+
+    /// One-line summary for the collapsed label, derived from known
+    /// tool-arg shapes so common tools show the URL / query instead of raw
+    /// JSON. Unknown tools fall back to a truncated args preview.
+    private var collapsedSummary: String {
+        guard let call,
+              let data = call.argumentsJSON.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return "" }
+        switch call.name {
+        case "web_search", "rag_search":
+            return (obj["query"] as? String) ?? ""
+        case "web_fetch":
+            return (obj["url"] as? String) ?? ""
+        default:
+            let trimmed = call.argumentsJSON.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed == "{}" || trimmed.isEmpty { return "" }
+            return String(trimmed.prefix(80))
+        }
+    }
+
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Arguments")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text(call.argumentsJSON.isEmpty ? "{}" : call.argumentsJSON)
-                    .font(.system(.caption, design: .monospaced))
-                    .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: 8) {
+                if let call {
+                    argumentsSection(call)
+                }
+                if let result {
+                    if call != nil { Divider() }
+                    resultSection(result)
+                } else if call?.status == .running {
+                    Label("Awaiting result\u{2026}", systemImage: "ellipsis")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(.top, 4)
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "wrench.and.screwdriver.fill")
-                Text(call.name)
+                    .font(.caption)
+                Text(displayName)
                     .font(.callout.bold())
-                statusBadge
+                let summary = collapsedSummary
+                if !summary.isEmpty {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer(minLength: 0)
+                statusBadge(for: effectiveStatus)
             }
         }
         .padding(10)
-        .background(DesignTokens.secondaryFill, in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        .background(
+            (effectiveStatus == .failed ? DesignTokens.errorFill : DesignTokens.secondaryFill),
+            in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius)
+        )
     }
 
     @ViewBuilder
-    private var statusBadge: some View {
-        switch call.status {
+    private func argumentsSection(_ call: ToolCallRecord) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Arguments")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(call.argumentsJSON.isEmpty ? "{}" : call.argumentsJSON)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+        }
+    }
+
+    @ViewBuilder
+    private func resultSection(_ result: ToolResultRecord) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(result.isError ? "Result (error)" : "Result")
+                .font(.caption2)
+                .foregroundStyle(result.isError ? .red : .secondary)
+            Text(Self.prettyJSON(for: result.outputJSON))
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+        }
+    }
+
+    @ViewBuilder
+    private func statusBadge(for status: ToolStatus) -> some View {
+        switch status {
         case .running:
             ProgressView().controlSize(.small)
         case .succeeded:
@@ -232,36 +355,13 @@ struct ToolCallBlock: View {
             Image(systemName: "clock").foregroundStyle(.secondary)
         }
     }
-}
 
-struct ToolResultBlock: View {
-    let result: ToolResultRecord
-    @State private var expanded = false
-
-    var body: some View {
-        DisclosureGroup(isExpanded: $expanded) {
-            Text(prettyJSON)
-                .font(.system(.caption, design: .monospaced))
-                .textSelection(.enabled)
-                .padding(.top, 4)
-        } label: {
-            HStack {
-                Image(systemName: result.isError ? "exclamationmark.bubble" : "tray.and.arrow.down")
-                Text(result.isError ? "Tool result (error)" : "Tool result")
-                    .font(.caption.bold())
-                    .foregroundStyle(result.isError ? .red : .secondary)
-            }
-        }
-        .padding(10)
-        .background(result.isError ? DesignTokens.errorFill : DesignTokens.secondaryFill, in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
-    }
-
-    private var prettyJSON: String {
-        guard let data = result.outputJSON.data(using: .utf8),
+    private static func prettyJSON(for raw: String) -> String {
+        guard let data = raw.data(using: .utf8),
               let obj = try? JSONSerialization.jsonObject(with: data),
               let pretty = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]),
               let str = String(data: pretty, encoding: .utf8) else {
-            return result.outputJSON
+            return raw
         }
         return str
     }
