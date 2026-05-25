@@ -186,7 +186,8 @@ struct TranscriptView: View {
                 message: message,
                 contextTokens: contextTokens,
                 failureError: failure,
-                onRetry: retry
+                onRetry: retry,
+                streamingMessageID: streamingMessageID
             )
             .padding(.horizontal, DesignTokens.panelPadding)
             .id(message.id)

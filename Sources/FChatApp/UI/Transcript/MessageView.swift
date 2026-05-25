@@ -6,12 +6,29 @@ struct MessageView: View {
     var contextTokens: Int? = nil
     var failureError: String? = nil
     var onRetry: (() -> Void)? = nil
+    /// Id of the message currently being streamed into, if any. Used to drive
+    /// live-thinking UI: the streaming row shows a "Thinking…" pill and its
+    /// reasoning block auto-expands until the first text delta arrives.
+    var streamingMessageID: MessageID? = nil
+
+    /// True while the model is mid-turn on *this* message and hasn't started
+    /// emitting visible text yet. Drives the pill + reasoning-block expand.
+    private var isActivelyThinking: Bool {
+        guard message.id == streamingMessageID else { return false }
+        return !message.contentItems.contains { item in
+            if case .text(let s) = item, !s.isEmpty { return true }
+            return false
+        }
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             roleBadge
                 .frame(width: 32, height: 32)
             VStack(alignment: .leading, spacing: 8) {
+                if isActivelyThinking {
+                    ThinkingPill()
+                }
                 ForEach(Array(message.contentItems.enumerated()), id: \.offset) { _, item in
                     contentView(for: item)
                 }
@@ -88,7 +105,7 @@ struct MessageView: View {
                 MarkdownView(source: text)
             }
         case .reasoningSummary(let text):
-            ReasoningBlock(text: text)
+            ReasoningBlock(text: text, isActive: isActivelyThinking)
         case .toolCall(let rec):
             ToolCallBlock(call: rec, result: nil)
         case .toolResult(let result):
@@ -113,9 +130,23 @@ struct MessageView: View {
 
 struct ReasoningBlock: View {
     let text: String
-    @State private var expanded = false
+    var isActive: Bool = false
+    /// `nil` means "follow the live-thinking state" (expanded while active,
+    /// collapsed when not). The first explicit user toggle records a `Bool`
+    /// here and from then on the user's choice wins for the life of this
+    /// view. New messages get a fresh @State so auto behaviour returns.
+    @State private var userOverride: Bool? = nil
+
+    private var effectiveExpanded: Bool {
+        userOverride ?? isActive
+    }
+
     var body: some View {
-        DisclosureGroup(isExpanded: $expanded) {
+        let binding = Binding<Bool>(
+            get: { effectiveExpanded },
+            set: { userOverride = $0 }
+        )
+        DisclosureGroup(isExpanded: binding) {
             Text(text)
                 .font(.callout)
                 .italic()
@@ -128,6 +159,27 @@ struct ReasoningBlock: View {
         }
         .padding(8)
         .background(DesignTokens.secondaryFill, in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        .animation(.default, value: effectiveExpanded)
+    }
+}
+
+/// Small pulsing pill shown at the top of the streaming-message body while
+/// the model is producing reasoning content or pre-first-text. Disappears
+/// the instant the first text delta arrives.
+struct ThinkingPill: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            ProgressView()
+                .controlSize(.small)
+            Text("Thinking\u{2026}")
+                .font(.caption)
+                .italic()
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(DesignTokens.secondaryFill, in: Capsule())
+        .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 }
 
