@@ -1,0 +1,56 @@
+import SwiftUI
+import FChatCore
+import FChatRAG
+
+/// Inspector section: list every collection with a toggle bound to the
+/// active chat's `attachedCollections`. Toggling on means the next
+/// `rag_search` invocation will be allowed to query that collection.
+struct CollectionsAttachSection: View {
+    @Bindable var viewModel: ChatViewModel
+    @Bindable var environment: AppEnvironment
+    @State private var collections: [RAGCollection] = []
+    @State private var refreshTrigger = 0
+
+    var body: some View {
+        Section("Collections") {
+            if collections.isEmpty {
+                Text("No collections yet. Create one in the Collections pane.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Attached collections are searched by the model via the rag_search tool.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                ForEach(collections) { collection in
+                    Toggle(isOn: toggleBinding(for: collection.id)) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(collection.name)
+                            Text("\(collection.embedder.rawValue) · \(collection.dim)d")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .task(id: refreshTrigger) { await refresh() }
+        .onAppear { refreshTrigger += 1 }
+    }
+
+    private func toggleBinding(for id: CollectionID) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.conversation.settings.attachedCollections.contains(id) },
+            set: { isOn in
+                var s = viewModel.conversation.settings
+                if isOn { s.attachedCollections.insert(id) }
+                else { s.attachedCollections.remove(id) }
+                viewModel.conversation.settings = s
+            }
+        )
+    }
+
+    private func refresh() async {
+        let all = await environment.collectionStore.listCollections()
+        await MainActor.run { collections = all }
+    }
+}

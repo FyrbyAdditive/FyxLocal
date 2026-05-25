@@ -14,7 +14,14 @@ import FChatMCP
 final class AppEnvironment {
     let secretStore: any SecretStore
     let toolRegistry: ToolRegistry
-    let collectionStore: CollectionStore
+    let collectionStore: any CollectionStoreProtocol
+    /// Set by `ChatViewModel.send` immediately before kicking off a stream
+    /// so the rag_search tool can default to "all attached collections for
+    /// the active chat" when the model omits the `collection` argument.
+    var attachedCollectionsForActiveChat: [CollectionID] = []
+    /// Lazy-built ingest queue shared across the Collections UI so per-file
+    /// progress survives pane switches.
+    var ingestQueue: IngestQueue?
     let ingestor: FileIngestor
     let pageExtractor: any PageExtractor
     let searchProvider: any WebSearchProvider
@@ -54,7 +61,28 @@ final class AppEnvironment {
     init() {
         self.secretStore = KeychainStore()
         self.toolRegistry = ToolRegistry()
-        self.collectionStore = CollectionStore()
+        // Persistent SQLite + sqlite-vec store. Falls back to the in-memory
+        // store if the DB can't be opened (rare; would mean filesystem fail).
+        let resolvedStore: any CollectionStoreProtocol
+        do {
+            let db = try RAGDatabase.openDefault()
+            resolvedStore = PersistentCollectionStore(
+                database: db,
+                embedderFactory: { _, _, _ in
+                    // Apple on-device contextual embeddings (Latin script
+                    // covers English + Swedish + most western European).
+                    switch AppleEmbedderLoader.loadLatin() {
+                    case .ready(let e): return e
+                    case .unavailable(let reason):
+                        throw EmbedderError.unavailable(reason)
+                    }
+                }
+            )
+        } catch {
+            FileHandle.standardError.write(Data("[FChat] rag database open failed (\(error)); falling back to in-memory store\n".utf8))
+            resolvedStore = CollectionStore()
+        }
+        self.collectionStore = resolvedStore
         self.ingestor = FileIngestor()
         self.pageExtractor = WebKitPageExtractor()
         self.searchProvider = DuckDuckGoProvider()
@@ -196,7 +224,13 @@ final class AppEnvironment {
     func registerBuiltInTools() async {
         let webSearch = WebSearchTool(provider: searchProvider)
         let webFetch = WebFetchTool(extractor: pageExtractor)
-        let rag = RAGSearchTool(retriever: CollectionStoreRetriever(store: collectionStore))
+        let rag = RAGSearchTool(retriever: DynamicAttachedRAGRetriever(
+            store: collectionStore,
+            attachedAccessor: { [weak self] in
+                guard let self else { return [] }
+                return self.attachedCollectionsForActiveChat
+            }
+        ))
         await toolRegistry.register(webSearch)
         await toolRegistry.register(webFetch)
         await toolRegistry.register(rag)

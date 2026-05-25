@@ -22,7 +22,7 @@ struct ChatDetailView: View {
                     ComposerView(viewModel: viewModel)
                 }
                 .inspector(isPresented: $showInspector) {
-                    InspectorView(viewModel: viewModel)
+                    InspectorView(viewModel: viewModel, environment: environment)
                         .inspectorColumnWidth(min: 240, ideal: 280, max: 360)
                 }
                 .navigationTitle(viewModel.conversation.title)

@@ -15,7 +15,7 @@ struct RootView: View {
             case .settings:
                 SettingsView(environment: environment)
             case .collections:
-                CollectionsManagerView(environment: environment)
+                CollectionsView(environment: environment)
             case nil:
                 EmptyPlaceholderView()
             }
@@ -33,20 +33,6 @@ struct RootView: View {
                 }
             }
         }
-    }
-}
-
-struct CollectionsManagerView: View {
-    @Bindable var environment: AppEnvironment
-    var body: some View {
-        VStack {
-            Text("Collections")
-                .font(.title.bold())
-            Text("Coming soon — manage your local document collections here.")
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
     }
 }
 

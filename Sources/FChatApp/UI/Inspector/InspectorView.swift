@@ -3,6 +3,7 @@ import FChatCore
 
 struct InspectorView: View {
     @Bindable var viewModel: ChatViewModel
+    @Bindable var environment: AppEnvironment
 
     var body: some View {
         Form {
@@ -26,6 +27,8 @@ struct InspectorView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            CollectionsAttachSection(viewModel: viewModel, environment: environment)
         }
         .formStyle(.grouped)
     }

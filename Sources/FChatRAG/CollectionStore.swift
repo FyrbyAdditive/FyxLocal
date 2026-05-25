@@ -2,7 +2,7 @@ import Foundation
 import CryptoKit
 import FChatCore
 
-public actor CollectionStore {
+public actor CollectionStore: CollectionStoreProtocol {
     public private(set) var collections: [CollectionID: RAGCollection] = [:]
     public private(set) var documents: [DocumentID: RAGDocument] = [:]
     public private(set) var chunks: [ChunkID: RAGChunk] = [:]
@@ -119,6 +119,44 @@ public actor CollectionStore {
 
     public func chunk(_ id: ChunkID) -> RAGChunk? { chunks[id] }
     public func document(_ id: DocumentID) -> RAGDocument? { documents[id] }
+
+    public func collection(_ id: CollectionID) -> RAGCollection? { collections[id] }
+
+    public func listCollections() -> [RAGCollection] {
+        collections.values.sorted { $0.createdAt < $1.createdAt }
+    }
+
+    public func documents(in id: CollectionID) -> [RAGDocument] {
+        (collectionToDocuments[id] ?? []).compactMap { documents[$0] }
+    }
+
+    public func chunks(of document: DocumentID) -> [RAGChunk] {
+        (documentToChunks[document] ?? []).compactMap { chunks[$0] }.sorted { $0.ordinal < $1.ordinal }
+    }
+
+    public func deleteDocument(_ id: DocumentID) async throws {
+        guard let doc = documents[id] else { return }
+        if let store = vectorStores[doc.collectionID] {
+            let chunkIDs = documentToChunks[id] ?? []
+            await store.delete(chunkIDs)
+        }
+        for chunkID in (documentToChunks[id] ?? []) {
+            chunks[chunkID] = nil
+            chunkContents[chunkID] = nil
+        }
+        documentToChunks[id] = nil
+        documents[id] = nil
+        collectionToDocuments[doc.collectionID]?.removeAll { $0 == id }
+    }
+
+    public func deleteCollection(_ id: CollectionID) async throws {
+        let docs = collectionToDocuments[id] ?? []
+        for docID in docs { try await deleteDocument(docID) }
+        collections[id] = nil
+        collectionToDocuments[id] = nil
+        vectorStores[id] = nil
+        embedders[id] = nil
+    }
 }
 
 public enum IngestError: Error, Sendable, Equatable {

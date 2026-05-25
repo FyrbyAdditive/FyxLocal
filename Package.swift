@@ -17,8 +17,31 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.7.0"),
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.4.0"),
+        .package(url: "https://github.com/groue/GRDB.swift.git", from: "6.29.0"),
     ],
     targets: [
+        // Vendored sqlite-vec v0.1.9 amalgamation. Built with SQLITE_CORE so
+        // it uses the standard sqlite3.h (provided by GRDB / system SQLite)
+        // rather than the runtime-loadable extension API.
+        .target(
+            name: "CSQLiteVec",
+            path: "Sources/CSQLiteVec",
+            sources: ["src"],
+            publicHeadersPath: "include",
+            cSettings: [
+                .define("SQLITE_CORE"),
+                .define("SQLITE_VEC_STATIC"),
+                .headerSearchPath("include"),
+                // GRDB's bundled SQLite supplies sqlite3.h via its umbrella;
+                // when CSQLiteVec is linked into the same binary the symbol
+                // resolution works at link time. For header lookup we point
+                // at the GRDB-vended sqlite3.h via the system include path
+                // the toolchain provides through the SDK.
+            ],
+            linkerSettings: [
+                .linkedLibrary("sqlite3"),
+            ]
+        ),
         .target(
             name: "FChatCore",
             resources: [
@@ -49,7 +72,13 @@ let package = Package(
         ),
         .target(
             name: "FChatRAG",
-            dependencies: ["FChatCore", "FChatProviders", "FChatTools"]
+            dependencies: [
+                "FChatCore",
+                "FChatProviders",
+                "FChatTools",
+                "CSQLiteVec",
+                .product(name: "GRDB", package: "GRDB.swift"),
+            ]
         ),
         .executableTarget(
             name: "FChatApp",
@@ -88,7 +117,10 @@ let package = Package(
         ),
         .testTarget(
             name: "FChatRAGTests",
-            dependencies: ["FChatRAG"],
+            dependencies: [
+                "FChatRAG",
+                .product(name: "GRDB", package: "GRDB.swift"),
+            ],
             resources: [.process("Fixtures")]
         ),
     ]

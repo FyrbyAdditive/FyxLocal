@@ -5,6 +5,16 @@ import FChatProviders
 public protocol RAGRetriever: Sendable {
     func search(query: String, collectionID: CollectionID, topK: Int) async throws -> [RAGSearchHit]
     func collection(named name: String) async throws -> CollectionID?
+    /// Search across every collection the current chat has attached.
+    /// Used when the model omits the `collection` argument — which it
+    /// routinely does even when told not to.
+    func searchAll(query: String, topK: Int) async throws -> [RAGSearchHit]
+}
+
+public extension RAGRetriever {
+    func searchAll(query: String, topK: Int) async throws -> [RAGSearchHit] {
+        []
+    }
 }
 
 public struct RAGSearchHit: Sendable, Hashable, Codable {
@@ -44,28 +54,44 @@ public struct RAGSearchTool: Tool {
             description = "Sök i användarens bifogade dokumentsamlingar efter avsnitt relevanta för en fråga. Returnerar utdrag med dokumentnamn, sida/avsnitt och en relevanspoäng. Använd när svaret kan finnas i användarens eget material."
         }
         let schema = JSONSchema(raw: #"""
-        {"type":"object","properties":{"query":{"type":"string"},"collection":{"type":"string","description":"Collection name"},"top_k":{"type":"integer","minimum":1,"maximum":20,"default":6}},"required":["query","collection"],"additionalProperties":false}
+        {"type":"object","properties":{"query":{"type":"string"},"collection":{"type":"string","description":"Optional collection name. Omit to search every collection attached to this chat."},"top_k":{"type":"integer","minimum":1,"maximum":20,"default":6}},"required":["query"],"additionalProperties":false}
         """#)
-        return ToolDefinition(name: name, description: description, parametersSchema: schema, strict: true)
+        return ToolDefinition(name: name, description: description, parametersSchema: schema, strict: false)
     }
 
     public func invoke(arguments: String) async throws -> ToolOutput {
         struct Args: Decodable {
             let query: String
-            let collection: String
+            let collection: String?
             let top_k: Int?
         }
-        guard let data = arguments.data(using: .utf8),
+        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalised = trimmed.isEmpty ? "{}" : trimmed
+        guard let data = normalised.data(using: .utf8),
               let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
-            throw ToolInvocationError.badArguments(arguments)
+            let body = #"{"error":"Could not parse arguments. Expected {\"query\": string, \"collection\"?: string}."}"#
+            return ToolOutput(outputJSON: body, isError: true, display: .markdown)
         }
-        guard let id = try await retriever.collection(named: parsed.collection) else {
-            let body = #"{"error":"unknown collection '\#(parsed.collection)'"}"#
-            return ToolOutput(outputJSON: body, isError: true)
+        let cleanQuery = parsed.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanQuery.isEmpty else {
+            return ToolOutput(outputJSON: #"{"error":"query is empty"}"#, isError: true, display: .markdown)
         }
         let topK = max(1, min(parsed.top_k ?? defaultTopK, 20))
-        let hits = try await retriever.search(query: parsed.query, collectionID: id, topK: topK)
-        let payload = RAGSearchPayload(query: parsed.query, collection: parsed.collection, hits: hits)
+
+        let collectionLabel: String
+        let hits: [RAGSearchHit]
+        if let name = parsed.collection?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            guard let id = try await retriever.collection(named: name) else {
+                let body = #"{"error":"unknown collection '\#(name)'"}"#
+                return ToolOutput(outputJSON: body, isError: true, display: .markdown)
+            }
+            collectionLabel = name
+            hits = try await retriever.search(query: cleanQuery, collectionID: id, topK: topK)
+        } else {
+            collectionLabel = "(all attached)"
+            hits = try await retriever.searchAll(query: cleanQuery, topK: topK)
+        }
+        let payload = RAGSearchPayload(query: cleanQuery, collection: collectionLabel, hits: hits)
         let json = try JSONEncoder().encode(payload)
         return ToolOutput(outputJSON: String(data: json, encoding: .utf8) ?? "{}", display: .markdown)
     }

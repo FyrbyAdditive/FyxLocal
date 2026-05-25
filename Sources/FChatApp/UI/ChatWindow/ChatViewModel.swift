@@ -142,6 +142,11 @@ final class ChatViewModel {
         let llm = environment.makeRuntimeProvider(for: providerRecord)
         let runner = ChatTurnRunner(provider: llm, registry: registry, maxIterations: providerRecord.sampling.maxToolIterations)
 
+        // Publish this chat's attached collections to the environment so
+        // the shared rag_search tool (registered once at startup) can fall
+        // back to searching them when the model omits the `collection` arg.
+        environment.attachedCollectionsForActiveChat = Array(conversation.settings.attachedCollections)
+
         isStreaming = true
         firstDeltaAt = nil
         let enabledTools = environment.enabledTools
