@@ -161,10 +161,12 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
 
     /// How many chunks we send to the embedder per forward pass. Set to keep
     /// peak GPU memory bounded regardless of the document size — a book that
-    /// chunks into 10k pieces is processed as ~310 batches of 32 rather than
-    /// one giant tensor. Tuned by hand against MLXQwen3Embedder; revisit if
-    /// we add larger or smaller embedders.
-    private static let embedBatchSize = 32
+    /// chunks into 10k pieces is processed as ~625 batches of 16 rather than
+    /// one giant tensor. Combined with MLXQwen3Embedder's per-batch
+    /// `clearCache()` call and per-chunk sequence-length cap, this keeps
+    /// peak memory roughly constant across the run. Tuned by hand against
+    /// MLXQwen3Embedder; revisit if we add larger or smaller embedders.
+    private static let embedBatchSize = 16
 
     public func ingest(
         data: Data,

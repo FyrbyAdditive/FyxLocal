@@ -38,12 +38,30 @@ public struct MLXQwen3Embedder: Embedder {
         self.pooling = Pooling(strategy: .last)
     }
 
+    /// Hard cap on per-chunk sequence length we feed to the model. Above
+    /// this the tensor size on each batch's first pass becomes very large
+    /// and never gets reused — MLX's buffer pool only recycles same-size
+    /// allocations. Bounding maxLen stabilises buffer sizes across batches
+    /// and keeps the worst-case batch tensor at ~16 × 1024 × hidden_dim
+    /// instead of an unbounded "longest chunk in the document" worst case.
+    /// 1024 tokens ≈ 3k chars, well beyond our typical 1k-char chunk size.
+    public static let maxSequenceLength = 1024
+
     public func embed(_ texts: [String]) async throws -> [[Float]] {
         guard !texts.isEmpty else { throw EmbedderError.emptyInput }
         let pooling = self.pooling
-        return try await container.perform { ctx in
-            return try embedBatch(texts, in: ctx, pooling: pooling)
+        let vectors = try await container.perform { ctx in
+            try embedBatch(texts, in: ctx, pooling: pooling)
         }
+        // Drain MLX's per-batch buffer cache. Without this, each embed()
+        // call leaves Metal buffers in the recycling pool, and because the
+        // batches' padded shapes vary (different `maxLen` per batch on a
+        // varied corpus) the pool can't actually reuse them — so it just
+        // accumulates. For a book-sized ingest with hundreds of batches
+        // that grows into tens of GB and triggers OOM. The upstream MLX
+        // docs flag this exact case (see Memory.swift comments).
+        MLX.Memory.clearCache()
+        return vectors
     }
 
     /// Apply the Qwen3-recommended retrieval instruction prefix on the
@@ -67,8 +85,18 @@ private func embedBatch(
     let model = ctx.model
 
     // Tokenise each input with special tokens (EOS marker is crucial for
-    // last-token pooling).
-    let encoded = texts.map { tokenizer.encode(text: $0, addSpecialTokens: true) }
+    // last-token pooling). Truncate to a hard cap so a single very long
+    // chunk can't blow the per-batch tensor size out of proportion.
+    let cap = MLXQwen3Embedder.maxSequenceLength
+    let encoded = texts.map { text -> [Int] in
+        var tokens = tokenizer.encode(text: text, addSpecialTokens: true)
+        if tokens.count > cap {
+            // Keep the trailing tokens so the EOS the tokenizer appended
+            // stays the last element (required for last-token pooling).
+            tokens = Array(tokens.suffix(cap))
+        }
+        return tokens
+    }
     let maxLen = encoded.map(\.count).max() ?? 0
     guard maxLen > 0 else { throw EmbedderError.emptyInput }
     let padID = (tokenizer.eosTokenId ?? 0)

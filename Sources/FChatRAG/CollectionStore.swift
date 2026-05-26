@@ -42,7 +42,7 @@ public actor CollectionStore: CollectionStoreProtocol {
     /// See `PersistentCollectionStore.embedBatchSize` for rationale. Keep
     /// the two stores' batching sizes identical so test/dev behaviour
     /// mirrors prod.
-    private static let embedBatchSize = 32
+    private static let embedBatchSize = 16
 
     public func ingest(
         data: Data,
