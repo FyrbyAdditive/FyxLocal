@@ -18,6 +18,13 @@ let package = Package(
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.7.0"),
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.4.0"),
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "6.29.0"),
+        // On-device embeddings (Qwen3-Embedding-4B on Apple Silicon via MLX).
+        // Model weights are vendored into the app bundle under
+        // Sources/FChatRAG/Resources/Qwen3-Embedding-4B-4bit-DWQ — no
+        // Hugging Face download at runtime. We still need swift-transformers
+        // for the tokenizer loader macros (#huggingFaceTokenizerLoader).
+        .package(url: "https://github.com/ml-explore/mlx-swift-lm", from: "3.31.3"),
+        .package(url: "https://github.com/huggingface/swift-transformers", from: "1.3.0"),
     ],
     targets: [
         // Vendored sqlite-vec v0.1.9 amalgamation. Built with SQLITE_CORE so
@@ -78,6 +85,20 @@ let package = Package(
                 "FChatTools",
                 "CSQLiteVec",
                 .product(name: "GRDB", package: "GRDB.swift"),
+                .product(name: "MLXEmbedders", package: "mlx-swift-lm"),
+                .product(name: "MLXHuggingFace", package: "mlx-swift-lm"),
+                // Tokenizer macros expand to Tokenizers.AutoTokenizer.from(...)
+                // at the call site, so this module must be on the FChatRAG
+                // dep list even though we never name it directly in code.
+                .product(name: "Tokenizers", package: "swift-transformers"),
+            ],
+            // Bundle the Qwen3-Embedding-4B-4bit-DWQ model weights so the
+            // app is self-contained — no first-run Hugging Face download.
+            // Adds ~2.1 GB to the app bundle. Tracked via git-lfs at the
+            // repo level so checkouts pull binaries from LFS, not bloat
+            // the main git history.
+            resources: [
+                .copy("Resources/Qwen3-Embedding-4B-4bit-DWQ"),
             ]
         ),
         .executableTarget(

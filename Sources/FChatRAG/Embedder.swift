@@ -44,7 +44,7 @@ public struct RemoteEmbedder: Embedder {
 /// Stand-in embedder for tests and fallback paths. Produces deterministic
 /// L2-normalised vectors from text hashes. Not for production retrieval.
 public struct HashEmbedder: Embedder {
-    public let kind: EmbedderKind = .appleNLContextual
+    public let kind: EmbedderKind = .test
     public let modelID: String
     public let dim: Int
 

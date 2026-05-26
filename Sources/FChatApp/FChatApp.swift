@@ -19,7 +19,7 @@ struct FChatApp: App {
         .windowStyle(.titleBar)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("New Chat") {
+                Button("New chat") {
                     environment.newConversation(title: "New chat")
                 }
                 .keyboardShortcut("n", modifiers: [.command])

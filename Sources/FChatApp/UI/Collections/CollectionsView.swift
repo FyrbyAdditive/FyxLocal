@@ -591,15 +591,25 @@ private struct NewCollectionSheet: View {
     var onCreated: () -> Void
     @State private var name: String = "New collection"
     @State private var error: String?
+    @State private var isWorking: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("New collection").font(.title3.bold())
-            Text("Documents you add here will be embedded with Apple's on-device contextual model. The model downloads automatically on first use.")
+            Text("Documents are embedded on-device with Qwen3-Embedding-4B running on Apple Silicon (MLX). The model is bundled with the app — no network access required.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField("Name", text: $name)
                 .textFieldStyle(.roundedBorder)
+                .disabled(isWorking)
+            if isWorking {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    Text("Loading model\u{2026}")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
             if let error {
                 Text(error).font(.caption).foregroundStyle(.red)
             }
@@ -607,36 +617,39 @@ private struct NewCollectionSheet: View {
                 Spacer()
                 Button("Cancel") { isPresented = false }
                     .keyboardShortcut(.cancelAction)
+                    .disabled(isWorking)
                 Button("Create") {
                     let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !trimmed.isEmpty else {
                         error = "Name is required."
                         return
                     }
+                    isWorking = true
+                    error = nil
                     Task {
-                        switch AppleEmbedderLoader.loadLatin() {
-                        case .ready(let embedder):
-                            do {
-                                _ = try await environment.collectionStore.createCollection(
-                                    name: trimmed,
-                                    embedder: embedder,
-                                    summary: nil,
-                                    distance: .cosine
-                                )
-                                isPresented = false
-                                onCreated()
-                            } catch {
-                                self.error = error.localizedDescription
-                            }
-                        case .unavailable(let reason):
-                            self.error = "Embedder unavailable: \(reason)"
+                        do {
+                            let container = try await MLXEmbedderLoader.shared.shared()
+                            let embedder = MLXQwen3Embedder(container: container)
+                            _ = try await environment.collectionStore.createCollection(
+                                name: trimmed,
+                                embedder: embedder,
+                                summary: nil,
+                                distance: .cosine
+                            )
+                            isWorking = false
+                            isPresented = false
+                            onCreated()
+                        } catch {
+                            isWorking = false
+                            self.error = error.localizedDescription
                         }
                     }
                 }
                 .keyboardShortcut(.defaultAction)
+                .disabled(isWorking)
             }
         }
         .padding(20)
-        .frame(width: 440)
+        .frame(width: 460)
     }
 }

@@ -128,13 +128,6 @@
         "sv" : { "stringUnit" : { "state" : "translated", "value" : "Inbyggd LLM-chattklient för macOS." } }
       }
     },
-    "New Chat" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Chat" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Ny chatt" } }
-      }
-    },
     "New chat" : {
       "extractionState" : "manual",
       "localizations" : {

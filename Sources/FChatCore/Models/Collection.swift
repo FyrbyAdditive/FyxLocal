@@ -35,8 +35,14 @@ public struct RAGCollection: Identifiable, Sendable, Hashable, Codable {
 }
 
 public enum EmbedderKind: String, Sendable, Hashable, Codable, CaseIterable {
-    case appleNLContextual
+    /// On-device embeddings via MLX running Qwen3-Embedding-4B on the
+    /// Apple Silicon GPU. 2560-dim vectors, ~5ms per chunk on M-series.
+    case mlxQwen3Embedding4B
+    /// Remote embeddings from an OpenAI-compatible /embeddings endpoint.
     case openAICompatible
+    /// Test/dev only: HashEmbedder produces deterministic vectors
+    /// without any model. Never used in production.
+    case test
 }
 
 public enum DistanceMetric: String, Sendable, Hashable, Codable, CaseIterable {

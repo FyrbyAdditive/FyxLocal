@@ -72,13 +72,21 @@ final class AppEnvironment {
             let db = try RAGDatabase.openDefault()
             resolvedStore = PersistentCollectionStore(
                 database: db,
-                embedderFactory: { _, _, _ in
-                    // Apple on-device contextual embeddings (Latin script
-                    // covers English + Swedish + most western European).
-                    switch AppleEmbedderLoader.loadLatin() {
-                    case .ready(let e): return e
-                    case .unavailable(let reason):
-                        throw EmbedderError.unavailable(reason)
+                embedderFactory: { kind, _, _ in
+                    // On-device path goes through MLX + Qwen3-Embedding-4B.
+                    // The shared container loads the ~2.26 GB weights once
+                    // per session and serves every MLX-backed collection.
+                    // Remote path falls back to the legacy OpenAI-compatible
+                    // RemoteEmbedder (instantiated elsewhere — kept for the
+                    // .openAICompatible kind once we wire the picker UI).
+                    switch kind {
+                    case .mlxQwen3Embedding4B:
+                        let container = try await MLXEmbedderLoader.shared.shared()
+                        return MLXQwen3Embedder(container: container)
+                    case .openAICompatible:
+                        throw EmbedderError.unavailable("Remote embeddings: pick an OpenAI-compatible provider explicitly when creating the collection.")
+                    case .test:
+                        return HashEmbedder()
                     }
                 }
             )
