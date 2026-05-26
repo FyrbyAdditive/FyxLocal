@@ -395,8 +395,8 @@ private struct ToolsTab: View {
 private struct ToolToggleRow: View {
     @Bindable var environment: AppEnvironment
     let name: String
-    let title: String
-    let description: String
+    let title: LocalizedStringKey
+    let description: LocalizedStringKey
 
     var body: some View {
         Toggle(isOn: Binding(
