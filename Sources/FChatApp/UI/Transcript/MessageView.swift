@@ -240,7 +240,16 @@ struct ToolCallResultBlock: View {
     /// still renders defensively as a result-only box.
     let call: ToolCallRecord?
     let result: ToolResultRecord?
-    @State private var expanded = false
+    @State private var expanded: Bool
+
+    init(call: ToolCallRecord?, result: ToolResultRecord?) {
+        self.call = call
+        self.result = result
+        // Chart results render the chart as their primary affordance —
+        // start expanded so the user sees it immediately. Other tool
+        // results default to collapsed to keep the transcript scan-able.
+        _expanded = State(initialValue: result?.display == .chart)
+    }
 
     /// If the result reports an error, treat the whole invocation as failed
     /// even when the call's own status field still says `.succeeded`. This
@@ -334,9 +343,18 @@ struct ToolCallResultBlock: View {
             Text(result.isError ? "Result (error)" : "Result")
                 .font(.caption2)
                 .foregroundStyle(result.isError ? .red : .secondary)
-            Text(Self.prettyJSON(for: result.outputJSON))
-                .font(.system(.caption, design: .monospaced))
-                .textSelection(.enabled)
+            // Dispatch on the display hint so non-JSON-shaped results can
+            // render as their own widgets. .chart → ToolChartView (Swift
+            // Charts bar/line/pie). Default falls back to pretty-printed
+            // JSON — same as the original behaviour.
+            switch result.display {
+            case .chart:
+                ToolChartView(json: result.outputJSON)
+            default:
+                Text(Self.prettyJSON(for: result.outputJSON))
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+            }
         }
     }
 

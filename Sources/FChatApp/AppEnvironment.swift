@@ -249,10 +249,16 @@ final class AppEnvironment {
         // prompt prefix stays cache-friendly for users who don't need
         // sub-day time precision. They enable it via Settings → Tools.
         let currentTime = CurrentTimeTool()
+        // make_chart is also opt-in: charts are useful but most chats don't
+        // need them, and an unconditionally-advertised chart tool nudges
+        // the model toward producing visual output when the user just
+        // wanted prose.
+        let makeChart = MakeChartTool()
         await toolRegistry.register(webSearch)
         await toolRegistry.register(webFetch)
         await toolRegistry.register(rag)
         await toolRegistry.register(currentTime)
+        await toolRegistry.register(makeChart)
     }
 
     static func defaultProviders() -> [ProviderRecord] {

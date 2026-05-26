@@ -374,6 +374,12 @@ private struct ToolsTab: View {
                     title: "Current time",
                     description: "Lets the model fetch the precise current time on demand. Off by default — the date is already in every message; enable this only when sub-day precision matters."
                 )
+                ToolToggleRow(
+                    environment: environment,
+                    name: "make_chart",
+                    title: "Make chart",
+                    description: "Lets the model render a bar, line, or pie chart inline in the chat. Off by default; enable when you want visual data displays."
+                )
             } header: {
                 Text("Built-in tools")
             } footer: {

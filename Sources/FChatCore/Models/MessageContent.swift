@@ -46,7 +46,7 @@ public enum ToolStatus: String, Codable, Sendable, Hashable {
 }
 
 public enum ToolDisplayHint: String, Codable, Sendable, Hashable {
-    case markdown, image, table, json, htmlIsland
+    case markdown, image, table, json, htmlIsland, chart
 }
 
 public struct UsageInfo: Codable, Sendable, Hashable {
