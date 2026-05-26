@@ -66,6 +66,30 @@ for bundle in "$PRODUCTS"/*.bundle; do
     fi
 done
 
+# Promote the FChatApp bundle's per-locale Localizable.strings to the app's
+# top-level Contents/Resources/<locale>.lproj/ so SwiftUI's default
+# `Text("...")` lookup — which consults Bundle.main — finds them. SwiftPM
+# emits xcstrings output only inside the module's resource bundle
+# (Bundle.module), so without this promotion the catalog is on disk but
+# unreachable for any view that doesn't pass `bundle: .module`. This is
+# the load-bearing piece of the localization fix; without it the existing
+# Swedish translations never reach the user.
+APP_BUNDLE_RES="$APP_DIR/Contents/Resources/F-Chat_FChatApp.bundle/Contents/Resources"
+if [[ -d "$APP_BUNDLE_RES" ]]; then
+    shopt -s nullglob
+    for lproj in "$APP_BUNDLE_RES"/*.lproj; do
+        locale="$(basename "$lproj" .lproj)"
+        dest="$APP_DIR/Contents/Resources/$locale.lproj"
+        mkdir -p "$dest"
+        for f in "$lproj"/Localizable.strings "$lproj"/Localizable.stringsdict; do
+            if [[ -e "$f" ]]; then
+                cp "$f" "$dest/"
+            fi
+        done
+    done
+    shopt -u nullglob
+fi
+
 cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -83,6 +107,11 @@ cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
     <string>app.fyrby.fchat</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>sv</string>
+    </array>
     <key>CFBundleName</key>
     <string>F-Chat</string>
     <key>CFBundlePackageType</key>
