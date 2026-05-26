@@ -284,14 +284,22 @@ struct ToolCallResultBlock: View {
         }
     }
 
+    /// True when the result is a chart. Charts are their own visualisation
+    /// of the underlying data, so we suppress the raw-JSON arguments
+    /// section, the "Result" label, and the divider — just the chart, in
+    /// the same collapsible box, with no JSON noise.
+    private var isChart: Bool {
+        result?.display == .chart && !(result?.isError ?? false)
+    }
+
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
             VStack(alignment: .leading, spacing: 8) {
-                if let call {
+                if !isChart, let call {
                     argumentsSection(call)
                 }
                 if let result {
-                    if call != nil { Divider() }
+                    if !isChart, call != nil { Divider() }
                     resultSection(result)
                 } else if call?.status == .running {
                     Label("Awaiting result\u{2026}", systemImage: "ellipsis")
@@ -340,9 +348,14 @@ struct ToolCallResultBlock: View {
     @ViewBuilder
     private func resultSection(_ result: ToolResultRecord) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(result.isError ? "Result (error)" : "Result")
-                .font(.caption2)
-                .foregroundStyle(result.isError ? .red : .secondary)
+            // Charts are their own affordance — no "Result" label above
+            // the chart. Errors and other tool results still get one so
+            // the user has visual context for the payload below.
+            if !isChart {
+                Text(result.isError ? "Result (error)" : "Result")
+                    .font(.caption2)
+                    .foregroundStyle(result.isError ? .red : .secondary)
+            }
             // Dispatch on the display hint so non-JSON-shaped results can
             // render as their own widgets. .chart → ToolChartView (Swift
             // Charts bar/line/pie). Default falls back to pretty-printed
