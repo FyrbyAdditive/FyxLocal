@@ -1,292 +1,1977 @@
 {
-  "sourceLanguage" : "en",
-  "version" : "1.0",
-  "strings" : {
-    "About" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "About" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Om" } }
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "%@ · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        }
       }
     },
-    "Arguments" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Arguments" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Argument" } }
+    "%@ · %@ · %lld chunks": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ · %lld chunks"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ · %lld delar"
+          }
+        }
       }
     },
-    "Built-in tools" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Built-in tools" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Inbyggda verktyg" } }
+    "%@ · %lldd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lldd"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lldd"
+          }
+        }
       }
     },
-    "Collections" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Collections" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Samlingar" } }
+    "%lld models · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld models · %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld modeller · %@"
+          }
+        }
       }
     },
-    "Coming soon — manage your local document collections here." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Coming soon — manage your local document collections here." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Kommer snart — hantera dina lokala dokumentsamlingar här." } }
+    "About": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Om"
+          }
+        }
       }
     },
-    "Conversation" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Conversation" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Konversation" } }
+    "Active provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active provider"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktiv leverantör"
+          }
+        }
       }
     },
-    "Conversations" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Conversations" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Konversationer" } }
+    "Add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lägg till"
+          }
+        }
       }
     },
-    "Created" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Created" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Skapad" } }
+    "Add provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add provider"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lägg till leverantör"
+          }
+        }
       }
     },
-    "Document collections" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Document collections" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Dokumentsamlingar" } }
+    "Add stdio MCP servers here. HTTP transport coming in a follow-up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add stdio MCP servers here. HTTP transport coming in a follow-up."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lägg till stdio MCP-servrar här. HTTP-transport kommer i ett senare steg."
+          }
+        }
       }
     },
-    "Drag files into a collection from the Collections sidebar entry." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drag files into a collection from the Collections sidebar entry." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Dra filer till en samling från Samlingar-posten i sidofältet." } }
+    "All documents and embeddings in this collection will be removed permanently.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All documents and embeddings in this collection will be removed permanently."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alla dokument och inbäddningar i denna samling tas bort permanent."
+          }
+        }
       }
     },
-    "F-Chat" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "F-Chat" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "F-Chat" } }
+    "Arguments": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arguments"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Argument"
+          }
+        }
       }
     },
-    "Inspector" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Inspector" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Inspektor" } }
+    "Attached collections are searched by the model via the rag_search tool.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attached collections are searched by the model via the rag_search tool."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bifogade samlingar söks av modellen via rag_search-verktyget."
+          }
+        }
       }
     },
-    "MCP" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "MCP" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "MCP" } }
+    "Awaiting result…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awaiting result…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Väntar på resultat…"
+          }
+        }
       }
     },
-    "MCP servers" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "MCP servers" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "MCP-servrar" } }
+    "Built-in tools": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in tools"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbyggda verktyg"
+          }
+        }
       }
     },
-    "Max output tokens" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Max output tokens" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Max utdata-tokens" } }
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avbryt"
+          }
+        }
       }
     },
-    "Messages" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Messages" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Meddelanden" } }
+    "Chart spec could not be parsed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chart spec could not be parsed"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagramspecifikationen kunde inte tolkas"
+          }
+        }
       }
     },
-    "Model" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Model" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Modell" } }
+    "Chat name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat name"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chattnamn"
+          }
+        }
       }
     },
-    "Native macOS LLM chat client." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Native macOS LLM chat client." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Inbyggd LLM-chattklient för macOS." } }
+    "Checking…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrollerar…"
+          }
+        }
       }
     },
-    "New chat" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "New chat" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Ny chatt" } }
+    "Choose files or folder…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose files or folder…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välj filer eller mapp…"
+          }
+        }
       }
     },
-    "Pick a model in the inspector, then type below." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pick a model in the inspector, then type below." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Välj en modell i inspektorn och skriv sedan nedan." } }
+    "Clear done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear done"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rensa klara"
+          }
+        }
       }
     },
-    "Provider" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Provider" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Leverantör" } }
+    "Collection name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collection name"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samlingsnamn"
+          }
+        }
       }
     },
-    "Providers" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Providers" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Leverantörer" } }
+    "Collections": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collections"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samlingar"
+          }
+        }
       }
     },
-    "RAG search" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "RAG search" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "RAG-sökning" } }
+    "Coming soon — manage your local document collections here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coming soon — manage your local document collections here."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kommer snart — hantera dina lokala dokumentsamlingar här."
+          }
+        }
       }
     },
-    "Reasoning" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reasoning" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Resonemang" } }
+    "Compact now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compact now"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komprimera nu"
+          }
+        }
       }
     },
-    "Sampling" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sampling" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Sampling" } }
+    "Compacting context…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compacting context…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komprimerar kontext…"
+          }
+        }
       }
     },
-    "Save key to Keychain" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Save key to Keychain" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Spara nyckel i Nyckelring" } }
+    "Context usage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Context usage"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontextanvändning"
+          }
+        }
       }
     },
-    "Select or start a conversation" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select or start a conversation" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Välj eller starta en konversation" } }
+    "Context window": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Context window"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontextfönster"
+          }
+        }
       }
     },
-    "Settings" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Inställningar" } }
+    "Conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversation"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konversation"
+          }
+        }
       }
     },
-    "Start a conversation" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start a conversation" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Starta en konversation" } }
+    "Conversation summary so far: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversation summary so far: %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konversationssammanfattning hittills: %@"
+          }
+        }
       }
     },
-    "Temperature" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Temperature" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Temperatur" } }
+    "Conversations": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversations"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konversationer"
+          }
+        }
       }
     },
-    "Thinking" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Tänker" } }
+    "Create": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skapa"
+          }
+        }
       }
     },
-    "Tools" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Verktyg" } }
+    "Created": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skapad"
+          }
+        }
       }
     },
-    "Tool result" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tool result" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Verktygsresultat" } }
+    "Currently %@. Click Test connection to discover models.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently %@. Click Test connection to discover models."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just nu %@. Klicka på Testa anslutning för att hitta modeller."
+          }
+        }
       }
     },
-    "Tool result (error)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tool result (error)" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Verktygsresultat (fel)" } }
+    "Default": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        }
       }
     },
-    "Version %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Version %@" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Version %@" } }
+    "Delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radera"
+          }
+        }
       }
     },
-    "Web fetch" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Web fetch" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Hämta sida" } }
+    "Disabled tools are not advertised to the model and cannot be invoked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled tools are not advertised to the model and cannot be invoked."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inaktiverade verktyg presenteras inte för modellen och kan inte anropas."
+          }
+        }
       }
     },
-    "Web fetch uses WKWebView + Mozilla Readability for clean extraction." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Web fetch uses WKWebView + Mozilla Readability for clean extraction." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Hämta sida använder WKWebView + Mozilla Readability för ren extraktion." } }
+    "Display name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display name"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visningsnamn"
+          }
+        }
       }
     },
-    "Web search" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Web search" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Webbsökning" } }
+    "Document collections": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document collections"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokumentsamlingar"
+          }
+        }
       }
     },
-    "Web search uses DuckDuckGo with no API key." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Web search uses DuckDuckGo with no API key." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Webbsökning använder DuckDuckGo utan API-nyckel." } }
+    "Documents are embedded on-device with Qwen3-Embedding-4B running on Apple Silicon (MLX). The model is bundled with the app — no network access required.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents are embedded on-device with Qwen3-Embedding-4B running on Apple Silicon (MLX). The model is bundled with the app — no network access required."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument bäddas in lokalt på enheten med Qwen3-Embedding-4B som körs på Apple Silicon (MLX). Modellen är paketerad med appen — ingen nätverksåtkomst krävs."
+          }
+        }
       }
     },
-    "RAG search queries your local collections." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "RAG search queries your local collections." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "RAG-sökning frågar dina lokala samlingar." } }
+    "Drag files into a collection from the Collections sidebar entry.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag files into a collection from the Collections sidebar entry."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dra filer till en samling från Samlingar-posten i sidofältet."
+          }
+        }
       }
     },
-    "Add stdio MCP servers here. HTTP transport coming in a follow-up." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add stdio MCP servers here. HTTP transport coming in a follow-up." } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Lägg till stdio MCP-servrar här. HTTP-transport kommer i ett senare steg." } }
+    "Drop files above, or use the file picker.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop files above, or use the file picker."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Släpp filer ovan, eller använd filväljaren."
+          }
+        }
+      }
+    },
+    "Drop files or folders here": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop files or folders here"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Släpp filer eller mappar här"
+          }
+        }
+      }
+    },
+    "F-Chat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "F-Chat"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "F-Chat"
+          }
+        }
+      }
+    },
+    "Hard cap (tokens)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hard cap (tokens)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hård gräns (tokens)"
+          }
+        }
+      }
+    },
+    "ID": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID"
+          }
+        }
+      }
+    },
+    "Inspector": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspector"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspektor"
+          }
+        }
+      }
+    },
+    "Keep recent messages verbatim": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep recent messages verbatim"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behåll senaste meddelanden ordagrant"
+          }
+        }
+      }
+    },
+    "Loading model…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading model…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Läser in modell…"
+          }
+        }
+      }
+    },
+    "MCP": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP"
+          }
+        }
+      }
+    },
+    "MCP servers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP servers"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP-servrar"
+          }
+        }
+      }
+    },
+    "Max output tokens": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max output tokens"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max utdata-tokens"
+          }
+        }
+      }
+    },
+    "Max tool iterations": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max tool iterations"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximalt antal verktygsiterationer"
+          }
+        }
+      }
+    },
+    "Message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meddelande"
+          }
+        }
+      }
+    },
+    "Messages": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meddelanden"
+          }
+        }
+      }
+    },
+    "Model": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modell"
+          }
+        }
+      }
+    },
+    "Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Namn"
+          }
+        }
+      }
+    },
+    "Native macOS LLM chat client.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Native macOS LLM chat client."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbyggd LLM-chattklient för macOS."
+          }
+        }
+      }
+    },
+    "New chat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New chat"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ny chatt"
+          }
+        }
+      }
+    },
+    "New chats use this provider and its default model. Each chat keeps its own setting; per-chat overrides live in the Inspector.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New chats use this provider and its default model. Each chat keeps its own setting; per-chat overrides live in the Inspector."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nya chattar använder denna leverantör och dess standardmodell. Varje chatt behåller sin egen inställning; per-chatt-åsidosättningar finns i Inspektören."
+          }
+        }
+      }
+    },
+    "New collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New collection"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ny samling"
+          }
+        }
+      }
+    },
+    "Next send projection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next send projection"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prognos för nästa skick"
+          }
+        }
+      }
+    },
+    "No budget detected. Pick a provider and a default model in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No budget detected. Pick a provider and a default model in Settings."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen budget upptäckt. Välj en leverantör och en standardmodell i Inställningar."
+          }
+        }
+      }
+    },
+    "No chunks for this document": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No chunks for this document"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inga delar för detta dokument"
+          }
+        }
+      }
+    },
+    "No collections yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No collections yet"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inga samlingar än"
+          }
+        }
+      }
+    },
+    "No collections yet. Create one in the Collections pane.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No collections yet. Create one in the Collections pane."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inga samlingar än. Skapa en i samlingspanelen."
+          }
+        }
+      }
+    },
+    "No default model set for provider %@. Open Settings → Providers and pick one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No default model set for provider %@. Open Settings → Providers and pick one."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen standardmodell satt för leverantör %@. Öppna Inställningar → Leverantörer och välj en."
+          }
+        }
+      }
+    },
+    "No documents in %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No documents in %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inga dokument i %@"
+          }
+        }
+      }
+    },
+    "No provider configured. Open Settings → Providers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No provider configured. Open Settings → Providers."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen leverantör konfigurerad. Öppna Inställningar → Leverantörer."
+          }
+        }
+      }
+    },
+    "Not checked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not checked"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inte testad"
+          }
+        }
+      }
+    },
+    "Older messages are summarized away when the projected request would leave less than the reserve free for the reply.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Older messages are summarized away when the projected request would leave less than the reserve free for the reply."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Äldre meddelanden sammanfattas bort när den planerade förfrågan skulle lämna mindre än reserven ledig för svaret."
+          }
+        }
+      }
+    },
+    "Open": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öppna"
+          }
+        }
+      }
+    },
+    "Override": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Override"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åsidosätt"
+          }
+        }
+      }
+    },
+    "PDF, .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, .md, .txt, källkod. Mappar genomsöks rekursivt; dolda filer och format som inte stöds hoppas över."
+          }
+        }
+      }
+    },
+    "Parallel tool calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parallel tool calls"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parallella verktygsanrop"
+          }
+        }
+      }
+    },
+    "Pick a model in the inspector, then type below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a model in the inspector, then type below."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välj en modell i inspektorn och skriv sedan nedan."
+          }
+        }
+      }
+    },
+    "Provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leverantör"
+          }
+        }
+      }
+    },
+    "Providers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Providers"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leverantörer"
+          }
+        }
+      }
+    },
+    "RAG search": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG search"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG-sökning"
+          }
+        }
+      }
+    },
+    "RAG search queries your local collections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG search queries your local collections."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAG-sökning frågar dina lokala samlingar."
+          }
+        }
+      }
+    },
+    "Reasoning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reasoning"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resonemang"
+          }
+        }
+      }
+    },
+    "Reasoning effort for this chat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reasoning effort for this chat"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resoneringsnivå för denna chatt"
+          }
+        }
+      }
+    },
+    "Remove provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove provider"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta bort leverantör"
+          }
+        }
+      }
+    },
+    "Rename…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byt namn…"
+          }
+        }
+      }
+    },
+    "Reserve for reply (tokens)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reserve for reply (tokens)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reserv för svar (tokens)"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Försök igen"
+          }
+        }
+      }
+    },
+    "Sampling": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sampling"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sampling"
+          }
+        }
+      }
+    },
+    "Sampling defaults": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sampling defaults"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standardvärden för sampling"
+          }
+        }
+      }
+    },
+    "Save": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spara"
+          }
+        }
+      }
+    },
+    "Save key to Keychain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save key to Keychain"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spara nyckel i Nyckelring"
+          }
+        }
+      }
+    },
+    "Select a document": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a document"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välj ett dokument"
+          }
+        }
+      }
+    },
+    "Select or create a collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select or create a collection"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välj eller skapa en samling"
+          }
+        }
+      }
+    },
+    "Select or start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select or start a conversation"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välj eller starta en konversation"
+          }
+        }
+      }
+    },
+    "Server max unknown — defaults to a safe 8,192 until you Test connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server max unknown — defaults to a safe 8,192 until you Test connection."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servermax okänt — använder säkra 8 192 tills du Testar anslutningen."
+          }
+        }
+      }
+    },
+    "Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inställningar"
+          }
+        }
+      }
+    },
+    "Start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a conversation"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starta en konversation"
+          }
+        }
+      }
+    },
+    "Temperature": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperature"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperatur"
+          }
+        }
+      }
+    },
+    "Test connection / fetch models": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test connection / fetch models"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testa anslutning / hämta modeller"
+          }
+        }
+      }
+    },
+    "Thinking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thinking"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tänker"
+          }
+        }
+      }
+    },
+    "This conversation will be removed permanently. This cannot be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This conversation will be removed permanently. This cannot be undone."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denna konversation tas bort permanent. Detta kan inte ångras."
+          }
+        }
+      }
+    },
+    "Title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel"
+          }
+        }
+      }
+    },
+    "Tool result": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tool result"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verktygsresultat"
+          }
+        }
+      }
+    },
+    "Tool result (error)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tool result (error)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verktygsresultat (fel)"
+          }
+        }
+      }
+    },
+    "Tools": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tools"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verktyg"
+          }
+        }
+      }
+    },
+    "Type below to begin.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type below to begin."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skriv nedan för att börja."
+          }
+        }
+      }
+    },
+    "Updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updated"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uppdaterad"
+          }
+        }
+      }
+    },
+    "Used for every chat that talks to this provider.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used for every chat that talks to this provider."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Används för varje chatt som pratar med denna leverantör."
+          }
+        }
+      }
+    },
+    "Using server max: %@ tokens.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Using server max: %@ tokens."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Använder servermax: %@ tokens."
+          }
+        }
+      }
+    },
+    "Version %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
+    },
+    "Web fetch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web fetch"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hämta sida"
+          }
+        }
+      }
+    },
+    "Web fetch uses WKWebView + Mozilla Readability for clean extraction.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web fetch uses WKWebView + Mozilla Readability for clean extraction."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hämta sida använder WKWebView + Mozilla Readability för ren extraktion."
+          }
+        }
+      }
+    },
+    "Web search": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web search"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webbsökning"
+          }
+        }
+      }
+    },
+    "Web search uses DuckDuckGo with no API key.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web search uses DuckDuckGo with no API key."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webbsökning använder DuckDuckGo utan API-nyckel."
+          }
+        }
+      }
+    },
+    "Your message is %@ tokens — larger than this provider's %@-token window. Save it as a RAG document instead (coming soon).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your message is %@ tokens — larger than this provider's %@-token window. Save it as a RAG document instead (coming soon)."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ditt meddelande är %@ tokens — större än denna leverantörs %@-token-fönster. Spara det som ett RAG-dokument istället (kommer snart)."
+          }
+        }
+      }
+    },
+    "p.%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "p.%lld"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "s.%lld"
+          }
+        }
+      }
+    },
+    "server max: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "server max: %@"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "servermax: %@"
+          }
+        }
+      }
+    },
+    "— pick a default —": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— pick a default —"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— välj en standard —"
+          }
+        }
       }
     }
   }

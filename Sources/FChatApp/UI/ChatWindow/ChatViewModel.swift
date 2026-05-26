@@ -132,12 +132,14 @@ final class ChatViewModel {
         guard !draftText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         guard let environment else { return }
         guard let providerRecord = environment.currentProvider() else {
-            lastError = "No provider configured. Open Settings → Providers."
+            lastError = String(localized: "No provider configured. Open Settings → Providers.")
             return
         }
         let trimmedModel = (providerRecord.defaultModel ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedModel.isEmpty else {
-            lastError = "No default model set for provider \(providerRecord.displayName). Open Settings → Providers and pick one."
+            lastError = String(
+                localized: "No default model set for provider \(providerRecord.displayName). Open Settings → Providers and pick one."
+            )
             return
         }
 
@@ -162,7 +164,9 @@ final class ChatViewModel {
             // Roll back the queued user message.
             conversation.messages.removeAll { $0.id == userMessageID }
             draftText = userText
-            lastError = "Your message is \(userMessageTokens.formatted()) tokens — larger than this provider's \(budget.effectiveWindow.formatted())-token window. Save it as a RAG document instead (coming soon)."
+            lastError = String(
+                localized: "Your message is \(userMessageTokens.formatted()) tokens — larger than this provider's \(budget.effectiveWindow.formatted())-token window. Save it as a RAG document instead (coming soon)."
+            )
             return
         }
 

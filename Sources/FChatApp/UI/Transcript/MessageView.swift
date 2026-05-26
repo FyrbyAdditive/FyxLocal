@@ -216,7 +216,11 @@ struct ThinkingPill: View {
         HStack(spacing: 6) {
             ProgressView()
                 .controlSize(.small)
-            Text("Thinking\u{2026}")
+            // Reuses the existing "Thinking" key. Xcode normalises trailing
+            // punctuation when generating string-catalog symbols, so we
+            // can't carry both "Thinking" and "Thinking…" — append the
+            // ellipsis with a separate Text fragment.
+            (Text("Thinking") + Text("\u{2026}"))
                 .font(.caption)
                 .italic()
                 .foregroundStyle(.secondary)
