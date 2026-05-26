@@ -44,14 +44,14 @@ public actor SQLiteVecVectorStore: VectorStore {
         try database.queue.write { db in
             for (id, vector) in entries {
                 let key = id.rawValue.uuidString
-                let json = Self.vectorAsJSONArray(vector)
+                let bytes = Self.vectorAsBytes(vector)
                 // sqlite-vec's vec0 doesn't support ON CONFLICT UPDATE for the
                 // embedding column directly; delete + insert is the documented
                 // upsert pattern.
                 try db.execute(sql: "DELETE FROM \(self.tableName) WHERE chunk_id = ?", arguments: [key])
                 try db.execute(
                     sql: "INSERT INTO \(self.tableName)(chunk_id, embedding) VALUES (?, vec_f32(?))",
-                    arguments: [key, json]
+                    arguments: [key, bytes]
                 )
             }
         }
@@ -69,7 +69,7 @@ public actor SQLiteVecVectorStore: VectorStore {
     public func search(query: [Float], topK: Int) throws -> [VectorSearchHit] {
         guard query.count == dim else { throw VectorStoreError.dimensionMismatch(expected: dim, got: query.count) }
         guard topK > 0 else { return [] }
-        let json = Self.vectorAsJSONArray(query)
+        let bytes = Self.vectorAsBytes(query)
         return try database.queue.read { db in
             // sqlite-vec's KNN: WHERE embedding MATCH vec_f32(?) AND k = ?
             // Distance is returned in the `distance` column (L2 by default).
@@ -81,7 +81,7 @@ public actor SQLiteVecVectorStore: VectorStore {
                 FROM \(self.tableName)
                 WHERE embedding MATCH vec_f32(?) AND k = ?
                 ORDER BY distance
-                """, arguments: [json, topK])
+                """, arguments: [bytes, topK])
             return rows.compactMap { row -> VectorSearchHit? in
                 guard
                     let key: String = row["chunk_id"],
@@ -109,14 +109,22 @@ public actor SQLiteVecVectorStore: VectorStore {
         }
     }
 
-    /// sqlite-vec's `vec_f32()` accepts JSON-array text like `"[1.0, 2.0, 3.0]"`.
-    static func vectorAsJSONArray(_ vector: [Float]) -> String {
-        var s = "["
-        for (i, v) in vector.enumerated() {
-            if i > 0 { s += "," }
-            s += String(v)
+    /// sqlite-vec's `vec_f32()` also accepts a packed little-endian float32
+    /// byte blob of length `dim * 4`. Much cheaper than the JSON-text path
+    /// at ingest scale — no per-row `String` allocation, no float→string
+    /// formatting cost, no float→binary parse cost on the sqlite-vec side.
+    static func vectorAsBytes(_ vector: [Float]) -> Data {
+        var data = Data(count: vector.count * MemoryLayout<Float>.size)
+        data.withUnsafeMutableBytes { raw in
+            guard let base = raw.baseAddress else { return }
+            // float32 is the same layout on all Apple-silicon targets we ship to.
+            // memcpy keeps this allocation-free past the initial Data alloc.
+            vector.withUnsafeBufferPointer { src in
+                if let srcBase = src.baseAddress {
+                    memcpy(base, srcBase, vector.count * MemoryLayout<Float>.size)
+                }
+            }
         }
-        s += "]"
-        return s
+        return data
     }
 }

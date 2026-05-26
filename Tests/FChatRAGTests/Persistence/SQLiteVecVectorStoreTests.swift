@@ -97,6 +97,35 @@ struct SQLiteVecVectorStoreTests {
         try? FileManager.default.removeItem(at: db.fileURL.deletingLastPathComponent())
     }
 
+    @Test func vectorAsBytesPacksLittleEndianFloat32() {
+        // sqlite-vec's vec_f32(?) accepts a raw little-endian float32 blob
+        // of length dim*4. Verify our packed-bytes serializer produces
+        // exactly that layout.
+        let v: [Float] = [1.0, -2.5, 0.0, 42.125]
+        let bytes = SQLiteVecVectorStore.vectorAsBytes(v)
+        #expect(bytes.count == v.count * MemoryLayout<Float>.size)
+
+        // Round-trip: re-interpret bytes as [Float] and compare exactly.
+        let roundTripped: [Float] = bytes.withUnsafeBytes { raw in
+            Array(raw.bindMemory(to: Float.self))
+        }
+        #expect(roundTripped == v)
+    }
+
+    @Test func upsertSearchRoundTripsAt2560Dim() async throws {
+        // Mirror of the real Qwen3 embedding dim. Catches any regression
+        // in the bytes encoder at production sizes.
+        let dim = 2560
+        let (db, store) = try makeStore(dim: dim)
+        var rng = SystemRandomNumberGenerator()
+        let v = normalised((0..<dim).map { _ in Float.random(in: -1...1, using: &rng) })
+        let id = ChunkID()
+        try await store.upsert([(id, v)])
+        let hits = try await store.search(query: v, topK: 1)
+        #expect(hits.first?.chunkID == id)
+        try? FileManager.default.removeItem(at: db.fileURL.deletingLastPathComponent())
+    }
+
     private func dot(_ a: [Float], _ b: [Float]) -> Float {
         zip(a, b).reduce(0) { $0 + $1.0 * $1.1 }
     }

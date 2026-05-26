@@ -99,6 +99,52 @@ struct PersistentCollectionStoreTests {
         try? FileManager.default.removeItem(at: dir)
     }
 
+    @Test func largeIngestStreamsInBatchesWithoutDroppingRows() async throws {
+        // Crosses the 32-batch boundary multiple times. Catches off-by-one
+        // bugs in the batching loop at edges (first batch, last batch,
+        // batch boundaries) — every chunk must end up in both the chunks
+        // table and the vector index.
+        let (dir, store) = try makeStore()
+        let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)
+        let c = try await store.createCollection(name: "big", embedder: hash, summary: nil, distance: .cosine)
+
+        // 80 markdown sections, each with a short body. The chunker emits
+        // one chunk per section (each section is well under targetSize),
+        // so we get ~80 chunks. That's 2 full batches of 32 plus a
+        // trailing batch of 16.
+        var md = ""
+        for i in 0..<80 {
+            md += "# Section \(i)\n\nUnique body text for section \(i) here.\n\n"
+        }
+
+        _ = try await store.ingest(
+            data: Data(md.utf8),
+            filename: "big.md",
+            collectionID: c.id,
+            ingestor: FileIngestor(),
+            chunker: Chunker()
+        )
+
+        let docs = await store.documents(in: c.id)
+        #expect(docs.count == 1)
+
+        let chunks = await store.chunks(of: docs[0].id)
+        #expect(chunks.count == 80, "expected 80 chunks, got \(chunks.count)")
+
+        // Every chunk must have a vector — search hits across topK=80 with
+        // a query close to one of the chunks should return that chunk.
+        let hits = try await store.search(query: "Unique body text for section 42 here.", in: c.id, topK: 80)
+        #expect(hits.count == 80, "vector index missing rows; got \(hits.count)")
+        // First chunk's ordinal must be present (otherwise the first batch
+        // somehow didn't make it into the vec table).
+        let firstOrdinalIDs = chunks.filter { $0.ordinal < 32 }.map(\.id)
+        let hitIDs = Set(hits.map(\.chunkID))
+        for id in firstOrdinalIDs {
+            #expect(hitIDs.contains(id), "first-batch chunk \(id) missing from vector index")
+        }
+        try? FileManager.default.removeItem(at: dir)
+    }
+
     @Test func surfacesParseFailureOnUnsupportedFormat() async throws {
         let (dir, store) = try makeStore()
         let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)

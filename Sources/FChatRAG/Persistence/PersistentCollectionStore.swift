@@ -159,6 +159,13 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
         }) ?? nil
     }
 
+    /// How many chunks we send to the embedder per forward pass. Set to keep
+    /// peak GPU memory bounded regardless of the document size — a book that
+    /// chunks into 10k pieces is processed as ~310 batches of 32 rather than
+    /// one giant tensor. Tuned by hand against MLXQwen3Embedder; revisit if
+    /// we add larger or smaller embedders.
+    private static let embedBatchSize = 32
+
     public func ingest(
         data: Data,
         filename: String,
@@ -191,29 +198,26 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
             byteSize: data.count
         )
 
-        // Persist the document row first so the user sees the failure if
-        // parsing failed. Then add chunks if we have any.
-        var assembledChunks: [RAGChunk] = []
-        var assembledContents: [String] = []
+        // Build the chunk list once. The chunk text already lives inside
+        // each `RAGChunk` (no separate `[String]` mirror), so we don't pay
+        // the string overhead twice.
+        var allChunks: [RAGChunk] = []
         if let parsed {
             var ordinal = 0
             for section in parsed.sections {
-                let pieces = chunker.chunk(section.text)
-                for piece in pieces {
-                    let chunk = RAGChunk(
+                for piece in chunker.chunk(section.text) {
+                    allChunks.append(RAGChunk(
                         documentID: document.id,
                         ordinal: ordinal,
                         text: piece,
                         meta: ChunkMeta(page: section.page, section: section.title)
-                    )
-                    assembledChunks.append(chunk)
-                    assembledContents.append(piece)
+                    ))
                     ordinal += 1
                 }
             }
         }
 
-        let chunksSnapshot = assembledChunks
+        let chunksSnapshot = allChunks
         let documentSnapshot = document
         let parseErrorSnapshot = parseError
         try await database.queue.write { db in
@@ -249,10 +253,23 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
             }
         }
 
-        if !assembledChunks.isEmpty {
-            let vectors = try await embedder.embed(assembledContents)
-            precondition(vectors.count == assembledChunks.count)
-            try await store.upsert(zip(assembledChunks, vectors).map { ($0.0.id, $0.1) })
+        // Now stream the embed step in fixed-size batches and upsert each
+        // batch's vectors immediately. ARC drops batch-scoped [[Float]]
+        // before the next batch starts, so peak memory is
+        // O(batch_size * dim * 4 bytes) regardless of the document size.
+        if !allChunks.isEmpty {
+            let batchSize = Self.embedBatchSize
+            var index = 0
+            while index < allChunks.count {
+                let upper = min(index + batchSize, allChunks.count)
+                let batch = allChunks[index..<upper]
+                let texts = batch.map(\.text)
+                let chunkIDs = batch.map(\.id)
+                let vectors = try await embedder.embed(texts)
+                precondition(vectors.count == chunkIDs.count)
+                try await store.upsert(zip(chunkIDs, vectors).map { ($0, $1) })
+                index = upper
+            }
         }
 
         try await touchCollection(collectionID)

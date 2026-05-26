@@ -39,6 +39,11 @@ public actor CollectionStore: CollectionStoreProtocol {
         collections.values.first(where: { $0.name == name })
     }
 
+    /// See `PersistentCollectionStore.embedBatchSize` for rationale. Keep
+    /// the two stores' batching sizes identical so test/dev behaviour
+    /// mirrors prod.
+    private static let embedBatchSize = 32
+
     public func ingest(
         data: Data,
         filename: String,
@@ -68,19 +73,15 @@ public actor CollectionStore: CollectionStoreProtocol {
         )
 
         var assembledChunks: [RAGChunk] = []
-        var assembledContents: [String] = []
         var ordinal = 0
         for section in parsed.sections {
-            let pieces = chunker.chunk(section.text)
-            for piece in pieces {
-                let chunk = RAGChunk(
+            for piece in chunker.chunk(section.text) {
+                assembledChunks.append(RAGChunk(
                     documentID: document.id,
                     ordinal: ordinal,
                     text: piece,
                     meta: ChunkMeta(page: section.page, section: section.title)
-                )
-                assembledChunks.append(chunk)
-                assembledContents.append(piece)
+                ))
                 ordinal += 1
             }
         }
@@ -92,9 +93,21 @@ public actor CollectionStore: CollectionStoreProtocol {
             return document
         }
 
-        let vectors = try await embedder.embed(assembledContents)
-        precondition(vectors.count == assembledChunks.count)
-        try await store.upsert(zip(assembledChunks, vectors).map { ($0.0.id, $0.1) })
+        // Stream the embed pass in fixed-size batches. Vectors land in the
+        // vector store one batch at a time; the [[Float]] batch buffer is
+        // dropped before the next batch starts.
+        let batchSize = Self.embedBatchSize
+        var index = 0
+        while index < assembledChunks.count {
+            let upper = min(index + batchSize, assembledChunks.count)
+            let batch = assembledChunks[index..<upper]
+            let texts = batch.map(\.text)
+            let chunkIDs = batch.map(\.id)
+            let vectors = try await embedder.embed(texts)
+            precondition(vectors.count == chunkIDs.count)
+            try await store.upsert(zip(chunkIDs, vectors).map { ($0, $1) })
+            index = upper
+        }
 
         documents[document.id] = document
         collectionToDocuments[collectionID, default: []].append(document.id)
