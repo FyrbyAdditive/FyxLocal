@@ -94,6 +94,11 @@ private struct ProviderCard: View {
     @State private var apiKeyDraft: String = ""
     @State private var apiKeyAlreadySaved: Bool = false
     @State private var saveMessage: String?
+    /// Per-card expansion state. Defaults to collapsed so a list of many
+    /// providers stays scannable; the user clicks the header to expand
+    /// the one they want to edit. Not persisted across launches — most
+    /// expansions are for a single edit session.
+    @State private var isExpanded: Bool = false
 
     init(record: Binding<ProviderRecord>, environment: AppEnvironment) {
         self._record = record
@@ -102,24 +107,51 @@ private struct ProviderCard: View {
     }
 
     var body: some View {
-        GroupBox(record.displayName) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("ID")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(record.id.rawValue)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button(role: .destructive) {
-                        environment.removeProvider(record.id)
-                    } label: {
-                        Image(systemName: "trash")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Remove provider")
-                }
+        GroupBox {
+            DisclosureGroup(isExpanded: $isExpanded) {
+                providerForm
+                    .padding(.top, 6)
+            } label: {
+                cardHeader
+            }
+        }
+        .task(id: record.id) {
+            apiKeyAlreadySaved = (try? await environment.secretStore.secret(for: KeychainAccount.providerAPIKey(record.id))) != nil
+        }
+    }
+
+    /// Always-visible row inside the card: name, live status badge, and a
+    /// trash button. Lets the user see provider state at a glance without
+    /// expanding.
+    private var cardHeader: some View {
+        HStack(spacing: 8) {
+            Text(record.displayName)
+                .font(.headline)
+            StatusBadge(status: environment.providerStatus[record.id] ?? .unknown)
+            Spacer()
+            Button(role: .destructive) {
+                environment.removeProvider(record.id)
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.borderless)
+            .help("Remove provider")
+        }
+        .contentShape(.rect)
+    }
+
+    @ViewBuilder
+    private var providerForm: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("ID")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(record.id.rawValue)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
 
                 LabeledRow(label: "Display name") {
                     TextField("Display name", text: $record.displayName)
@@ -162,8 +194,6 @@ private struct ProviderCard: View {
                     } label: {
                         Label("Test connection / fetch models", systemImage: "antenna.radiowaves.left.and.right")
                     }
-
-                    StatusBadge(status: environment.providerStatus[record.id] ?? .unknown)
                     Spacer()
                 }
 
@@ -225,11 +255,6 @@ private struct ProviderCard: View {
                         .first(where: { $0.id == record.defaultModel })?
                         .contextWindow
                 )
-            }
-            .padding(.vertical, 6)
-        }
-        .task(id: record.id) {
-            apiKeyAlreadySaved = (try? await environment.secretStore.secret(for: KeychainAccount.providerAPIKey(record.id))) != nil
         }
     }
 
