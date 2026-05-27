@@ -24,11 +24,6 @@ struct AgentPickerSection: View {
             }
             .labelsHidden()
             .pickerStyle(.menu)
-
-            Text("Set the default for new chats in Settings → Agents.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

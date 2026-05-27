@@ -2025,23 +2025,6 @@
         }
       }
     },
-    "Set the default for new chats in Settings → Agents.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Set the default for new chats in Settings → Agents."
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ställ in standardvärdet för nya chattar under Inställningar → Agenter."
-          }
-        }
-      }
-    },
     "Settings": {
       "extractionState": "manual",
       "localizations": {
