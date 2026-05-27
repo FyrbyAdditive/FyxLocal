@@ -15,22 +15,32 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
     public var includeToolGuidance: Bool
     public var includeRAGGuidance: Bool
     public var customSuffix: String?
+    /// Replaces the built-in F-Chat preamble. nil = use the localised
+    /// default. Tool / RAG guidance is still auto-appended when their
+    /// flags are set, so custom agents keep working with tools and RAG.
+    public var basePromptOverride: String?
 
     public init(
         language: PromptLanguage = .english,
         includeToolGuidance: Bool = true,
         includeRAGGuidance: Bool = false,
-        customSuffix: String? = nil
+        customSuffix: String? = nil,
+        basePromptOverride: String? = nil
     ) {
         self.language = language
         self.includeToolGuidance = includeToolGuidance
         self.includeRAGGuidance = includeRAGGuidance
         self.customSuffix = customSuffix
+        self.basePromptOverride = basePromptOverride
     }
 
     public func render() -> String {
         var parts: [String] = []
-        parts.append(Strings.base(for: language))
+        if let override = basePromptOverride, !override.isEmpty {
+            parts.append(override)
+        } else {
+            parts.append(Strings.base(for: language))
+        }
         if includeToolGuidance { parts.append(Strings.toolGuidance(for: language)) }
         if includeRAGGuidance { parts.append(Strings.ragGuidance(for: language)) }
         if let suffix = customSuffix, !suffix.isEmpty { parts.append(suffix) }

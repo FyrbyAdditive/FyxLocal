@@ -56,6 +56,17 @@ final class AppEnvironment {
     var enabledTools: Set<String> {
         didSet { scheduleSave() }
     }
+    /// Named system-prompt presets ("agents"). Always non-empty in
+    /// practice because `init` seeds the built-in Default agent on first
+    /// launch and recreates it if the persisted list is missing it.
+    var agents: [Agent] {
+        didSet { scheduleSave() }
+    }
+    /// Which agent newly-created chats start with. nil resolves to
+    /// `AgentID.defaultAgent`.
+    var defaultAgentForNewChats: AgentID? {
+        didSet { scheduleSave() }
+    }
     var sidebarSelection: SidebarSelection?
 
     static let defaultEnabledTools: Set<String> = ["web_search", "web_fetch", "rag_search"]
@@ -113,6 +124,8 @@ final class AppEnvironment {
             self.promptLanguage = snapshot.promptLanguage
             self.activeProviderID = snapshot.activeProviderID
             self.enabledTools = snapshot.enabledTools ?? AppEnvironment.defaultEnabledTools
+            self.agents = AppEnvironment.ensureDefaultAgent(in: snapshot.agents ?? [])
+            self.defaultAgentForNewChats = snapshot.defaultAgentForNewChats
         } else {
             self.providerRecords = AppEnvironment.defaultProviders()
             self.conversations = []
@@ -120,6 +133,8 @@ final class AppEnvironment {
             self.promptLanguage = PromptLanguage.resolve()
             self.activeProviderID = nil
             self.enabledTools = AppEnvironment.defaultEnabledTools
+            self.agents = AppEnvironment.ensureDefaultAgent(in: [])
+            self.defaultAgentForNewChats = nil
         }
         // Resolve the active provider id if it's stale (deleted) or missing.
         if let active = self.activeProviderID, !self.providerRecords.contains(where: { $0.id == active }) {
@@ -154,7 +169,9 @@ final class AppEnvironment {
             selectedConversationID: selectedConversationID,
             promptLanguage: promptLanguage,
             activeProviderID: activeProviderID,
-            enabledTools: enabledTools
+            enabledTools: enabledTools,
+            agents: agents,
+            defaultAgentForNewChats: defaultAgentForNewChats
         )
         // Encode + atomic write off MainActor. At 70k+ tokens the encode
         // alone is hundreds of ms — running it on MainActor blocked the UI
@@ -284,6 +301,75 @@ final class AppEnvironment {
                 defaultModel: nil
             )
         ]
+    }
+
+    // MARK: - Agents
+
+    /// Guarantees the built-in Default agent is present in the list, at
+    /// the front. The Default's `basePrompt` is always nil so the chat
+    /// gets today's localised F-Chat preamble.
+    static func ensureDefaultAgent(in existing: [Agent]) -> [Agent] {
+        var list = existing.filter { $0.id != .defaultAgent }
+        let seeded = Agent(
+            id: .defaultAgent,
+            name: String(localized: "Default", bundle: .module),
+            basePrompt: nil
+        )
+        list.insert(seeded, at: 0)
+        return list
+    }
+
+    /// Look up the agent a chat should be using. Falls back to the
+    /// built-in Default when the chat's `agentID` is nil, missing, or
+    /// pointing at a deleted agent. Never returns a synthetic value if
+    /// the agents list is correctly seeded; the last fallback exists
+    /// only as a defensive escape hatch.
+    func resolveAgent(for conversation: Conversation) -> Agent {
+        let target = conversation.settings.agentID
+            ?? defaultAgentForNewChats
+            ?? .defaultAgent
+        return agents.first(where: { $0.id == target })
+            ?? agents.first(where: { $0.id == .defaultAgent })
+            ?? Agent.builtInDefault
+    }
+
+    @discardableResult
+    func addAgent(name: String, basePrompt: String?) -> Agent {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPrompt = basePrompt?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let agent = Agent(
+            id: AgentID(),
+            name: trimmedName.isEmpty ? String(localized: "Untitled agent", bundle: .module) : trimmedName,
+            basePrompt: (trimmedPrompt?.isEmpty ?? true) ? nil : trimmedPrompt
+        )
+        agents.append(agent)
+        return agent
+    }
+
+    func updateAgent(_ updated: Agent) {
+        guard updated.id != .defaultAgent else { return }
+        guard let i = agents.firstIndex(where: { $0.id == updated.id }) else { return }
+        var copy = updated
+        copy.updatedAt = .now
+        agents[i] = copy
+    }
+
+    func deleteAgent(_ id: AgentID) {
+        guard id != .defaultAgent else { return }
+        agents.removeAll { $0.id == id }
+        if defaultAgentForNewChats == id {
+            defaultAgentForNewChats = nil
+        }
+        // Chats that referenced this agent keep their stale agentID — the
+        // resolver silently falls back to Default. We deliberately don't
+        // sweep `conversations` here so the persisted intent survives if
+        // the agent is later re-added (e.g. via state-file restore).
+    }
+
+    /// Count of chats currently referencing this agent. Drives the delete
+    /// confirmation copy ("N chats will fall back to Default").
+    func chatCountUsingAgent(_ id: AgentID) -> Int {
+        conversations.reduce(0) { $0 + ((($1.settings.agentID ?? .defaultAgent) == id) ? 1 : 0) }
     }
 
     func newConversation(title: String) {

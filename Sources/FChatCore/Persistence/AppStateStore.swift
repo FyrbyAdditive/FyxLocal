@@ -58,15 +58,24 @@ public struct PersistedAppState: Codable, Sendable {
     /// state files; treated as "all built-ins enabled" when absent so the
     /// behaviour matches what existing chats have been getting.
     public var enabledTools: Set<String>?
+    /// Named system-prompt presets ("agents"). Optional/missing on older
+    /// state files; AppEnvironment seeds the built-in Default when absent
+    /// so behaviour for pre-feature chats matches today.
+    public var agents: [Agent]?
+    /// Which agent newly-created chats start out using. Optional/missing
+    /// on older state files; resolves to `AgentID.defaultAgent` at runtime.
+    public var defaultAgentForNewChats: AgentID?
 
     public init(
-        version: Int = 3,
+        version: Int = 4,
         providers: [ProviderRecord],
         conversations: [Conversation],
         selectedConversationID: ConversationID?,
         promptLanguage: PromptLanguage,
         activeProviderID: ProviderID? = nil,
-        enabledTools: Set<String>? = nil
+        enabledTools: Set<String>? = nil,
+        agents: [Agent]? = nil,
+        defaultAgentForNewChats: AgentID? = nil
     ) {
         self.version = version
         self.providers = providers
@@ -75,5 +84,7 @@ public struct PersistedAppState: Codable, Sendable {
         self.promptLanguage = promptLanguage
         self.activeProviderID = activeProviderID
         self.enabledTools = enabledTools
+        self.agents = agents
+        self.defaultAgentForNewChats = defaultAgentForNewChats
     }
 }

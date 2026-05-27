@@ -4,6 +4,10 @@ public struct ChatSettings: Codable, Sendable, Hashable {
     public var model: String
     public var providerID: ProviderID
     public var systemPrompt: String?
+    /// Which agent (named system-prompt preset) this chat uses. nil resolves
+    /// to the global default; `AgentID.defaultAgent` pins to the built-in
+    /// preamble. See `AppEnvironment.resolveAgent(for:)`.
+    public var agentID: AgentID?
     public var temperature: Double?
     public var topP: Double?
     public var maxOutputTokens: Int?
@@ -30,11 +34,13 @@ public struct ChatSettings: Codable, Sendable, Hashable {
         enabledMCPServers: Set<MCPServerID> = [],
         attachedCollections: Set<CollectionID> = [],
         enabledServerTools: Set<ServerSideTool> = [],
-        responseStorageMode: ResponseStorageMode = .serverStored
+        responseStorageMode: ResponseStorageMode = .serverStored,
+        agentID: AgentID? = nil
     ) {
         self.model = model
         self.providerID = providerID
         self.systemPrompt = systemPrompt
+        self.agentID = agentID
         self.temperature = temperature
         self.topP = topP
         self.maxOutputTokens = maxOutputTokens

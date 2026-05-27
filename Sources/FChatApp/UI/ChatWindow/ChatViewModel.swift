@@ -111,10 +111,17 @@ final class ChatViewModel {
     }
 
     private func composeInstructions(language: PromptLanguage) -> String {
+        // Resolve the chat's agent (falls back to Default when nil or
+        // pointing at a deleted agent). The agent's basePrompt — if any —
+        // replaces the F-Chat preamble; tool / RAG guidance is still
+        // auto-appended below so custom agents keep working with tools
+        // and attached collections.
+        let agentBase = environment?.resolveAgent(for: conversation).basePrompt
         let prompt = LocalizedSystemPrompt(
             language: language,
             includeToolGuidance: true,
-            includeRAGGuidance: !conversation.settings.attachedCollections.isEmpty
+            includeRAGGuidance: !conversation.settings.attachedCollections.isEmpty,
+            basePromptOverride: agentBase
         )
         // No temporal context here: a fresh ISO timestamp in the system
         // prompt invalidates vLLM's prefix cache on every send. The date

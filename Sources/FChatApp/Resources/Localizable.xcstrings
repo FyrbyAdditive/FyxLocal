@@ -53,6 +53,23 @@
         }
       }
     },
+    "%lld chats will fall back to the Default agent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld chats will fall back to the Default agent."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld chattar återgår till standardagenten."
+          }
+        }
+      }
+    },
     "%lld models · %@": {
       "extractionState": "manual",
       "localizations": {
@@ -138,6 +155,23 @@
         }
       }
     },
+    "Add agent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add agent"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lägg till agent"
+          }
+        }
+      }
+    },
     "Add provider": {
       "extractionState": "manual",
       "localizations": {
@@ -168,6 +202,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lägg till stdio MCP-servrar här. HTTP-transport kommer i ett senare steg."
+          }
+        }
+      }
+    },
+    "Agent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent"
+          }
+        }
+      }
+    },
+    "Agent name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent name"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agentnamn"
+          }
+        }
+      }
+    },
+    "Agents": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agenter"
           }
         }
       }
@@ -270,6 +355,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inbyggda verktyg"
+          }
+        }
+      }
+    },
+    "Built-in. Uses F-Chat's localised default preamble.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in. Uses F-Chat's localised default preamble."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbyggd. Använder F-Chats lokaliserade standardinledning."
           }
         }
       }
@@ -631,6 +733,23 @@
         }
       }
     },
+    "Default agent for new chats": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default agent for new chats"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standardagent för nya chattar"
+          }
+        }
+      }
+    },
     "Default model": {
       "extractionState": "manual",
       "localizations": {
@@ -661,6 +780,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Radera"
+          }
+        }
+      }
+    },
+    "Delete agent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete agent"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radera agent"
+          }
+        }
+      }
+    },
+    "Delete agent \"%@\"?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete agent \"%@\"?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radera agenten \"%@\"?"
           }
         }
       }
@@ -1821,6 +1974,23 @@
         }
       }
     },
+    "Set the default for new chats in Settings → Agents.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the default for new chats in Settings → Agents."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ställ in standardvärdet för nya chattar under Inställningar → Agenter."
+          }
+        }
+      }
+    },
     "Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -1851,6 +2021,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Starta en konversation"
+          }
+        }
+      }
+    },
+    "System prompt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System prompt"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemprompt"
           }
         }
       }
@@ -1906,6 +2093,23 @@
         }
       }
     },
+    "This agent isn't used by any chat.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This agent isn't used by any chat."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denna agent används inte av någon chatt."
+          }
+        }
+      }
+    },
     "This conversation will be removed permanently. This cannot be undone.": {
       "extractionState": "manual",
       "localizations": {
@@ -1919,6 +2123,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Denna konversation tas bort permanent. Detta kan inte ångras."
+          }
+        }
+      }
+    },
+    "This picks the agent any newly-created chat starts with. Individual chats can override in the Inspector.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This picks the agent any newly-created chat starts with. Individual chats can override in the Inspector."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detta väljer agenten som varje ny chatt börjar med. Enskilda chattar kan åsidosätta i Inspektören."
           }
         }
       }
@@ -2008,6 +2229,23 @@
         }
       }
     },
+    "Untitled agent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled agent"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Namnlös agent"
+          }
+        }
+      }
+    },
     "Updated": {
       "extractionState": "manual",
       "localizations": {
@@ -2038,6 +2276,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Används för varje chatt som pratar med denna leverantör."
+          }
+        }
+      }
+    },
+    "Uses F-Chat's built-in preamble.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses F-Chat's built-in preamble."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Använder F-Chats inbyggda inledning."
           }
         }
       }

@@ -8,6 +8,8 @@ struct SettingsView: View {
         TabView {
             ProvidersTab(environment: environment)
                 .tabItem { Label("Providers", systemImage: "antenna.radiowaves.left.and.right") }
+            AgentsTab(environment: environment)
+                .tabItem { Label("Agents", systemImage: "person.crop.circle") }
             ToolsTab(environment: environment)
                 .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
             MCPTab()
