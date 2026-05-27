@@ -65,6 +65,10 @@ public struct PersistedAppState: Codable, Sendable {
     /// Which agent newly-created chats start out using. Optional/missing
     /// on older state files; resolves to `AgentID.defaultAgent` at runtime.
     public var defaultAgentForNewChats: AgentID?
+    /// User-configured MCP servers. Optional/missing on older state files;
+    /// resolves to an empty list at runtime. Per-server `enabled` flag
+    /// gates whether the registry connects to it on first use.
+    public var mcpServers: [MCPServerRecord]?
 
     public init(
         version: Int = 4,
@@ -75,7 +79,8 @@ public struct PersistedAppState: Codable, Sendable {
         activeProviderID: ProviderID? = nil,
         enabledTools: Set<String>? = nil,
         agents: [Agent]? = nil,
-        defaultAgentForNewChats: AgentID? = nil
+        defaultAgentForNewChats: AgentID? = nil,
+        mcpServers: [MCPServerRecord]? = nil
     ) {
         self.version = version
         self.providers = providers
@@ -86,5 +91,6 @@ public struct PersistedAppState: Codable, Sendable {
         self.enabledTools = enabledTools
         self.agents = agents
         self.defaultAgentForNewChats = defaultAgentForNewChats
+        self.mcpServers = mcpServers
     }
 }

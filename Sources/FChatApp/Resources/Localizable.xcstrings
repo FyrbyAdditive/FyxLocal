@@ -138,6 +138,23 @@
         }
       }
     },
+    "Add MCP server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add MCP server"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lägg till MCP-server"
+          }
+        }
+      }
+    },
     "Add agent": {
       "extractionState": "manual",
       "localizations": {
@@ -168,6 +185,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lägg till leverantör"
+          }
+        }
+      }
+    },
+    "Add server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add server"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lägg till server"
           }
         }
       }
@@ -270,6 +304,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Argument"
+          }
+        }
+      }
+    },
+    "Arguments (comma-separated)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arguments (comma-separated)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Argument (kommaseparerade)"
           }
         }
       }
@@ -512,6 +563,40 @@
         }
       }
     },
+    "Command": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kommando"
+          }
+        }
+      }
+    },
+    "Command (e.g. npx)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command (e.g. npx)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kommando (t.ex. npx)"
+          }
+        }
+      }
+    },
     "Compact now": {
       "extractionState": "manual",
       "localizations": {
@@ -542,6 +627,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Komprimerar kontext…"
+          }
+        }
+      }
+    },
+    "Connecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting…"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ansluter…"
           }
         }
       }
@@ -801,6 +903,40 @@
         }
       }
     },
+    "Delete server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete server"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radera server"
+          }
+        }
+      }
+    },
+    "Delete server \"%@\"?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete server \"%@\"?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radera servern \"%@\"?"
+          }
+        }
+      }
+    },
     "Disabled tools are not advertised to the model and cannot be invoked.": {
       "extractionState": "manual",
       "localizations": {
@@ -814,6 +950,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inaktiverade verktyg presenteras inte för modellen och kan inte anropas."
+          }
+        }
+      }
+    },
+    "Disconnected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnected"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frånkopplad"
           }
         }
       }
@@ -903,6 +1056,23 @@
         }
       }
     },
+    "Each enabled server's tools are advertised to every chat. Servers connect on first use this session.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each enabled server's tools are advertised to every chat. Servers connect on first use this session."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verktygen från varje aktiverad server är tillgängliga i alla chattar. Servrar ansluter vid första användning denna session."
+          }
+        }
+      }
+    },
     "Enter a full URL including scheme.": {
       "extractionState": "manual",
       "localizations": {
@@ -916,6 +1086,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ange en fullständig URL inklusive schema."
+          }
+        }
+      }
+    },
+    "Environment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Environment"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miljövariabler"
           }
         }
       }
@@ -954,6 +1141,23 @@
         }
       }
     },
+    "HTTP": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP"
+          }
+        }
+      }
+    },
     "Hard cap (tokens)": {
       "extractionState": "manual",
       "localizations": {
@@ -967,6 +1171,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hård gräns (tokens)"
+          }
+        }
+      }
+    },
+    "Headers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Headers"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Headers"
           }
         }
       }
@@ -1001,6 +1222,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inspektor"
+          }
+        }
+      }
+    },
+    "Its tools will no longer be available to any chat until you re-add it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its tools will no longer be available to any chat until you re-add it."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dess verktyg kommer inte längre vara tillgängliga i någon chatt förrän du lägger till den igen."
           }
         }
       }
@@ -1209,6 +1447,23 @@
         }
       }
     },
+    "Model Context Protocol servers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model Context Protocol servers"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model Context Protocol-servrar"
+          }
+        }
+      }
+    },
     "Name": {
       "extractionState": "manual",
       "localizations": {
@@ -1307,6 +1562,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prognos för nästa skick"
+          }
+        }
+      }
+    },
+    "No MCP servers yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No MCP servers yet"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inga MCP-servrar än"
           }
         }
       }
@@ -1596,6 +1868,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leverantörer"
+          }
+        }
+      }
+    },
+    "Ready · %lld tools": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready · %lld tools"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klar · %lld verktyg"
           }
         }
       }
@@ -1974,6 +2263,23 @@
         }
       }
     },
+    "Stdio (subprocess)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stdio (subprocess)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stdio (delprocess)"
+          }
+        }
+      }
+    },
     "System prompt": {
       "extractionState": "manual",
       "localizations": {
@@ -2021,6 +2327,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Testa anslutning / hämta modeller"
+          }
+        }
+      }
+    },
+    "Test connection / refresh tools": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test connection / refresh tools"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testa anslutning / uppdatera verktyg"
           }
         }
       }
@@ -2161,6 +2484,23 @@
         }
       }
     },
+    "Transport": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transport"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transport"
+          }
+        }
+      }
+    },
     "Type below to begin.": {
       "extractionState": "manual",
       "localizations": {
@@ -2178,6 +2518,40 @@
         }
       }
     },
+    "URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        }
+      }
+    },
+    "URL (e.g. https://host/mcp)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL (e.g. https://host/mcp)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL (t.ex. https://värd/mcp)"
+          }
+        }
+      }
+    },
     "Untitled agent": {
       "extractionState": "manual",
       "localizations": {
@@ -2191,6 +2565,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Namnlös agent"
+          }
+        }
+      }
+    },
+    "Untitled server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled server"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Namnlös server"
           }
         }
       }
@@ -2331,6 +2722,23 @@
         }
       }
     },
+    "Working directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working directory"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbetskatalog"
+          }
+        }
+      }
+    },
     "Your message is %@ tokens — larger than this provider's %@-token window. Save it as a RAG document instead (coming soon).": {
       "extractionState": "manual",
       "localizations": {
@@ -2361,6 +2769,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "budget"
+          }
+        }
+      }
+    },
+    "comma-separated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "comma-separated"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kommaseparerade"
+          }
+        }
+      }
+    },
+    "optional": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "optional"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "valfritt"
           }
         }
       }

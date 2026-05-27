@@ -67,6 +67,17 @@ final class AppEnvironment {
     var defaultAgentForNewChats: AgentID? {
         didSet { scheduleSave() }
     }
+    /// User-configured MCP servers. Per-record `enabled` gates whether
+    /// the registry will connect to it; the connection itself is lazy
+    /// (triggered by the first chat send after launch via
+    /// `mcpRegistry.ensureLoaded(servers:)`).
+    var mcpServers: [MCPServerRecord] {
+        didSet { scheduleSave() }
+    }
+    /// Session-scoped MCP connections + their registered tool adapters.
+    /// Constructed once in `init`, idempotent `ensureLoaded` walks the
+    /// `mcpServers` list on first chat send.
+    let mcpRegistry: MCPRegistry
     var sidebarSelection: SidebarSelection?
 
     /// Global on-by-default tool toggles surfaced in Settings → Tools.
@@ -139,6 +150,7 @@ final class AppEnvironment {
             self.enabledTools = snapshot.enabledTools ?? AppEnvironment.defaultEnabledTools
             self.agents = AppEnvironment.ensureDefaultAgent(in: snapshot.agents ?? [])
             self.defaultAgentForNewChats = snapshot.defaultAgentForNewChats
+            self.mcpServers = snapshot.mcpServers ?? []
         } else {
             self.providerRecords = AppEnvironment.defaultProviders()
             self.conversations = []
@@ -148,7 +160,12 @@ final class AppEnvironment {
             self.enabledTools = AppEnvironment.defaultEnabledTools
             self.agents = AppEnvironment.ensureDefaultAgent(in: [])
             self.defaultAgentForNewChats = nil
+            self.mcpServers = []
         }
+        // Session-scoped registry; lazy-connects via ensureLoaded on
+        // first chat send. Holding the toolRegistry lets it
+        // dynamically register/unregister MCPToolAdapter instances.
+        self.mcpRegistry = MCPRegistry(toolRegistry: self.toolRegistry)
         // Resolve the active provider id if it's stale (deleted) or missing.
         if let active = self.activeProviderID, !self.providerRecords.contains(where: { $0.id == active }) {
             self.activeProviderID = self.providerRecords.first?.id
@@ -184,7 +201,8 @@ final class AppEnvironment {
             activeProviderID: activeProviderID,
             enabledTools: enabledTools,
             agents: agents,
-            defaultAgentForNewChats: defaultAgentForNewChats
+            defaultAgentForNewChats: defaultAgentForNewChats,
+            mcpServers: mcpServers
         )
         // Encode + atomic write off MainActor. At 70k+ tokens the encode
         // alone is hundreds of ms — running it on MainActor blocked the UI
@@ -403,6 +421,55 @@ final class AppEnvironment {
     /// confirmation copy ("N chats will fall back to Default").
     func chatCountUsingAgent(_ id: AgentID) -> Int {
         conversations.reduce(0) { $0 + ((($1.settings.agentID ?? .defaultAgent) == id) ? 1 : 0) }
+    }
+
+    // MARK: - MCP servers
+
+    @discardableResult
+    func addMCPServer(displayName: String, transport: MCPTransportConfig) -> MCPServerRecord {
+        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let record = MCPServerRecord(
+            id: MCPServerID(rawValue: UUID().uuidString),
+            displayName: trimmed.isEmpty ? String(localized: "Untitled server", bundle: .module) : trimmed,
+            transport: transport,
+            enabled: true
+        )
+        mcpServers.append(record)
+        // If a chat has already triggered an ensureLoaded this session
+        // we'd otherwise skip the new server until next launch. Connect
+        // it eagerly so adding a server in Settings "just works".
+        if record.enabled {
+            Task { await mcpRegistry.connect(record) }
+        }
+        return record
+    }
+
+    func updateMCPServer(_ updated: MCPServerRecord) {
+        guard let i = mcpServers.firstIndex(where: { $0.id == updated.id }) else { return }
+        let previous = mcpServers[i]
+        mcpServers[i] = updated
+        // Config changed? Force a reconnect so the running client
+        // doesn't carry stale subprocess / URL state.
+        if previous.transport != updated.transport || previous.enabled != updated.enabled {
+            Task { await mcpRegistry.reconnect(updated) }
+        }
+    }
+
+    func setMCPServerEnabled(_ id: MCPServerID, enabled: Bool) {
+        guard let i = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        guard mcpServers[i].enabled != enabled else { return }
+        mcpServers[i].enabled = enabled
+        let record = mcpServers[i]
+        if enabled {
+            Task { await mcpRegistry.connect(record) }
+        } else {
+            Task { await mcpRegistry.disconnect(id) }
+        }
+    }
+
+    func removeMCPServer(_ id: MCPServerID) {
+        mcpServers.removeAll { $0.id == id }
+        Task { await mcpRegistry.disconnect(id) }
     }
 
     func newConversation(title: String) {

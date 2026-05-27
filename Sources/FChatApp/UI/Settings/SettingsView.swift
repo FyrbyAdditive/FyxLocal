@@ -15,7 +15,7 @@ struct SettingsView: View {
                 .tabItem { Label("Agents", systemImage: "person.crop.circle") }
             ToolsTab(environment: environment)
                 .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
-            MCPTab()
+            MCPTab(environment: environment)
                 .tabItem { Label("MCP", systemImage: "network") }
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
@@ -442,18 +442,6 @@ private struct ToolToggleRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-}
-
-private struct MCPTab: View {
-    var body: some View {
-        Form {
-            Section("MCP servers") {
-                Text("Add stdio MCP servers here. HTTP transport coming in a follow-up.")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .formStyle(.grouped)
     }
 }
 

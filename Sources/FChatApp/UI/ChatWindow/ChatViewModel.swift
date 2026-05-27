@@ -97,7 +97,14 @@ final class ChatViewModel {
         let cache = self.tokenCountCache
         Task.detached(priority: .userInitiated) { [weak self] in
             let allDefs = await registry.definitions(for: language)
-            let toolDefs = allDefs.filter { enabledToolNames.contains($0.name) }
+            // MCP-discovered tools (`mcp__<server>__<tool>`) are admitted
+            // unconditionally; the global Settings → Tools page surfaces
+            // only built-ins. Whether a particular MCP server's tools
+            // are present at all is gated upstream by whether the
+            // server is enabled in Settings → MCP.
+            let toolDefs = allDefs.filter { def in
+                enabledToolNames.contains(def.name) || def.name.hasPrefix("mcp__")
+            }
             let projection = builder.project(
                 conversation: conversationSnapshot,
                 draftUserText: draftSnapshot,
@@ -199,12 +206,23 @@ final class ChatViewModel {
         firstDeltaAt = nil
         let enabledTools = environment.enabledTools
             .union(AppEnvironment.alwaysAvailableTools)
+        // Lazy-connect configured MCP servers on the first send of the
+        // session so their tools land in the registry before we read it.
+        // The MCPRegistry tracks loaded-once internally; subsequent
+        // sends are a single guard check.
+        let mcpRegistry = environment.mcpRegistry
+        let mcpServers = environment.mcpServers
         streamTask = Task { [weak self, assistantIndex] in
             guard let self else { return }
+            await mcpRegistry.ensureLoaded(servers: mcpServers)
             await ChatTaskContext.$attachedCollections.withValue(attachedCollections) {
                 do {
                     let allDefinitions = await registry.definitions(for: promptLanguage)
-                    let toolDefinitions = allDefinitions.filter { enabledTools.contains($0.name) }
+                    // MCP tools admitted unconditionally; built-ins gated
+                    // by the Settings → Tools toggles via enabledTools.
+                    let toolDefinitions = allDefinitions.filter { def in
+                        enabledTools.contains(def.name) || def.name.hasPrefix("mcp__")
+                    }
 
                     let request = try await self.buildRequestWithCompactIfNeeded(
                         providerRecord: providerRecord,
