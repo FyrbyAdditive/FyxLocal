@@ -119,9 +119,6 @@ struct CollectionsView: View {
                                     Text(collection.name)
                                         .font(.body)
                                 }
-                                Text("\(collection.embedder.rawValue) · \(collection.dim)d")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
                             }
                             .tag(collection.id)
                             .contextMenu {
@@ -599,7 +596,7 @@ private struct NewCollectionSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("New collection").font(.title3.bold())
-            Text("Documents are embedded on-device with Qwen3-Embedding-4B running on Apple Silicon (MLX). The model is bundled with the app — no network access required.")
+            Text("Documents are embedded on-device. No network access required.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField("Name", text: $name)

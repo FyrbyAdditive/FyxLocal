@@ -36,23 +36,6 @@
         }
       }
     },
-    "%@ · %lldd": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lldd"
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lldd"
-          }
-        }
-      }
-    },
     "%lld chats will fall back to the Default agent.": {
       "extractionState": "manual",
       "localizations": {
@@ -869,19 +852,19 @@
         }
       }
     },
-    "Documents are embedded on-device with Qwen3-Embedding-4B running on Apple Silicon (MLX). The model is bundled with the app — no network access required.": {
+    "Documents are embedded on-device. No network access required.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Documents are embedded on-device with Qwen3-Embedding-4B running on Apple Silicon (MLX). The model is bundled with the app — no network access required."
+            "value": "Documents are embedded on-device. No network access required."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dokument bäddas in lokalt på enheten med Qwen3-Embedding-4B som körs på Apple Silicon (MLX). Modellen är paketerad med appen — ingen nätverksåtkomst krävs."
+            "value": "Dokument bäddas in lokalt på enheten. Ingen nätverksåtkomst krävs."
           }
         }
       }

@@ -22,14 +22,7 @@ struct CollectionsAttachSection: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 ForEach(collections) { collection in
-                    Toggle(isOn: toggleBinding(for: collection.id)) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(collection.name)
-                            Text("\(collection.embedder.rawValue) · \(collection.dim)d")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                    Toggle(collection.name, isOn: toggleBinding(for: collection.id))
                 }
             }
         }
