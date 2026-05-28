@@ -42,7 +42,7 @@ Icon?
 .env
 .env.local
 *.local.json
-secrets/
+/secrets/
 
 # Coverage
 coverage/

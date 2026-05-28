@@ -118,6 +118,17 @@ cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
     <string>0.4.0</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>app.fyrby.fchat.oauth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>fchat</string>
+            </array>
+        </dict>
+    </array>
     <key>CFBundleVersion</key>
     <string>0.4.0</string>
     <key>LSApplicationCategoryType</key>

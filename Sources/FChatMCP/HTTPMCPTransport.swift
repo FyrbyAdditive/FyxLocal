@@ -25,10 +25,24 @@ public actor HTTPMCPTransport: MCPTransport {
     private var inboundContinuation: AsyncThrowingStream<JSONRPCFrame, Error>.Continuation?
     private let inboundStream: AsyncThrowingStream<JSONRPCFrame, Error>
     private var closed = false
+    /// Optional callback supplied by the registry when this transport is
+    /// gated by OAuth. Returns a fresh "Bearer <token>" string the
+    /// transport should use as the Authorization header. Called on 401
+    /// to drive a transparent refresh + retry.
+    public typealias AuthorizationRefresher = @Sendable () async throws -> String
+    private var authorizationRefresher: AuthorizationRefresher?
+    /// Cached Authorization header value, replaced on every successful
+    /// refresh. Takes precedence over any "Authorization" key in
+    /// `extraHeaders`.
+    private var currentAuthorization: String?
 
     public init(url: URL, extraHeaders: [String: String] = [:], session: URLSession? = nil) {
         self.url = url
         self.extraHeaders = extraHeaders
+        // If the caller pre-set an Authorization header, treat it as
+        // the initial "current" token so OAuth refresh paths see the
+        // bearer token immediately.
+        self.currentAuthorization = extraHeaders["Authorization"]
         if let session {
             self.session = session
         } else {
@@ -47,10 +61,36 @@ public actor HTTPMCPTransport: MCPTransport {
         self.inboundContinuation = c
     }
 
+    /// Install a refresh callback. When `send()` receives an HTTP 401
+    /// and a callback is set, the callback is invoked, the returned
+    /// Authorization value replaces the cached one, and the request is
+    /// retried exactly once.
+    public func setAuthorizationRefresher(_ block: @escaping AuthorizationRefresher) {
+        self.authorizationRefresher = block
+    }
+
     public func send(_ frame: JSONRPCFrame) async throws {
         guard !closed else { throw MCPTransportError.closed }
 
         let bodyData = try JSONRPCCodec.encode(frame)
+        do {
+            try await sendOnce(bodyData: bodyData)
+        } catch MCPTransportError.ioError(let message) where message.hasPrefix("HTTP 401") {
+            // Auth-refresh + single retry path. If the refresher fires
+            // successfully but the second attempt also 401s, bubble it
+            // up — we don't loop.
+            guard let refresher = authorizationRefresher else { throw MCPTransportError.ioError(message) }
+            let fresh: String
+            do { fresh = try await refresher() }
+            catch { throw MCPTransportError.ioError("auth refresh failed: \(error)") }
+            currentAuthorization = fresh
+            try await sendOnce(bodyData: bodyData)
+        }
+    }
+
+    /// Single-attempt POST; does not retry on auth failure. The retry
+    /// loop lives in `send`.
+    private func sendOnce(bodyData: Data) async throws {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = bodyData
@@ -58,7 +98,12 @@ public actor HTTPMCPTransport: MCPTransport {
         // Servers advertise SSE via this Accept header — clients that ask
         // for both get the streaming response when the server prefers it.
         request.setValue("application/json, text/event-stream", forHTTPHeaderField: "Accept")
-        for (k, v) in extraHeaders { request.setValue(v, forHTTPHeaderField: k) }
+        for (k, v) in extraHeaders where k.lowercased() != "authorization" {
+            request.setValue(v, forHTTPHeaderField: k)
+        }
+        if let auth = currentAuthorization {
+            request.setValue(auth, forHTTPHeaderField: "Authorization")
+        }
         if let id = mcpSessionID {
             request.setValue(id, forHTTPHeaderField: "Mcp-Session-Id")
         }

@@ -150,6 +150,10 @@ private struct MCPServerCard: View {
 private struct MCPServerForm: View {
     @Binding var record: MCPServerRecord
     @Bindable var environment: AppEnvironment
+    /// Cached "is there an access token in the Keychain for this
+    /// server" lookup — drives the Sign in vs Re-authenticate label
+    /// and the Sign out button's enabled state.
+    @State fileprivate var hasAccessToken: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -280,30 +284,112 @@ private struct MCPServerForm: View {
                 ))
                 .textFieldStyle(.roundedBorder)
             }
-            LabeledContent("Headers") {
-                // Same KEY=VALUE-per-line shape. Set `Authorization` here
-                // when a server requires bearer-token auth — OAuth flow
-                // is deliberately not implemented in this pass.
-                TextEditor(text: Binding(
-                    get: { config.headers.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: "\n") },
-                    set: { newVal in
-                        var headers: [String: String] = [:]
-                        for line in newVal.split(separator: "\n") {
-                            if let eq = line.firstIndex(of: "=") {
-                                let key = String(line[..<eq]).trimmingCharacters(in: .whitespaces)
-                                let value = String(line[line.index(after: eq)...]).trimmingCharacters(in: .whitespaces)
-                                if !key.isEmpty { headers[key] = value }
+
+            Toggle("Use OAuth", isOn: Binding(
+                get: { config.useOAuth },
+                set: { newVal in
+                    config.useOAuth = newVal
+                    record.transport = .http(config)
+                }
+            ))
+
+            if config.useOAuth {
+                oauthFields(config: config)
+            } else {
+                LabeledContent("Headers") {
+                    // KEY=VALUE per line. Set `Authorization` here for
+                    // bearer-token auth (the lightweight path); for full
+                    // OAuth 2.1 flip the toggle above.
+                    TextEditor(text: Binding(
+                        get: { config.headers.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: "\n") },
+                        set: { newVal in
+                            var headers: [String: String] = [:]
+                            for line in newVal.split(separator: "\n") {
+                                if let eq = line.firstIndex(of: "=") {
+                                    let key = String(line[..<eq]).trimmingCharacters(in: .whitespaces)
+                                    let value = String(line[line.index(after: eq)...]).trimmingCharacters(in: .whitespaces)
+                                    if !key.isEmpty { headers[key] = value }
+                                }
                             }
+                            config.headers = headers
+                            record.transport = .http(config)
                         }
-                        config.headers = headers
-                        record.transport = .http(config)
-                    }
-                ))
-                .font(.body.monospaced())
-                .frame(minHeight: 60)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.secondary.opacity(0.3), lineWidth: 1))
+                    ))
+                    .font(.body.monospaced())
+                    .frame(minHeight: 60)
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.secondary.opacity(0.3), lineWidth: 1))
+                }
             }
         }
+    }
+
+    @ViewBuilder
+    private func oauthFields(config: MCPTransportConfig.HTTPConfig) -> some View {
+        LabeledContent("Authorization server (optional)") {
+            TextField("auto-discover from MCP server", text: Binding(
+                get: { config.oauthAuthorizationServerURL?.absoluteString ?? "" },
+                set: { newVal in
+                    var c = config
+                    c.oauthAuthorizationServerURL = URL(string: newVal)
+                    record.transport = .http(c)
+                }
+            ))
+            .textFieldStyle(.roundedBorder)
+        }
+
+        LabeledContent("Client ID (optional)") {
+            TextField("blank to auto-register", text: Binding(
+                get: { config.oauthClientID ?? "" },
+                set: { newVal in
+                    var c = config
+                    c.oauthClientID = newVal.isEmpty ? nil : newVal
+                    record.transport = .http(c)
+                }
+            ))
+            .textFieldStyle(.roundedBorder)
+        }
+
+        LabeledContent("Scopes (optional)") {
+            TextField("space-separated", text: Binding(
+                get: { config.oauthScopes ?? "" },
+                set: { newVal in
+                    var c = config
+                    c.oauthScopes = newVal.isEmpty ? nil : newVal
+                    record.transport = .http(c)
+                }
+            ))
+            .textFieldStyle(.roundedBorder)
+        }
+
+        HStack {
+            Button {
+                Task {
+                    try? await environment.signInToMCPServer(record.id)
+                    await refreshSignInState()
+                }
+            } label: {
+                Label(hasAccessToken ? "Re-authenticate" : "Sign in", systemImage: "key")
+            }
+
+            Button(role: .destructive) {
+                Task {
+                    await environment.signOutOfMCPServer(record.id)
+                    await refreshSignInState()
+                }
+            } label: {
+                Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+            }
+            .disabled(!hasAccessToken)
+
+            Spacer()
+        }
+        .task(id: record.id) {
+            await refreshSignInState()
+        }
+    }
+
+    private func refreshSignInState() async {
+        hasAccessToken = await environment.oauthCoordinator.hasStoredAccessToken(for: record.id)
     }
 }
 

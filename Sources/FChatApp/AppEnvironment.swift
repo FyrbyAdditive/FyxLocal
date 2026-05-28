@@ -78,6 +78,10 @@ final class AppEnvironment {
     /// Constructed once in `init`, idempotent `ensureLoaded` walks the
     /// `mcpServers` list on first chat send.
     let mcpRegistry: MCPRegistry
+    /// OAuth coordinator surfaced on AppEnvironment so the Settings UI
+    /// can drive sign-in / sign-out for HTTP MCP servers without
+    /// reaching into the registry.
+    let oauthCoordinator: OAuthCoordinator
     var sidebarSelection: SidebarSelection?
 
     /// Global on-by-default tool toggles surfaced in Settings → Tools.
@@ -162,10 +166,16 @@ final class AppEnvironment {
             self.defaultAgentForNewChats = nil
             self.mcpServers = []
         }
+        // OAuth coordinator owns interactive sign-in + token refresh
+        // for HTTP MCP servers with `useOAuth = true`. Passed into the
+        // registry so its .http connect path can mint Authorization
+        // bearer tokens before constructing the transport.
+        let oauth = OAuthCoordinator(secretStore: self.secretStore)
+        self.oauthCoordinator = oauth
         // Session-scoped registry; lazy-connects via ensureLoaded on
         // first chat send. Holding the toolRegistry lets it
         // dynamically register/unregister MCPToolAdapter instances.
-        self.mcpRegistry = MCPRegistry(toolRegistry: self.toolRegistry)
+        self.mcpRegistry = MCPRegistry(toolRegistry: self.toolRegistry, oauthCoordinator: oauth)
         // Resolve the active provider id if it's stale (deleted) or missing.
         if let active = self.activeProviderID, !self.providerRecords.contains(where: { $0.id == active }) {
             self.activeProviderID = self.providerRecords.first?.id
@@ -469,7 +479,35 @@ final class AppEnvironment {
 
     func removeMCPServer(_ id: MCPServerID) {
         mcpServers.removeAll { $0.id == id }
-        Task { await mcpRegistry.disconnect(id) }
+        Task {
+            await mcpRegistry.disconnect(id)
+            // Drop any persisted OAuth state too — a re-add of the
+            // same id (unlikely; ids are UUIDs) wouldn't want to inherit
+            // stale tokens.
+            await oauthCoordinator.clearTokens(for: id)
+        }
+    }
+
+    /// Trigger interactive OAuth sign-in for an HTTP MCP server. The
+    /// Settings UI calls this from the "Sign in" / "Re-authenticate"
+    /// button. On success, also reconnects the registry so tools land
+    /// without the user clicking Test connection separately.
+    func signInToMCPServer(_ id: MCPServerID) async throws {
+        guard let record = mcpServers.first(where: { $0.id == id }) else { return }
+        guard case .http(let httpConfig) = record.transport else { return }
+        try await oauthCoordinator.reauthorize(
+            serverID: id,
+            resource: httpConfig.url,
+            httpConfig: httpConfig
+        )
+        await mcpRegistry.connect(record)
+    }
+
+    /// Clear any persisted OAuth tokens for this server and disconnect
+    /// it. The card stays in the list; the user can sign in again later.
+    func signOutOfMCPServer(_ id: MCPServerID) async {
+        await mcpRegistry.disconnect(id)
+        await oauthCoordinator.clearTokens(for: id)
     }
 
     func newConversation(title: String) {

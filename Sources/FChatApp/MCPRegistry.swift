@@ -42,9 +42,13 @@ final class MCPRegistry {
     /// True after `ensureLoaded` has run once this session — subsequent
     /// calls return immediately so the chat send path stays O(1).
     private var loadedOnce: Bool = false
+    /// OAuth coordinator for HTTP servers with `useOAuth = true`.
+    /// Optional so test paths can construct a registry without one.
+    let oauthCoordinator: OAuthCoordinator?
 
-    init(toolRegistry: ToolRegistry) {
+    init(toolRegistry: ToolRegistry, oauthCoordinator: OAuthCoordinator? = nil) {
         self.toolRegistry = toolRegistry
+        self.oauthCoordinator = oauthCoordinator
     }
 
     /// Idempotent: walks the enabled-server list once per session and
@@ -91,10 +95,42 @@ final class MCPRegistry {
             }
             transport = stdio
         case .http(let config):
-            transport = HTTPMCPTransport(
+            var headers = config.headers
+            if config.useOAuth {
+                guard let coordinator = oauthCoordinator else {
+                    status[record.id] = .failed("OAuth requested but no coordinator configured")
+                    return
+                }
+                do {
+                    let token = try await coordinator.accessToken(
+                        for: record.id,
+                        resource: config.url,
+                        httpConfig: config
+                    )
+                    headers["Authorization"] = "Bearer \(token)"
+                } catch {
+                    status[record.id] = .failed(Self.describe(error))
+                    return
+                }
+            }
+            let http = HTTPMCPTransport(
                 url: config.url,
-                extraHeaders: config.headers
+                extraHeaders: headers
             )
+            if config.useOAuth, let coordinator = oauthCoordinator {
+                let serverID = record.id
+                let resource = config.url
+                let httpConfig = config
+                await http.setAuthorizationRefresher {
+                    let fresh = try await coordinator.accessToken(
+                        for: serverID,
+                        resource: resource,
+                        httpConfig: httpConfig
+                    )
+                    return "Bearer \(fresh)"
+                }
+            }
+            transport = http
         }
 
         let client = MCPClient(transport: transport)

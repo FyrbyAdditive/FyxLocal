@@ -325,6 +325,23 @@
         }
       }
     },
+    "Authorization server (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorization server (optional)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auktoriseringsserver (valfritt)"
+          }
+        }
+      }
+    },
     "Awaiting result…": {
       "extractionState": "manual",
       "localizations": {
@@ -508,6 +525,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rensa klara"
+          }
+        }
+      }
+    },
+    "Client ID (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Client ID (optional)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klient-ID (valfritt)"
           }
         }
       }
@@ -1872,6 +1906,23 @@
         }
       }
     },
+    "Re-authenticate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-authenticate"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logga in igen"
+          }
+        }
+      }
+    },
     "Ready · %lld tools": {
       "extractionState": "manual",
       "localizations": {
@@ -2127,6 +2178,23 @@
         }
       }
     },
+    "Scopes (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scopes (optional)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behörigheter (valfritt)"
+          }
+        }
+      }
+    },
     "Search the public web via DuckDuckGo. No API key required.": {
       "extractionState": "manual",
       "localizations": {
@@ -2242,6 +2310,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Visar F-Chats inbyggda inledning. Redigera för att åsidosätta."
+          }
+        }
+      }
+    },
+    "Sign in": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logga in"
+          }
+        }
+      }
+    },
+    "Sign out": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logga ut"
           }
         }
       }
@@ -2603,6 +2705,23 @@
         }
       }
     },
+    "Use OAuth": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use OAuth"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Använd OAuth"
+          }
+        }
+      }
+    },
     "Used for every chat that talks to this provider.": {
       "extractionState": "manual",
       "localizations": {
@@ -2756,6 +2875,40 @@
         }
       }
     },
+    "auto-discover from MCP server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "auto-discover from MCP server"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "automatisk identifiering från MCP-server"
+          }
+        }
+      }
+    },
+    "blank to auto-register": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "blank to auto-register"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lämna tom för auto-registrering"
+          }
+        }
+      }
+    },
     "budget": {
       "extractionState": "manual",
       "localizations": {
@@ -2854,6 +3007,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "servermax: %@"
+          }
+        }
+      }
+    },
+    "space-separated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "space-separated"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mellanslagsseparerade"
           }
         }
       }
