@@ -48,3 +48,12 @@ Icon?
 coverage/
 *.gcda
 *.gcno
+
+# Vendored relocatable CPython for skill code execution (fetched by scripts/fetch-python.sh)
+/vendor/
+
+# Dev sample skills for manual verification
+/sample-skills/
+
+# Claude Code session artifacts
+.claude/

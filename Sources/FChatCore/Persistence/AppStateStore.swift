@@ -69,6 +69,11 @@ public struct PersistedAppState: Codable, Sendable {
     /// resolves to an empty list at runtime. Per-server `enabled` flag
     /// gates whether the registry connects to it on first use.
     public var mcpServers: [MCPServerRecord]?
+    /// Installed Agent Skills (the global library). Optional/missing on older
+    /// state files; resolves to an empty list at runtime. The skills' bundled
+    /// files live on disk under the SkillStore directory keyed by id — only
+    /// the parsed metadata + instruction body persist here.
+    public var skills: [Skill]?
 
     public init(
         version: Int = 4,
@@ -80,7 +85,8 @@ public struct PersistedAppState: Codable, Sendable {
         enabledTools: Set<String>? = nil,
         agents: [Agent]? = nil,
         defaultAgentForNewChats: AgentID? = nil,
-        mcpServers: [MCPServerRecord]? = nil
+        mcpServers: [MCPServerRecord]? = nil,
+        skills: [Skill]? = nil
     ) {
         self.version = version
         self.providers = providers
@@ -92,5 +98,6 @@ public struct PersistedAppState: Codable, Sendable {
         self.agents = agents
         self.defaultAgentForNewChats = defaultAgentForNewChats
         self.mcpServers = mcpServers
+        self.skills = skills
     }
 }

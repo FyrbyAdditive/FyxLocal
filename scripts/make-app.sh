@@ -24,6 +24,9 @@ APP_DIR="$ROOT/build/F-Chat.app"
 echo "==> assemble-qwen3-model.sh"
 "$ROOT/scripts/assemble-qwen3-model.sh"
 
+echo "==> fetch-python.sh (vendored CPython for skill code execution)"
+"$ROOT/scripts/fetch-python.sh"
+
 echo "==> xcodebuild -scheme FChat -configuration $CONFIG"
 xcodebuild \
     -scheme FChat \
@@ -65,6 +68,18 @@ for bundle in "$PRODUCTS"/*.bundle; do
         cp -R "$bundle" "$APP_DIR/Contents/Resources/"
     fi
 done
+
+# Bundle the vendored relocatable CPython so Agent Skills' `.py` helpers run
+# via the sandboxed `run_code` tool regardless of whether the user's Mac has a
+# system python3. CodeSandbox resolves it at
+# Contents/Resources/python3/bin/python3.
+VENDORED_PY="$ROOT/vendor/python3"
+if [[ -x "$VENDORED_PY/bin/python3" ]]; then
+    echo "==> bundling vendored python3"
+    cp -R "$VENDORED_PY" "$APP_DIR/Contents/Resources/python3"
+else
+    echo "warning: vendored python3 not found at $VENDORED_PY; skills' python scripts won't run in the built app" >&2
+fi
 
 # Promote the FChatApp bundle's per-locale Localizable.strings to the app's
 # top-level Contents/Resources/<locale>.lproj/ so SwiftUI's default

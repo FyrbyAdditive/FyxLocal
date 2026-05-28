@@ -74,6 +74,15 @@ final class AppEnvironment {
     var mcpServers: [MCPServerRecord] {
         didSet { scheduleSave() }
     }
+    /// Installed Agent Skills (the global library). The bundled files live on
+    /// disk under `skillStore`; this list holds the parsed metadata + body and
+    /// is what persists to state.json.
+    var skills: [Skill] {
+        didSet { scheduleSave() }
+    }
+    /// On-disk storage for skill packages (unpack/import/create/delete) and the
+    /// working directories the code-execution sandbox runs in.
+    let skillStore: SkillStore
     /// Session-scoped MCP connections + their registered tool adapters.
     /// Constructed once in `init`, idempotent `ensureLoaded` walks the
     /// `mcpServers` list on first chat send.
@@ -144,6 +153,7 @@ final class AppEnvironment {
         self.webFetchCache = WebFetchCache()
         self.searchProvider = DuckDuckGoProvider()
         self.stateStore = AppStateStore()
+        self.skillStore = SkillStore()
         // Restore from disk if present; otherwise fall back to defaults.
         if let snapshot = self.stateStore.load() {
             self.providerRecords = snapshot.providers.isEmpty ? AppEnvironment.defaultProviders() : snapshot.providers
@@ -155,6 +165,7 @@ final class AppEnvironment {
             self.agents = AppEnvironment.ensureDefaultAgent(in: snapshot.agents ?? [])
             self.defaultAgentForNewChats = snapshot.defaultAgentForNewChats
             self.mcpServers = snapshot.mcpServers ?? []
+            self.skills = snapshot.skills ?? []
         } else {
             self.providerRecords = AppEnvironment.defaultProviders()
             self.conversations = []
@@ -165,6 +176,7 @@ final class AppEnvironment {
             self.agents = AppEnvironment.ensureDefaultAgent(in: [])
             self.defaultAgentForNewChats = nil
             self.mcpServers = []
+            self.skills = []
         }
         // OAuth coordinator owns interactive sign-in + token refresh
         // for HTTP MCP servers with `useOAuth = true`. Passed into the
@@ -216,7 +228,8 @@ final class AppEnvironment {
             enabledTools: enabledTools,
             agents: agents,
             defaultAgentForNewChats: defaultAgentForNewChats,
-            mcpServers: mcpServers
+            mcpServers: mcpServers,
+            skills: skills
         )
         // Encode + atomic write off MainActor. At 70k+ tokens the encode
         // alone is hundreds of ms — running it on MainActor blocked the UI
@@ -341,11 +354,21 @@ final class AppEnvironment {
         // the model toward producing visual output when the user just
         // wanted prose.
         let makeChart = MakeChartTool()
+        // run_code drives Agent Skills (progressive-disclosure level 3). A
+        // single shared instance reads the per-turn enabled-skill set from a
+        // TaskLocal (set by ChatViewModel.send), mirroring how rag_search
+        // routes to per-chat collections. It's admitted to a chat's tool list
+        // only when that chat has ≥1 enabled skill (see the projection /
+        // send filters in ChatViewModel).
+        let runCode = RunCodeTool(accessor: {
+            ChatTaskContext.enabledSkills.map { .init(name: $0.name, directory: $0.directory) }
+        })
         await toolRegistry.register(webSearch)
         await toolRegistry.register(webFetch)
         await toolRegistry.register(rag)
         await toolRegistry.register(currentTime)
         await toolRegistry.register(makeChart)
+        await toolRegistry.register(runCode)
     }
 
     static func defaultProviders() -> [ProviderRecord] {
@@ -550,6 +573,67 @@ final class AppEnvironment {
     /// the placeholder text in the Settings field.
     func hasMCPStaticAuthToken(_ id: MCPServerID) async -> Bool {
         ((try? await secretStore.secret(for: KeychainAccount.mcpStaticAuthToken(id))) ?? nil) != nil
+    }
+
+    // MARK: - Skills
+
+    /// The skills enabled for a given chat: the explicit per-chat selection
+    /// (`enabledSkills`) unioned with any library skills marked
+    /// `enabledByDefault`. Skills the chat explicitly references but that have
+    /// since been deleted are silently dropped.
+    func resolveEnabledSkills(for conversation: Conversation) -> [Skill] {
+        let selected = conversation.settings.enabledSkills
+        return skills.filter { selected.contains($0.id) || $0.enabledByDefault }
+    }
+
+    /// Import a skill from an unpacked folder or a `.zip` archive (chosen by
+    /// the file's extension). Throws a descriptive error the import UI surfaces.
+    @discardableResult
+    func importSkill(from url: URL) throws -> Skill {
+        let skill: Skill
+        if url.pathExtension.lowercased() == "zip" {
+            skill = try skillStore.importSkill(fromZip: url)
+        } else {
+            skill = try skillStore.importSkill(fromDirectory: url)
+        }
+        skills.append(skill)
+        return skill
+    }
+
+    @discardableResult
+    func createSkill(name: String, description: String, body: String) throws -> Skill {
+        let skill = try skillStore.createSkill(name: name, description: description, body: body)
+        skills.append(skill)
+        return skill
+    }
+
+    /// Update a skill's metadata. For user-created skills the on-disk SKILL.md
+    /// is rewritten so a later re-read stays consistent; imported skills keep
+    /// their original files (we only ever change the `enabledByDefault` flag on
+    /// those in practice).
+    func updateSkill(_ updated: Skill) {
+        guard let i = skills.firstIndex(where: { $0.id == updated.id }) else { return }
+        var copy = updated
+        copy.updatedAt = .now
+        skills[i] = copy
+        if copy.sourceKind == .userCreated {
+            try? skillStore.rewriteManifest(for: copy)
+        }
+    }
+
+    func deleteSkill(_ id: SkillID) {
+        skills.removeAll { $0.id == id }
+        skillStore.deleteSkill(id)
+        // Drop the now-dangling reference from every chat that had it enabled
+        // so the inspector toggle list and projection stay consistent.
+        for index in conversations.indices where conversations[index].settings.enabledSkills.contains(id) {
+            conversations[index].settings.enabledSkills.remove(id)
+        }
+    }
+
+    /// Count of chats currently enabling this skill — drives delete-confirm copy.
+    func chatCountUsingSkill(_ id: SkillID) -> Int {
+        conversations.reduce(0) { $0 + ($1.settings.enabledSkills.contains(id) ? 1 : 0) }
     }
 
     func newConversation(title: String) {

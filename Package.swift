@@ -52,6 +52,10 @@ let package = Package(
         ),
         .target(
             name: "FChatCore",
+            dependencies: [
+                // ZIP reader for importing `.zip`-packaged Agent Skills.
+                .product(name: "ZIPFoundation", package: "ZIPFoundation"),
+            ],
             resources: [
                 .copy("Tokenization/Resources/cl100k_base.tiktoken"),
                 .copy("Tokenization/Resources/o200k_base.tiktoken"),
@@ -120,7 +124,10 @@ let package = Package(
         ),
         .testTarget(
             name: "FChatCoreTests",
-            dependencies: ["FChatCore"]
+            dependencies: [
+                "FChatCore",
+                .product(name: "ZIPFoundation", package: "ZIPFoundation"),
+            ]
         ),
         .testTarget(
             name: "FChatProvidersTests",

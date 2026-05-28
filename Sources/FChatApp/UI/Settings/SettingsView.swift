@@ -15,6 +15,8 @@ struct SettingsView: View {
                 .tabItem { Label("Agents", systemImage: "person.crop.circle") }
             ToolsTab(environment: environment)
                 .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
+            SkillsTab(environment: environment)
+                .tabItem { Label("Skills", systemImage: "puzzlepiece.extension") }
             MCPTab(environment: environment)
                 .tabItem { Label("MCP", systemImage: "network") }
             AboutTab()

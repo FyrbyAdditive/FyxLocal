@@ -17,6 +17,26 @@ struct LocalizedSystemPromptTests {
         #expect(prompt.contains("svenska"))
     }
 
+    @Test func skillsSectionAppearsWhenSkillsPresent() {
+        let prompt = LocalizedSystemPrompt(
+            language: .english,
+            skills: [
+                .init(name: "pdf-tools", description: "Work with PDFs."),
+                .init(name: "charts", description: "Make charts."),
+            ]
+        ).render()
+        #expect(prompt.contains("pdf-tools"))
+        #expect(prompt.contains("Work with PDFs."))
+        #expect(prompt.contains("run_code"))
+        #expect(prompt.contains("SKILL.md"))
+    }
+
+    @Test func noSkillsSectionWhenEmpty() {
+        let prompt = LocalizedSystemPrompt(language: .english, skills: []).render()
+        #expect(!prompt.contains("run_code"))
+        #expect(!prompt.lowercased().contains("the following skills"))
+    }
+
     @Test func toolGuidanceTogglesSection() {
         let withTools = LocalizedSystemPrompt(language: .english, includeToolGuidance: true).render()
         let withoutTools = LocalizedSystemPrompt(language: .english, includeToolGuidance: false).render()

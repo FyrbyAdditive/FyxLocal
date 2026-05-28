@@ -19,19 +19,35 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
     /// default. Tool / RAG guidance is still auto-appended when their
     /// flags are set, so custom agents keep working with tools and RAG.
     public var basePromptOverride: String?
+    /// Agent Skills enabled for this chat. Each contributes a name +
+    /// description to a compact "Available skills" section — progressive
+    /// disclosure level 1. The model reads a skill's SKILL.md and runs its
+    /// bundled scripts via the `run_code` tool when a skill is relevant.
+    public var skills: [SkillSummary]
+
+    public struct SkillSummary: Sendable, Hashable {
+        public var name: String
+        public var description: String
+        public init(name: String, description: String) {
+            self.name = name
+            self.description = description
+        }
+    }
 
     public init(
         language: PromptLanguage = .english,
         includeToolGuidance: Bool = true,
         includeRAGGuidance: Bool = false,
         customSuffix: String? = nil,
-        basePromptOverride: String? = nil
+        basePromptOverride: String? = nil,
+        skills: [SkillSummary] = []
     ) {
         self.language = language
         self.includeToolGuidance = includeToolGuidance
         self.includeRAGGuidance = includeRAGGuidance
         self.customSuffix = customSuffix
         self.basePromptOverride = basePromptOverride
+        self.skills = skills
     }
 
     public func render() -> String {
@@ -43,6 +59,7 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
         }
         if includeToolGuidance { parts.append(Strings.toolGuidance(for: language)) }
         if includeRAGGuidance { parts.append(Strings.ragGuidance(for: language)) }
+        if !skills.isEmpty { parts.append(Strings.skillsGuidance(for: language, skills: skills)) }
         if let suffix = customSuffix, !suffix.isEmpty { parts.append(suffix) }
         return parts.joined(separator: "\n\n")
     }
@@ -89,6 +106,41 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
                 Du får använda de tillgängliga verktygen när de hjälper dig att svara. \
                 Föredra färre välformulerade anrop framför många små. Anropa inte ett \
                 verktyg om du redan vet svaret.
+                """
+            }
+        }
+
+        static func skillsGuidance(for language: PromptLanguage, skills: [SkillSummary]) -> String {
+            let bullets = skills
+                .map { "- \($0.name): \($0.description)" }
+                .joined(separator: "\n")
+            switch language {
+            case .english:
+                return """
+                The following skills are available to you. A skill is a folder \
+                of instructions and scripts you can use when its description \
+                matches the task:
+
+                \(bullets)
+
+                To use a skill, call the `run_code` tool with that skill's \
+                name. Start by reading its instructions (`cat SKILL.md`), then \
+                run its bundled scripts as the instructions direct. Only invoke \
+                a skill when its description is clearly relevant.
+                """
+            case .swedish:
+                return """
+                Följande färdigheter ("skills") är tillgängliga för dig. En \
+                färdighet är en mapp med instruktioner och skript som du kan \
+                använda när dess beskrivning matchar uppgiften:
+
+                \(bullets)
+
+                Använd en färdighet genom att anropa verktyget `run_code` med \
+                färdighetens namn. Börja med att läsa dess instruktioner \
+                (`cat SKILL.md`) och kör sedan de medföljande skripten enligt \
+                instruktionerna. Anropa endast en färdighet när dess beskrivning \
+                är tydligt relevant.
                 """
             }
         }

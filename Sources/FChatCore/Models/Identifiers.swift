@@ -35,6 +35,11 @@ public struct ChunkID: Hashable, Codable, Sendable, RawRepresentable {
     public init(rawValue: UUID = UUID()) { self.rawValue = rawValue }
 }
 
+public struct SkillID: Hashable, Codable, Sendable, RawRepresentable {
+    public let rawValue: UUID
+    public init(rawValue: UUID = UUID()) { self.rawValue = rawValue }
+}
+
 public struct AgentID: Hashable, Codable, Sendable, RawRepresentable {
     public let rawValue: UUID
     public init(rawValue: UUID = UUID()) { self.rawValue = rawValue }

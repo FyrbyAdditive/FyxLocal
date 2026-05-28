@@ -19,6 +19,12 @@ public struct ChatSettings: Codable, Sendable, Hashable {
     public var attachedCollections: Set<CollectionID>
     public var enabledServerTools: Set<ServerSideTool>
     public var responseStorageMode: ResponseStorageMode
+    /// Agent Skills enabled for this chat (a subset of the global library).
+    /// Defaults to empty. A custom Decodable (below) decodes it via
+    /// `decodeIfPresent` so older state files written before the field existed
+    /// still load — Swift's synthesized Decodable does NOT fall back to a
+    /// property's default value for a missing key, it throws.
+    public var enabledSkills: Set<SkillID> = []
 
     public init(
         model: String,
@@ -35,7 +41,8 @@ public struct ChatSettings: Codable, Sendable, Hashable {
         attachedCollections: Set<CollectionID> = [],
         enabledServerTools: Set<ServerSideTool> = [],
         responseStorageMode: ResponseStorageMode = .serverStored,
-        agentID: AgentID? = nil
+        agentID: AgentID? = nil,
+        enabledSkills: Set<SkillID> = []
     ) {
         self.model = model
         self.providerID = providerID
@@ -52,6 +59,38 @@ public struct ChatSettings: Codable, Sendable, Hashable {
         self.attachedCollections = attachedCollections
         self.enabledServerTools = enabledServerTools
         self.responseStorageMode = responseStorageMode
+        self.enabledSkills = enabledSkills
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case model, providerID, systemPrompt, agentID, temperature, topP, maxOutputTokens
+        case reasoningEffort, parallelToolCalls, maxToolIterations, enabledBuiltInTools
+        case enabledMCPServers, attachedCollections, enabledServerTools, responseStorageMode
+        case enabledSkills
+    }
+
+    // Custom Decodable so a state file written before `enabledSkills` existed
+    // still loads (Swift's synthesized decoder throws keyNotFound rather than
+    // using the property default). Every pre-existing field stays required,
+    // matching the previous synthesized behaviour.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.model = try c.decode(String.self, forKey: .model)
+        self.providerID = try c.decode(ProviderID.self, forKey: .providerID)
+        self.systemPrompt = try c.decodeIfPresent(String.self, forKey: .systemPrompt)
+        self.agentID = try c.decodeIfPresent(AgentID.self, forKey: .agentID)
+        self.temperature = try c.decodeIfPresent(Double.self, forKey: .temperature)
+        self.topP = try c.decodeIfPresent(Double.self, forKey: .topP)
+        self.maxOutputTokens = try c.decodeIfPresent(Int.self, forKey: .maxOutputTokens)
+        self.reasoningEffort = try c.decodeIfPresent(ReasoningEffort.self, forKey: .reasoningEffort)
+        self.parallelToolCalls = try c.decode(Bool.self, forKey: .parallelToolCalls)
+        self.maxToolIterations = try c.decode(Int.self, forKey: .maxToolIterations)
+        self.enabledBuiltInTools = try c.decode(Set<String>.self, forKey: .enabledBuiltInTools)
+        self.enabledMCPServers = try c.decode(Set<MCPServerID>.self, forKey: .enabledMCPServers)
+        self.attachedCollections = try c.decode(Set<CollectionID>.self, forKey: .attachedCollections)
+        self.enabledServerTools = try c.decode(Set<ServerSideTool>.self, forKey: .enabledServerTools)
+        self.responseStorageMode = try c.decode(ResponseStorageMode.self, forKey: .responseStorageMode)
+        self.enabledSkills = try c.decodeIfPresent(Set<SkillID>.self, forKey: .enabledSkills) ?? []
     }
 }
 

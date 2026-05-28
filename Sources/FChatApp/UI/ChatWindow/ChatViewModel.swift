@@ -85,8 +85,13 @@ final class ChatViewModel {
         let builder = RequestPayloadBuilder(tokenizer: tokenizer)
         let instructions = composeInstructions(language: environment.promptLanguage)
         let language = environment.promptLanguage
-        let enabledToolNames = environment.enabledTools
+        var enabledToolNames = environment.enabledTools
             .union(AppEnvironment.alwaysAvailableTools)
+        // Admit run_code only when this chat has ≥1 enabled skill; otherwise
+        // the tool isn't offered to the model at all.
+        if !environment.resolveEnabledSkills(for: conversation).isEmpty {
+            enabledToolNames.insert("run_code")
+        }
         let registry = environment.toolRegistry
 
         // Snapshot the value-typed inputs and run the expensive BPE walk on a
@@ -125,11 +130,14 @@ final class ChatViewModel {
         // auto-appended below so custom agents keep working with tools
         // and attached collections.
         let agentBase = environment?.resolveAgent(for: conversation).basePrompt
+        let skillSummaries = (environment?.resolveEnabledSkills(for: conversation) ?? [])
+            .map { LocalizedSystemPrompt.SkillSummary(name: $0.name, description: $0.description) }
         let prompt = LocalizedSystemPrompt(
             language: language,
             includeToolGuidance: true,
             includeRAGGuidance: !conversation.settings.attachedCollections.isEmpty,
-            basePromptOverride: agentBase
+            basePromptOverride: agentBase,
+            skills: skillSummaries
         )
         // No temporal context here: a fresh ISO timestamp in the system
         // prompt invalidates vLLM's prefix cache on every send. The date
@@ -202,10 +210,21 @@ final class ChatViewModel {
         // clobber each other.
         let attachedCollections = Array(conversation.settings.attachedCollections)
 
+        // Resolve this chat's enabled skills into (name, on-disk dir) refs for
+        // the per-turn TaskLocal the shared run_code tool reads. Same isolation
+        // story as attachedCollections — concurrent chats don't clobber.
+        let enabledSkillRefs: [SkillRuntimeRef] = environment.resolveEnabledSkills(for: conversation).map {
+            SkillRuntimeRef(name: $0.name, directory: environment.skillStore.skillRootDirectory(for: $0.id))
+        }
+
         isStreaming = true
         firstDeltaAt = nil
-        let enabledTools = environment.enabledTools
+        var enabledTools = environment.enabledTools
             .union(AppEnvironment.alwaysAvailableTools)
+        // Admit run_code only when this chat has ≥1 enabled skill.
+        if !enabledSkillRefs.isEmpty {
+            enabledTools.insert("run_code")
+        }
         // Lazy-connect configured MCP servers on the first send of the
         // session so their tools land in the registry before we read it.
         // The MCPRegistry tracks loaded-once internally; subsequent
@@ -216,6 +235,7 @@ final class ChatViewModel {
             guard let self else { return }
             await mcpRegistry.ensureLoaded(servers: mcpServers)
             await ChatTaskContext.$attachedCollections.withValue(attachedCollections) {
+              await ChatTaskContext.$enabledSkills.withValue(enabledSkillRefs) {
                 do {
                     let allDefinitions = await registry.definitions(for: promptLanguage)
                     // MCP tools admitted unconditionally; built-ins gated
@@ -251,6 +271,7 @@ final class ChatViewModel {
                 self.environment?.update(self.conversation)
                 self.refreshProjectionNow()
                 self.maybeAutoTitle(providerRecord: providerRecord, modelID: trimmedModel, language: promptLanguage)
+              }
             }
         }
     }

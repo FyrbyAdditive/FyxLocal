@@ -35,6 +35,8 @@ struct InspectorView: View {
             AgentPickerSection(viewModel: viewModel, environment: environment)
 
             CollectionsAttachSection(viewModel: viewModel, environment: environment)
+
+            SkillsAttachSection(viewModel: viewModel, environment: environment)
         }
         .formStyle(.grouped)
     }

@@ -13,4 +13,15 @@ import FChatCore
 /// is needed at tool-invocation time.
 enum ChatTaskContext {
     @TaskLocal static var attachedCollections: [CollectionID] = []
+    /// Agent Skills enabled for the chat that initiated this turn, as
+    /// (name, on-disk directory) pairs. The shared `RunCodeTool` reads this
+    /// so it only ever runs code inside a skill the current chat enabled,
+    /// and so concurrent chats never see each other's skills.
+    @TaskLocal static var enabledSkills: [SkillRuntimeRef] = []
+}
+
+/// A per-turn reference to an enabled skill: its name and unpacked directory.
+struct SkillRuntimeRef: Sendable, Hashable {
+    let name: String
+    let directory: URL
 }
