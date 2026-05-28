@@ -13,6 +13,18 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
     public var sampling: ProviderSamplingDefaults
     /// Context-budget knobs for auto-compaction. Same back-compat story.
     public var context: ProviderContextSettings
+    /// Per-request network timeout in seconds. This is the URLSession
+    /// `timeoutIntervalForRequest` — the maximum gap between received
+    /// data packets, not a wall-clock cap. It resets on each byte, so a
+    /// long-but-active stream won't trip it; a stalled connection (e.g.
+    /// a slow vLLM backend that goes quiet) errors out after this many
+    /// idle seconds. Default 120s. Optional so older state files load
+    /// cleanly (resolved to the default when absent).
+    public var requestTimeout: TimeInterval
+
+    /// Default per-request timeout. Doubled from the previous implicit
+    /// URLSession.shared default of 60s.
+    public static let defaultRequestTimeout: TimeInterval = 120
 
     public init(
         id: ProviderID,
@@ -22,7 +34,8 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         capability: ProviderCapability = .init(),
         modelOverrides: [ModelOverride] = [],
         sampling: ProviderSamplingDefaults = .init(),
-        context: ProviderContextSettings = .init()
+        context: ProviderContextSettings = .init(),
+        requestTimeout: TimeInterval = ProviderRecord.defaultRequestTimeout
     ) {
         self.id = id
         self.displayName = displayName
@@ -32,11 +45,12 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         self.modelOverrides = modelOverrides
         self.sampling = sampling
         self.context = context
+        self.requestTimeout = requestTimeout
     }
 
     // Custom Decodable to tolerate missing optional fields on old state files.
     private enum CodingKeys: String, CodingKey {
-        case id, displayName, baseURL, defaultModel, capability, modelOverrides, sampling, context
+        case id, displayName, baseURL, defaultModel, capability, modelOverrides, sampling, context, requestTimeout
     }
 
     public init(from decoder: Decoder) throws {
@@ -49,6 +63,8 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         self.modelOverrides = try c.decodeIfPresent([ModelOverride].self, forKey: .modelOverrides) ?? []
         self.sampling = try c.decodeIfPresent(ProviderSamplingDefaults.self, forKey: .sampling) ?? .init()
         self.context = try c.decodeIfPresent(ProviderContextSettings.self, forKey: .context) ?? .init()
+        self.requestTimeout = try c.decodeIfPresent(TimeInterval.self, forKey: .requestTimeout)
+            ?? ProviderRecord.defaultRequestTimeout
     }
 }
 

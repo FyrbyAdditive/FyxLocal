@@ -246,10 +246,21 @@ final class AppEnvironment {
     }
 
     func makeRuntimeProvider(for record: ProviderRecord) -> any LLMProvider {
-        OpenAIResponsesProvider(
+        // Per-provider URLSession so the configurable request timeout
+        // applies. `timeoutIntervalForRequest` is the max idle gap
+        // between received data packets — it resets on each byte, so a
+        // long-but-active SSE stream won't trip it; a stalled backend
+        // errors after this many idle seconds. `timeoutIntervalForResource`
+        // is the overall wall-clock ceiling for a single transfer; keep it
+        // generous so genuinely long replies aren't cut off.
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = record.requestTimeout
+        config.timeoutIntervalForResource = max(record.requestTimeout * 10, 3600)
+        let session = URLSession(configuration: config)
+        return OpenAIResponsesProvider(
             id: record.id,
             baseURL: record.baseURL,
-            session: .shared,
+            session: session,
             secretStore: secretStore
         )
     }

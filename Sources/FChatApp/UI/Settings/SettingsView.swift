@@ -255,6 +255,17 @@ private struct ProviderCard: View {
                         .first(where: { $0.id == record.defaultModel })?
                         .contextWindow
                 )
+
+                Divider().padding(.vertical, 4)
+
+                NetworkSection(timeout: Binding(
+                    get: { record.requestTimeout },
+                    set: {
+                        var updated = record
+                        updated.requestTimeout = $0
+                        record = updated
+                    }
+                ))
         }
     }
 
@@ -494,6 +505,33 @@ private struct SamplingSection: View {
                 get: { sampling.parallelToolCalls },
                 set: { sampling.parallelToolCalls = $0 }
             ))
+        }
+    }
+}
+
+private struct NetworkSection: View {
+    @Binding var timeout: TimeInterval
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Network")
+                .font(.callout.bold())
+            Text("Maximum idle time between data packets before a request fails. Resets on each byte received, so long active replies are fine — this only catches a stalled connection. Raise it if a slow backend times out mid-reply.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Stepper(value: Binding(
+                get: { Int(timeout) },
+                set: { timeout = TimeInterval(max(10, min(1800, $0))) }
+            ), in: 10...1800, step: 30) {
+                HStack {
+                    Text("Request timeout (seconds)")
+                    Spacer()
+                    Text("\(Int(timeout))")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 }

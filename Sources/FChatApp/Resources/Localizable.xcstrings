@@ -1515,6 +1515,23 @@
         }
       }
     },
+    "Maximum idle time between data packets before a request fails. Resets on each byte received, so long active replies are fine — this only catches a stalled connection. Raise it if a slow backend times out mid-reply.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum idle time between data packets before a request fails. Resets on each byte received, so long active replies are fine — this only catches a stalled connection. Raise it if a slow backend times out mid-reply."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximal vilotid mellan datapaket innan en förfrågan misslyckas. Återställs vid varje mottagen byte, så långa aktiva svar är inga problem — detta fångar bara en stillastående anslutning. Höj den om en långsam backend gör time-out mitt i ett svar."
+          }
+        }
+      }
+    },
     "Message": {
       "extractionState": "manual",
       "localizations": {
@@ -1613,6 +1630,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inbyggd LLM-chattklient för macOS."
+          }
+        }
+      }
+    },
+    "Network": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nätverk"
           }
         }
       }
@@ -2123,6 +2157,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Byt namn…"
+          }
+        }
+      }
+    },
+    "Request timeout (seconds)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request timeout (seconds)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidsgräns för förfrågan (sekunder)"
           }
         }
       }
