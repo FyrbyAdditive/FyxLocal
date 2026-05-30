@@ -15,21 +15,31 @@ import Foundation
 public actor WebFetchCache {
     private struct Entry {
         var page: ExtractedPage
-        var lastAccess: Date
+        /// Strictly-increasing access stamp. A monotonic counter, NOT wall-clock
+        /// time: multiple get/put calls can land in the same `Date` tick, and on
+        /// a tie `min(by:)` evicts an arbitrary entry — which made LRU eviction
+        /// non-deterministic. A counter guarantees a unique order per access.
+        var accessSeq: UInt64
     }
 
     private var entries: [String: Entry] = [:]
     private let limit: Int
+    private var sequence: UInt64 = 0
 
     public init(limit: Int = 64) {
         self.limit = max(1, limit)
     }
 
-    /// Look up the cached page for `url`. Touches the access time so LRU
+    private func nextSeq() -> UInt64 {
+        sequence &+= 1
+        return sequence
+    }
+
+    /// Look up the cached page for `url`. Touches the access stamp so LRU
     /// reflects the read.
     public func get(_ url: String) -> ExtractedPage? {
         guard var entry = entries[url] else { return nil }
-        entry.lastAccess = .now
+        entry.accessSeq = nextSeq()
         entries[url] = entry
         return entry.page
     }
@@ -37,10 +47,11 @@ public actor WebFetchCache {
     /// Store / overwrite the cached page for `url`. Evicts the least-recently
     /// accessed entry if we cross the limit.
     public func put(_ url: String, _ page: ExtractedPage) {
-        entries[url] = Entry(page: page, lastAccess: .now)
+        entries[url] = Entry(page: page, accessSeq: nextSeq())
         guard entries.count > limit else { return }
-        // Evict the single oldest entry. O(n) over a small dict is fine.
-        if let victim = entries.min(by: { $0.value.lastAccess < $1.value.lastAccess }) {
+        // Evict the single least-recently-accessed entry. Ties are impossible
+        // because accessSeq is strictly increasing. O(n) over a small dict.
+        if let victim = entries.min(by: { $0.value.accessSeq < $1.value.accessSeq }) {
             entries.removeValue(forKey: victim.key)
         }
     }

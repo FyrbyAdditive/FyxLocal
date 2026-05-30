@@ -32,7 +32,10 @@ struct SettingsView: View {
                 .tag(SettingsTab.about)
         }
         .padding()
-        .frame(minWidth: 720, minHeight: 520)
+        // A stable minimum keeps the tabbed TabView from blowing out the
+        // NavigationSplitView layout (an unbounded height lets tall tab content
+        // disturb the sidebar). It still expands to fill a larger pane.
+        .frame(minWidth: 560, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
     }
 }
 

@@ -38,31 +38,25 @@ struct FChatApp: App {
                 }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
             }
-            // Replace the stock AppKit "About F-Chat" panel with a command
-            // that opens the Settings window on its About tab — so there's a
-            // single About surface instead of a separate tiny modal.
-            CommandGroup(replacing: .appInfo) {
-                AboutMenuCommand(environment: environment)
+            // Settings opens INSIDE the main window's detail pane (the sidebar's
+            // Settings row already drives this) rather than a separate window, so
+            // we replace SwiftUI's `Settings {}` scene (which always spawns its
+            // own window) with our own ⌘, command that selects the settings pane.
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings\u{2026}") {
+                    environment.settingsTab = .providers
+                    environment.sidebarSelection = .settings
+                }
+                .keyboardShortcut(",", modifiers: .command)
             }
-        }
-
-        Settings {
-            SettingsView(environment: environment)
-        }
-    }
-}
-
-/// The "About F-Chat" menu item. Sets the Settings selection to the About tab
-/// and opens the Settings window via the `openSettings` environment action
-/// (hosting it in a view is what gives access to that action from `.commands`).
-private struct AboutMenuCommand: View {
-    let environment: AppEnvironment
-    @Environment(\.openSettings) private var openSettings
-
-    var body: some View {
-        Button("About F-Chat") {
-            environment.settingsTab = .about
-            openSettings()
+            // "About F-Chat" opens the same in-window pane on its About tab — a
+            // single About surface instead of a separate modal.
+            CommandGroup(replacing: .appInfo) {
+                Button("About F-Chat") {
+                    environment.settingsTab = .about
+                    environment.sidebarSelection = .settings
+                }
+            }
         }
     }
 }
