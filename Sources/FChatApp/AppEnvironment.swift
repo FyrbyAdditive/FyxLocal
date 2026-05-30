@@ -766,9 +766,14 @@ final class AppEnvironment {
         // view model before dropping the underlying conversation.
         chatViewModels[id]?.cancel()
         chatViewModels.removeValue(forKey: id)
-        let wasSelected = (selectedConversationID == id)
+        // The detail pane renders whatever `sidebarSelection` points at (the
+        // List's selection binding drives that, NOT `selectedConversationID`),
+        // so we must move selection off this chat when it's the one on screen —
+        // otherwise the detail keeps rendering a now-deleted id and shows a
+        // stray spinner. Check both fields so it works however selection was set.
+        let wasShowing = sidebarSelection == .conversation(id) || selectedConversationID == id
         conversations.removeAll { $0.id == id }
-        if wasSelected {
+        if wasShowing {
             // Select the next nearest conversation, or land on the empty placeholder.
             if let next = conversations.first {
                 selectedConversationID = next.id
