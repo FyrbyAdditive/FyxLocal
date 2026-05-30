@@ -1,5 +1,8 @@
 import SwiftUI
 import FChatCore
+#if canImport(AppKit)
+import AppKit
+#endif
 
 struct SidebarView: View {
     @Bindable var environment: AppEnvironment
@@ -12,6 +15,9 @@ struct SidebarView: View {
     @FocusState private var renameFieldFocus: ConversationID?
 
     var body: some View {
+        // The conversations list scrolls on its own; Collections + Settings are
+        // pinned to the bottom via a safe-area inset so they never scroll out
+        // of view no matter how many chats there are.
         List(selection: $environment.sidebarSelection) {
             Section {
                 ForEach(environment.conversations) { conversation in
@@ -34,15 +40,11 @@ struct SidebarView: View {
                     }
                 }
             }
-
-            Section {
-                NavigationLink(value: SidebarSelection.collections) {
-                    Label("Collections", systemImage: "books.vertical")
-                }
-                NavigationLink(value: SidebarSelection.settings) {
-                    Label("Settings", systemImage: "gearshape")
-                }
-            }
+        }
+        // Keep the List's own (darker) sidebar background; the pinned footer
+        // paints that exact colour itself so it matches the chat list above.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            sidebarFooter
         }
         // Return on a selected row enters rename mode, mirroring Finder.
         // Returns .ignored if no row is selected or one is already being
@@ -86,6 +88,54 @@ struct SidebarView: View {
         } message: {
             Text("This conversation will be removed permanently. This cannot be undone.")
         }
+    }
+
+    /// Collections + Settings, pinned at the bottom of the sidebar. A small
+    /// non-scrolling `List` bound to the SAME `sidebarSelection` as the main
+    /// list, so it keeps the native sidebar row look and the selection
+    /// highlight tracks whichever pane is active (the chat list and this footer
+    /// share the one selection binding).
+    @ViewBuilder
+    private var sidebarFooter: some View {
+        VStack(spacing: 0) {
+            // Hairline separator from the scrolling chat list above.
+            Divider()
+            VStack(spacing: 2) {
+                footerRow(.collections, title: "Collections", icon: "books.vertical")
+                footerRow(.settings, title: "Settings", icon: "gearshape")
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+        }
+        // Paint the footer with the chat list's own rendered colour so it
+        // reads as the same surface (the standalone `.sidebar` material blends
+        // lighter inside the window, so we match the measured list colour
+        // directly, adapting to light/dark).
+        .background(Color.sidebarListBackground)
+    }
+
+    /// One pinned footer row, styled to read like a native sidebar row: a
+    /// selection-tinted rounded capsule behind the label when its pane is
+    /// active. Sits directly on the sidebar material (no box/border) so it
+    /// blends in rather than looking like a detached widget.
+    @ViewBuilder
+    private func footerRow(_ selection: SidebarSelection, title: LocalizedStringKey, icon: String) -> some View {
+        let isSelected = environment.sidebarSelection == selection
+        Button {
+            environment.sidebarSelection = selection
+        } label: {
+            Label(title, systemImage: icon)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(isSelected ? Color.accentColor.opacity(0.85) : Color.clear)
+                )
+                .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+                .contentShape(.rect)
+    }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -194,3 +244,18 @@ struct SidebarView: View {
         return "Delete \"\(convo.title)\"?"
     }
 }
+
+private extension Color {
+    /// The chat list's rendered sidebar background colour, matched directly so
+    /// the pinned footer is the same surface. The SwiftUI sidebar `List` blends
+    /// its material *behind the window* (against the desktop), so a standalone
+    /// material layer comes out a different (lighter) grey — we match the
+    /// measured colour instead, adapting to light/dark.
+    static let sidebarListBackground = Color(nsColor: NSColor(name: nil) { appearance in
+        let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return isDark
+            ? NSColor(srgbRed: 22/255, green: 24/255, blue: 26/255, alpha: 1)
+            : NSColor(srgbRed: 246/255, green: 246/255, blue: 247/255, alpha: 1)
+    })
+}
+
