@@ -28,6 +28,28 @@ struct MarkdownParserTests {
         }
     }
 
+    /// Does any run in the first paragraph carry a `.link` attribute?
+    private func firstParagraphHasLink(_ md: String) -> Bool {
+        let blocks = MarkdownParser.parse(md)
+        guard case .paragraph(let content)? = blocks.first else { return false }
+        for run in content.runs where run.link != nil { return true }
+        return false
+    }
+
+    // S3: only safe schemes become clickable; file://, javascript:, and custom
+    // app schemes from model output render as plain (non-link) text.
+    @Test func httpAndHttpsLinksAreClickable() {
+        #expect(firstParagraphHasLink("[x](https://example.com)"))
+        #expect(firstParagraphHasLink("[x](http://example.com)"))
+        #expect(firstParagraphHasLink("[x](mailto:a@b.com)"))
+    }
+
+    @Test func unsafeLinkSchemesAreNotClickable() {
+        #expect(!firstParagraphHasLink("[x](file:///etc/passwd)"))
+        #expect(!firstParagraphHasLink("[x](javascript:alert(1))"))
+        #expect(!firstParagraphHasLink("[x](someapp://do-something)"))
+    }
+
     @Test func parsesUnorderedListWithMultipleItems() {
         let blocks = MarkdownParser.parse("""
         - one

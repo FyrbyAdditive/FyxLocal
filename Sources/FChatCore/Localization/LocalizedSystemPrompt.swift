@@ -114,8 +114,21 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
         }
 
         static func skillsGuidance(for language: PromptLanguage, skills: [SkillSummary]) -> String {
+            // Skill name/description come from a third-party skill package and
+            // land in the system prompt. Sanitize so a malicious skill can't
+            // break the prompt structure or pose as a system instruction:
+            // collapse newlines/control chars to spaces and length-cap each.
+            func sanitize(_ s: String, max: Int) -> String {
+                let collapsed = s.unicodeScalars
+                    .map { CharacterSet.controlCharacters.contains($0) ? " " : Character($0) }
+                    .reduce(into: "") { $0.append($1) }
+                    .components(separatedBy: .whitespaces)
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " ")
+                return collapsed.count > max ? String(collapsed.prefix(max)) + "…" : collapsed
+            }
             let bullets = skills
-                .map { "- \($0.name): \($0.description)" }
+                .map { "- \(sanitize($0.name, max: 80)): \(sanitize($0.description, max: 300))" }
                 .joined(separator: "\n")
             switch language {
             case .english:

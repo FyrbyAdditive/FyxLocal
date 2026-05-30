@@ -23,6 +23,10 @@ public struct DocxParser: DocumentParser {
         }
         let walker = DocxXMLWalker()
         let parser = XMLParser(data: documentXMLData)
+        // Defensive: never resolve external entities when parsing untrusted
+        // office documents (XXE). Apple's default is already false; set it
+        // explicitly so the intent is clear and a future flip can't expose us.
+        parser.shouldResolveExternalEntities = false
         parser.delegate = walker
         if !parser.parse() {
             throw DocumentParserError.decodeFailure("docx XML parse failed: \(parser.parserError?.localizedDescription ?? "unknown")")
@@ -216,6 +220,7 @@ public struct PptxParser: DocumentParser {
             guard let slideData = try DocxParser.extract(entry: path, from: archive) else { continue }
             let walker = PptxSlideWalker()
             let parser = XMLParser(data: slideData)
+            parser.shouldResolveExternalEntities = false   // XXE-safe (see DocxParser)
             parser.delegate = walker
             _ = parser.parse()
             let (title, body) = walker.finish()
@@ -226,6 +231,7 @@ public struct PptxParser: DocumentParser {
             if let notesData = (try? DocxParser.extract(entry: notesPath, from: archive)) ?? nil {
                 let notesWalker = PptxSlideWalker()
                 let notesParser = XMLParser(data: notesData)
+                notesParser.shouldResolveExternalEntities = false   // XXE-safe
                 notesParser.delegate = notesWalker
                 _ = notesParser.parse()
                 let (_, notesBody) = notesWalker.finish()

@@ -44,10 +44,21 @@ public struct ImportedMessage: Sendable, Hashable {
 
     public init(role: Role, text: String, reasoning: String? = nil, createdAt: Date) {
         self.role = role
-        self.text = text
-        self.reasoning = reasoning
+        // Cap per-field size at construction so both importers are bounded in
+        // one place — a single gigantic message can't blow up memory.
+        self.text = String(text.prefix(ChatImportLimits.maxCharsPerField))
+        self.reasoning = reasoning.map { String($0.prefix(ChatImportLimits.maxCharsPerField)) }
         self.createdAt = createdAt
     }
+}
+
+/// Resource bounds applied when importing untrusted export files, so a crafted
+/// (or simply enormous) export can't exhaust memory.
+public enum ChatImportLimits {
+    /// Max messages kept per conversation; extras are dropped.
+    public static let maxMessagesPerConversation = 100_000
+    /// Max characters kept per message text / reasoning field; extra is truncated.
+    public static let maxCharsPerField = 1_000_000
 }
 
 /// Which export a payload was recognised as.

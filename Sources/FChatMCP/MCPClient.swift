@@ -104,12 +104,21 @@ public actor MCPClient {
             throw MCPClientError.unexpectedResult
         }
         guard let tools = value["tools"]?.arrayValue else { throw MCPClientError.unexpectedResult }
+        // An MCP server is untrusted: bound the tool count and per-field lengths
+        // so a hostile/buggy server can't exhaust memory or flood the prompt.
+        let maxTools = 1000
+        let maxNameLen = 256
+        let maxDescLen = 8_192
         var output: [MCPTool] = []
-        for tool in tools {
-            guard let name = tool["name"]?.stringValue else { continue }
+        for tool in tools.prefix(maxTools) {
+            guard let name = tool["name"]?.stringValue, !name.isEmpty else { continue }
             let description = tool["description"]?.stringValue ?? ""
             let schema = tool["inputSchema"] ?? .object([:])
-            output.append(MCPTool(name: name, description: description, inputSchema: schema))
+            output.append(MCPTool(
+                name: String(name.prefix(maxNameLen)),
+                description: String(description.prefix(maxDescLen)),
+                inputSchema: schema
+            ))
         }
         return output
     }

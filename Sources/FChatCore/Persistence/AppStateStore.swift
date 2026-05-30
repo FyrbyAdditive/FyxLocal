@@ -17,10 +17,38 @@ public struct AppStateStore: Sendable {
     }
 
     public func load() -> PersistedAppState? {
+        // No file yet → genuine first run; return nil so the caller starts fresh.
         guard let data = try? Data(contentsOf: fileURL) else { return nil }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try? decoder.decode(PersistedAppState.self, from: data)
+        do {
+            return try decoder.decode(PersistedAppState.self, from: data)
+        } catch {
+            // The file EXISTS but won't decode (corruption, or a schema change
+            // that broke Codable). Returning nil here used to let the app boot
+            // empty and then auto-save over the real file — silent total data
+            // loss. Instead, preserve the unreadable file as a timestamped
+            // backup so it's recoverable, log loudly, then start fresh.
+            backupUnreadableFile(error: error)
+            return nil
+        }
+    }
+
+    /// Copy (never delete) an undecodable `state.json` aside so the user's data
+    /// is recoverable instead of being overwritten by the next save. Returns the
+    /// backup URL (for tests / callers that want to surface it).
+    @discardableResult
+    func backupUnreadableFile(error: Error) -> URL {
+        let stamp = ISO8601DateFormatter().string(from: Date())
+            .replacingOccurrences(of: ":", with: "-")
+        let backup = fileURL.deletingLastPathComponent()
+            .appendingPathComponent("\(fileURL.lastPathComponent).corrupt-\(stamp).bak")
+        try? FileManager.default.copyItem(at: fileURL, to: backup)
+        FileHandle.standardError.write(Data((
+            "[FChat] could not decode \(fileURL.lastPathComponent): \(error). "
+            + "Backed up to \(backup.lastPathComponent); starting with empty state.\n"
+        ).utf8))
+        return backup
     }
 
     public func save(_ state: PersistedAppState) throws {
