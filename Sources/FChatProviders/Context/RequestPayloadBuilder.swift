@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Tim Ellis / Fyrby Additive Manufacturing & Engineering
 
 import Foundation
+import os
 import FChatCore
 
 /// Translates a `Conversation` plus a pending user draft into the structured
@@ -144,9 +145,10 @@ public struct RequestPayloadBuilder: Sendable {
                 }
                 items.append(.functionCallOutput(callID: rec.callID, outputJSON: rec.outputJSON))
 
-            case .image(let data, let mimeType):
-                let base64 = data.base64EncodedString()
-                textRuns.append(.inputImageData(base64: base64, mimeType: mimeType))
+            case .image(let ref):
+                if let data = item.imageData {
+                    textRuns.append(.inputImageData(base64: data.base64EncodedString(), mimeType: ref.mimeType))
+                }
 
             case .attachment:
                 // Out of band; attachments aren't supported in the OpenAI
@@ -252,11 +254,10 @@ public struct RequestPayloadBuilder: Sendable {
             case .toolResult(let rec):
                 total += tokenizer.countTokens(in: rec.outputJSON)
                 total += 4
-            case .image(let data, _):
+            case .image:
                 // Rough placeholder: low/medium-detail images use ~85 / ~170
                 // tokens on OpenAI. We treat all images as ~150 to be safe.
                 total += 150
-                _ = data
             case .attachment:
                 break
             }
@@ -377,43 +378,34 @@ public struct ClearOptions: Sendable {
 /// to compute and collision-safe for our use (per-message identity is keyed
 /// by `MessageID`; the hash only has to disambiguate that *one* message's
 /// generations of itself, not different messages).
-public final class MessageTokenCountCache: @unchecked Sendable {
+public final class MessageTokenCountCache: Sendable {
     private struct Entry {
         let fingerprint: Int
         let count: Int
     }
 
-    private var entries: [MessageID: Entry] = [:]
-    private let lock = NSLock()
+    // Protected state behind an OS unfair lock — Sendable-by-construction, so
+    // the cache no longer needs `@unchecked Sendable` + a manual NSLock. Stays
+    // synchronous so `RequestPayloadBuilder.project(...)` can call it inline; the
+    // lock is only held for the dictionary read/write, never across the BPE call.
+    private let entries = OSAllocatedUnfairLock<[MessageID: Entry]>(initialState: [:])
 
     public init() {}
 
     /// Returns the cached count for `message` if its content hasn't changed
     /// since the last query; otherwise tokenises via `builder` and caches.
-    ///
-    /// Synchronous so `RequestPayloadBuilder.project(...)` can stay sync; the
-    /// lock is held only for the dictionary read/write, never across the
-    /// (potentially expensive) BPE call.
     public func countTokens(in message: Message, using builder: RequestPayloadBuilder) -> Int {
         let fingerprint = Self.fingerprint(of: message)
-        lock.lock()
-        if let entry = entries[message.id], entry.fingerprint == fingerprint {
-            lock.unlock()
-            return entry.count
-        }
-        lock.unlock()
+        let cached = entries.withLock { $0[message.id] }
+        if let cached, cached.fingerprint == fingerprint { return cached.count }
         let count = builder.countTokens(in: message)
-        lock.lock()
-        entries[message.id] = Entry(fingerprint: fingerprint, count: count)
-        lock.unlock()
+        entries.withLock { $0[message.id] = Entry(fingerprint: fingerprint, count: count) }
         return count
     }
 
     /// Drop all cached counts. Call on conversation reload.
     public func reset() {
-        lock.lock()
-        entries.removeAll(keepingCapacity: true)
-        lock.unlock()
+        entries.withLock { $0.removeAll(keepingCapacity: true) }
     }
 
     private static func fingerprint(of message: Message) -> Int {
@@ -434,11 +426,12 @@ public final class MessageTokenCountCache: @unchecked Sendable {
             case .toolResult(let rec):
                 hasher.combine(3)
                 hasher.combine(rec.outputJSON.count)
-            case .image(let data, _):
+            case .image(let ref):
                 hasher.combine(4)
-                hasher.combine(data.count)
-            case .attachment:
+                hasher.combine(ref.sha256)
+            case .attachment(let ref):
                 hasher.combine(5)
+                hasher.combine(ref.sha256)
             }
         }
         return hasher.finalize()

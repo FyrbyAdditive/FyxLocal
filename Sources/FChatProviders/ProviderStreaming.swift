@@ -114,34 +114,52 @@ private func runSSEStream(
     // into a [UInt8] and decode each region once per line (not per byte).
     let parser = SSEParser()
     var lineBuffer: [UInt8] = []
+    var yieldedAny = false
+
+    // Decode one SSE frame, tolerating a single malformed event: log + skip it
+    // and keep the stream alive rather than throwing out of the whole turn (a
+    // provider can emit one bad event in a long stream). Returns true on a
+    // terminal `[DONE]`.
+    func handle(_ sse: SSEEvent) -> Bool {
+        if isDone(sse) { return true }
+        do {
+            if let event = try decode(sse) {
+                continuation.yield(event)
+                yieldedAny = true
+            }
+        } catch {
+            FileHandle.standardError.write(Data("[FChat] skipped malformed stream event: \(error)\n".utf8))
+        }
+        return false
+    }
+    // Single terminal path: if the whole stream produced no usable event,
+    // surface a clear error instead of a silent blank reply, then complete.
+    func finishStream() {
+        if !yieldedAny {
+            continuation.yield(.responseError(message: "The provider returned no readable response.", code: nil))
+        }
+        continuation.yield(.completed)
+    }
+
     for try await byte in bytes {
         try Task.checkCancellation()
         lineBuffer.append(byte)
         if byte == UInt8(ascii: "\n") {
             if let chunk = String(bytes: lineBuffer, encoding: .utf8) {
                 lineBuffer.removeAll(keepingCapacity: true)
-                for sse in parser.feed(chunk) {
-                    if isDone(sse) {
-                        continuation.yield(.completed)
-                        return
-                    }
-                    if let event = try decode(sse) {
-                        continuation.yield(event)
-                    }
+                for sse in parser.feed(chunk) where handle(sse) {
+                    finishStream(); return
                 }
             }
         }
     }
     if !lineBuffer.isEmpty, let chunk = String(bytes: lineBuffer, encoding: .utf8) {
-        for sse in parser.feed(chunk) {
-            if isDone(sse) { continuation.yield(.completed); return }
-            if let event = try decode(sse) { continuation.yield(event) }
+        for sse in parser.feed(chunk) where handle(sse) {
+            finishStream(); return
         }
     }
-    for sse in parser.finish() {
-        if let event = try decode(sse) {
-            continuation.yield(event)
-        }
+    for sse in parser.finish() where handle(sse) {
+        finishStream(); return
     }
-    continuation.yield(.completed)
+    finishStream()
 }

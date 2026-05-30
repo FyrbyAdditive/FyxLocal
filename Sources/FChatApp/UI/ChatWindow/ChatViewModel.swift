@@ -257,6 +257,10 @@ final class ChatViewModel {
                         userMessageID: userMessageID
                     )
                     for try await event in runner.run(initial: request) {
+                        // Honour Stop at event granularity: a large buffered chunk
+                        // can contain many events, so check per-event rather than
+                        // only at chunk boundaries.
+                        try Task.checkCancellation()
                         await self.apply(event: event, assistantIndex: assistantIndex)
                     }
                 } catch {
@@ -400,8 +404,11 @@ final class ChatViewModel {
 
         // Determine the active compaction state: keep range starts after the
         // most recent compaction's upper bound, if any.
-        let firstKeepableIndex = conversation.compactions.last?.toIndex ?? 0
         let currentMessageCount = conversation.messages.count
+        // A prior compaction's toIndex is only valid while messages stay
+        // append-only; clamp so an imported/mutated conversation can't produce an
+        // inverted (lower > upper) keep range and trap.
+        let firstKeepableIndex = min(conversation.compactions.last?.toIndex ?? 0, currentMessageCount)
 
         // Project the cost without any further compaction. Reuses the
         // per-message token-count cache so the send-path doesn't re-tokenise
@@ -423,8 +430,12 @@ final class ChatViewModel {
         var keepLowerBound = firstKeepableIndex
 
         if needsCompact {
-            await MainActor.run { self.isCompacting = true }
-            defer { Task { @MainActor in self.isCompacting = false } }
+            // This method is MainActor-isolated (the class is @MainActor), so set
+            // the flag directly and clear it synchronously on scope exit. The old
+            // `defer { Task { … } }` scheduled a *future* hop, leaving isCompacting
+            // briefly inconsistent (and racy on a thrown error).
+            isCompacting = true
+            defer { isCompacting = false }
 
             let messagesAvailableToCompact = currentMessageCount - firstKeepableIndex
             let recentKeep = providerRecord.context.recentKeepCount
@@ -454,24 +465,29 @@ final class ChatViewModel {
             }
 
             let summarizeFrom = firstKeepableIndex
-            let summarizeTo = firstKeepableIndex + pivotOffset
-            let summarizer = ConversationSummarizer(provider: llm, modelID: modelID, language: language)
-            let slice = conversation.messages[summarizeFrom..<summarizeTo]
-            let freshSummary = try await summarizer.summarize(messages: slice)
+            // Clamp to the current message count. Compaction indices are valid
+            // only while messages are append-only; an imported/mutated
+            // conversation could make summarizeTo exceed the array and crash the
+            // slice. Guard the range rather than trap; if there's nothing safe to
+            // summarize, fall through and send with the clamped keep range.
+            let summarizeTo = min(firstKeepableIndex + pivotOffset, conversation.messages.count)
+            if summarizeFrom < summarizeTo {
+                let summarizer = ConversationSummarizer(provider: llm, modelID: modelID, language: language)
+                let slice = conversation.messages[summarizeFrom..<summarizeTo]
+                let freshSummary = try await summarizer.summarize(messages: slice)
 
-            let record = CompactionRecord(
-                fromIndex: summarizeFrom,
-                toIndex: summarizeTo,
-                summary: freshSummary
-            )
-            await MainActor.run {
+                let record = CompactionRecord(
+                    fromIndex: summarizeFrom,
+                    toIndex: summarizeTo,
+                    summary: freshSummary
+                )
                 self.conversation.compactions.append(record)
-            }
 
-            // Now compose the combined summary (existing + fresh) and shift
-            // the keep range to after the new compaction.
-            summary = existingSummariesConcatenated(plus: freshSummary)
-            keepLowerBound = summarizeTo
+                // Now compose the combined summary (existing + fresh) and shift
+                // the keep range to after the new compaction.
+                summary = existingSummariesConcatenated(plus: freshSummary)
+                keepLowerBound = summarizeTo
+            }
         }
 
         let inputs = builder.assemble(
