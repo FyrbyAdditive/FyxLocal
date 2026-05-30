@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Hardened-runtime exceptions for the embedded interpreter + on-device ML.
+         MLX/Metal JIT-compile kernels; the bundled relocatable CPython loads its
+         own dylibs / .so extension modules (signed by us, not Apple) and is
+         launched relocatably. Without these, hardened runtime would kill MLX or
+         block Python from loading its libraries. The app is intentionally NOT
+         sandboxed (it runs Python and reads user-picked files). -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+</dict>
+</plist>
