@@ -163,5 +163,46 @@ cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
+# --- Code signing -----------------------------------------------------------
+# Sign with a stable identity so macOS Keychain "Always Allow" grants persist.
+# An unsigned / linker-adhoc bundle changes code identity every build, so the
+# Keychain ACL never matches and the Providers page re-prompts on every launch.
+# Developer ID + hardened runtime also makes the app notarization-ready.
+# Override the identity with FCHAT_CODESIGN_IDENTITY (use "-" for stable ad-hoc).
+SIGN_ID="${FCHAT_CODESIGN_IDENTITY:-Developer ID Application: Timothy Ellis (QS865LKS7W)}"
+ENTITLEMENTS="$ROOT/scripts/FChat.entitlements"
+
+sign_one() {
+    # Sign a single Mach-O with hardened runtime; tolerate non-Mach-O / failures
+    # on nested files (we re-verify the whole bundle at the end).
+    codesign --force --timestamp --options runtime --sign "$SIGN_ID" "$1" >/dev/null 2>&1 || true
+}
+
+if [[ "$SIGN_ID" == "-" ]] || security find-identity -v -p codesigning | grep -q "${SIGN_ID%% (*}"; then
+    echo "==> codesign ($SIGN_ID)"
+    # 1) Nested Mach-O inside the vendored Python tree (dylibs, .so, bin/*), inside-out.
+    if [[ -d "$APP_DIR/Contents/Resources/python3" ]]; then
+        while IFS= read -r -d '' f; do
+            if file "$f" | grep -q 'Mach-O'; then sign_one "$f"; fi
+        done < <(find "$APP_DIR/Contents/Resources/python3" \
+                    \( -name '*.dylib' -o -name '*.so' -o -path '*/bin/*' \) -type f -print0)
+    fi
+    # 2) Any dylibs shipped in the SPM resource bundles.
+    while IFS= read -r -d '' f; do
+        sign_one "$f"
+    done < <(find "$APP_DIR/Contents/Resources" -name '*.dylib' -type f -print0)
+    # 3) Main executable, then the app bundle (outermost last) with entitlements.
+    codesign --force --timestamp --options runtime \
+        --entitlements "$ENTITLEMENTS" --sign "$SIGN_ID" "$APP_DIR/Contents/MacOS/FChat"
+    codesign --force --timestamp --options runtime \
+        --entitlements "$ENTITLEMENTS" --sign "$SIGN_ID" "$APP_DIR"
+    codesign --verify --deep --strict --verbose=2 "$APP_DIR" \
+        || { echo "error: codesign verification failed" >&2; exit 1; }
+else
+    echo "warning: signing identity '$SIGN_ID' not found; leaving app UNSIGNED." >&2
+    echo "         The Keychain will re-prompt on every launch until the app is signed." >&2
+    echo "         Set FCHAT_CODESIGN_IDENTITY to a valid identity, or '-' for ad-hoc." >&2
+fi
+
 echo "==> built $APP_DIR"
 echo "    open $APP_DIR    # to launch"
