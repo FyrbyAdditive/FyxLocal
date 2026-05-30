@@ -82,6 +82,11 @@ struct SidebarView: View {
                 .keyboardShortcut("n", modifiers: [.command])
             }
         }
+        // File ▸ Import Chats… routes here so the menu and the toolbar button
+        // drive the one picker + wizard the sidebar owns.
+        .onChange(of: environment.importChatsRequests) { _, _ in
+            showChatImporter = true
+        }
         .fileImporter(
             isPresented: $showChatImporter,
             allowedContentTypes: [.json, .zip],

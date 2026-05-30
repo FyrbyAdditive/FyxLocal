@@ -23,6 +23,13 @@ struct FChatApp: App {
                     environment.newConversation(title: "New chat")
                 }
                 .keyboardShortcut("n", modifiers: [.command])
+                Divider()
+                // Same flow as the sidebar's Import toolbar button — this only
+                // asks the sidebar (which owns the picker + wizard) to present.
+                Button("Import Chats from File\u{2026}") {
+                    environment.requestImportChats()
+                }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
             }
             // Replace the stock AppKit "About F-Chat" panel with a command
             // that opens the Settings window on its About tab — so there's a

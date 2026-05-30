@@ -97,6 +97,15 @@ final class AppEnvironment {
     /// Session-only; not persisted.
     var settingsTab: SettingsTab = .providers
 
+    /// Bumped to request the chat-import file picker from outside the sidebar
+    /// (the File ▸ Import Chats… menu command). `SidebarView` owns the picker
+    /// and wizard, so it watches this counter and presents the picker on change.
+    /// A counter rather than a Bool so repeated requests always fire.
+    var importChatsRequests = 0
+
+    /// Open the chat-import file picker (File menu / toolbar share one flow).
+    func requestImportChats() { importChatsRequests += 1 }
+
     /// Global on-by-default tool toggles surfaced in Settings → Tools.
     /// `rag_search` is NOT listed here: it's always available (gated
     /// per-chat by the Inspector's Collections section instead), and is
