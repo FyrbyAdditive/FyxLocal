@@ -92,6 +92,10 @@ final class AppEnvironment {
     /// reaching into the registry.
     let oauthCoordinator: OAuthCoordinator
     var sidebarSelection: SidebarSelection?
+    /// Selected tab in the Settings window. Settable from elsewhere (e.g. the
+    /// "About F-Chat" menu command sets `.about` before opening Settings).
+    /// Session-only; not persisted.
+    var settingsTab: SettingsTab = .providers
 
     /// Global on-by-default tool toggles surfaced in Settings → Tools.
     /// `rag_search` is NOT listed here: it's always available (gated
@@ -752,4 +756,12 @@ enum SidebarSelection: Hashable {
     case conversation(ConversationID)
     case settings
     case collections
+}
+
+/// Which tab the Settings window shows. Drives the `TabView` selection in
+/// `SettingsView` so the selection can be set programmatically — e.g. the
+/// "About F-Chat" menu item opens Settings on the `.about` tab instead of the
+/// stock AppKit about panel.
+enum SettingsTab: Hashable {
+    case providers, agents, tools, skills, mcp, about
 }

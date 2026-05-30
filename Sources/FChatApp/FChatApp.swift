@@ -24,10 +24,31 @@ struct FChatApp: App {
                 }
                 .keyboardShortcut("n", modifiers: [.command])
             }
+            // Replace the stock AppKit "About F-Chat" panel with a command
+            // that opens the Settings window on its About tab — so there's a
+            // single About surface instead of a separate tiny modal.
+            CommandGroup(replacing: .appInfo) {
+                AboutMenuCommand(environment: environment)
+            }
         }
 
         Settings {
             SettingsView(environment: environment)
+        }
+    }
+}
+
+/// The "About F-Chat" menu item. Sets the Settings selection to the About tab
+/// and opens the Settings window via the `openSettings` environment action
+/// (hosting it in a view is what gives access to that action from `.commands`).
+private struct AboutMenuCommand: View {
+    let environment: AppEnvironment
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Button("About F-Chat") {
+            environment.settingsTab = .about
+            openSettings()
         }
     }
 }

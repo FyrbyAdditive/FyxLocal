@@ -8,19 +8,25 @@ struct SettingsView: View {
     @Bindable var environment: AppEnvironment
 
     var body: some View {
-        TabView {
+        TabView(selection: $environment.settingsTab) {
             ProvidersTab(environment: environment)
                 .tabItem { Label("Providers", systemImage: "antenna.radiowaves.left.and.right") }
+                .tag(SettingsTab.providers)
             AgentsTab(environment: environment)
                 .tabItem { Label("Agents", systemImage: "person.crop.circle") }
+                .tag(SettingsTab.agents)
             ToolsTab(environment: environment)
                 .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
+                .tag(SettingsTab.tools)
             SkillsTab(environment: environment)
                 .tabItem { Label("Skills", systemImage: "puzzlepiece.extension") }
+                .tag(SettingsTab.skills)
             MCPTab(environment: environment)
                 .tabItem { Label("MCP", systemImage: "network") }
+                .tag(SettingsTab.mcp)
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
+                .tag(SettingsTab.about)
         }
         .padding()
         .frame(minWidth: 720, minHeight: 520)
