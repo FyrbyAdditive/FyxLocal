@@ -13,6 +13,10 @@ struct SidebarView: View {
     @State private var renamingID: ConversationID?
     @State private var renameDraft: String = ""
     @FocusState private var renameFieldFocus: ConversationID?
+    /// Chat-import (ChatGPT/Claude) file picker + result/error for the alert.
+    @State private var showChatImporter = false
+    @State private var importResult: ChatImportSummary?
+    @State private var importError: String?
 
     var body: some View {
         // The conversations list scrolls on its own; Collections + Settings are
@@ -61,11 +65,35 @@ struct SidebarView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
+                    showChatImporter = true
+                } label: {
+                    Label("Import chats", systemImage: "square.and.arrow.down")
+                }
+                .help("Import conversations exported from ChatGPT or Claude")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
                     environment.newConversation(title: "New chat")
                 } label: {
                     Label("New chat", systemImage: "plus")
                 }
                 .keyboardShortcut("n", modifiers: [.command])
+            }
+        }
+        .fileImporter(
+            isPresented: $showChatImporter,
+            allowedContentTypes: [.json, .zip],
+            allowsMultipleSelection: false
+        ) { result in
+            handleChatImport(result)
+        }
+        .alert("Import chats", isPresented: importAlertPresented) {
+            Button("OK", role: .cancel) { importResult = nil; importError = nil }
+        } message: {
+            if let importError {
+                Text(importError)
+            } else if let importResult {
+                Text(importSummaryMessage(importResult))
             }
         }
         .confirmationDialog(
@@ -204,6 +232,38 @@ struct SidebarView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+
+    // MARK: - Chat import
+
+    private var importAlertPresented: Binding<Bool> {
+        Binding(
+            get: { importResult != nil || importError != nil },
+            set: { if !$0 { importResult = nil; importError = nil } }
+        )
+    }
+
+    private func handleChatImport(_ result: Result<[URL], Error>) {
+        importResult = nil
+        importError = nil
+        do {
+            guard let url = try result.get().first else { return }
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            importResult = try environment.importChats(from: url)
+        } catch {
+            importError = (error as? CustomStringConvertible)?.description ?? error.localizedDescription
+        }
+    }
+
+    private func importSummaryMessage(_ s: ChatImportSummary) -> String {
+        var msg = String(
+            localized: "Imported \(s.conversationCount) conversation(s) (\(s.messageCount) messages) from \(s.format.rawValue)."
+        )
+        if !s.warnings.isEmpty {
+            msg += "\n\n" + s.warnings.joined(separator: "\n")
+        }
+        return msg
     }
 
     private func beginRename(_ conversation: Conversation) {

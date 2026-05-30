@@ -675,6 +675,68 @@ final class AppEnvironment {
         }
     }
 
+    // MARK: - Import
+
+    /// Import conversations exported from ChatGPT or Claude (a `.zip` data
+    /// export or the raw `conversations.json`) as native conversations. Each
+    /// imported chat is assigned the current active provider so it can be
+    /// browsed and continued; the exported model name is used when present.
+    /// New conversations are inserted at the top; persistence fires via the
+    /// `conversations` didSet. Throws `ChatImportError` on unreadable/empty/
+    /// unrecognised input.
+    @discardableResult
+    func importChats(from url: URL) throws -> ChatImportSummary {
+        let result = try ChatImporter.parse(fileURL: url)
+        guard let provider = currentProvider() else {
+            throw ChatImportError.unrecognizedFormat   // no provider to attach to
+        }
+        let fallbackModel = provider.defaultModel
+            ?? detectedModels[provider.id]?.first?.id
+            ?? ""
+
+        var created: [Conversation] = []
+        for chat in result.chats {
+            let settings = ChatSettings(
+                model: (chat.model?.isEmpty == false ? chat.model! : fallbackModel),
+                providerID: provider.id
+            )
+            let messages: [Message] = chat.messages.map { m in
+                var items: [MessageContent] = []
+                if let reasoning = m.reasoning, !reasoning.isEmpty {
+                    items.append(.reasoningSummary(reasoning))
+                }
+                if !m.text.isEmpty {
+                    items.append(.text(m.text))
+                }
+                return Message(
+                    role: m.role == .user ? .user : .assistant,
+                    contentItems: items,
+                    createdAt: m.createdAt
+                )
+            }
+            created.append(Conversation(
+                title: chat.title,
+                createdAt: chat.createdAt,
+                updatedAt: chat.updatedAt,
+                settings: settings,
+                messages: messages
+            ))
+        }
+
+        // Insert newest export first, preserving the export's own ordering.
+        conversations.insert(contentsOf: created, at: 0)
+        if let first = created.first {
+            selectedConversationID = first.id
+            sidebarSelection = .conversation(first.id)
+        }
+        return ChatImportSummary(
+            format: result.format,
+            conversationCount: created.count,
+            messageCount: result.messageCount,
+            warnings: result.warnings
+        )
+    }
+
     func conversation(_ id: ConversationID) -> Conversation? {
         conversations.first(where: { $0.id == id })
     }
@@ -764,4 +826,13 @@ enum SidebarSelection: Hashable {
 /// stock AppKit about panel.
 enum SettingsTab: Hashable {
     case providers, agents, tools, skills, mcp, about
+}
+
+/// UI-facing outcome of a chat import, surfaced as a confirmation in the
+/// sidebar after `AppEnvironment.importChats(from:)`.
+struct ChatImportSummary: Sendable {
+    let format: ChatImportFormat
+    let conversationCount: Int
+    let messageCount: Int
+    let warnings: [String]
 }
