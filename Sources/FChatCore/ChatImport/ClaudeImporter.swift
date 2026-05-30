@@ -45,7 +45,7 @@ public enum ClaudeImporter {
         let model = (convo["model"] as? String).flatMap { $0.isEmpty ? nil : $0 }
 
         var messages: [ImportedMessage] = []
-        for msg in rawMessages {
+        for msg in rawMessages.prefix(ChatImportLimits.maxMessagesPerConversation) {
             if let imported = importedMessage(from: msg) { messages.append(imported) }
         }
         guard !messages.isEmpty else { return nil }

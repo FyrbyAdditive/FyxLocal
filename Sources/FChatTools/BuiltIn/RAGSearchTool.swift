@@ -85,7 +85,7 @@ public struct RAGSearchTool: Tool {
         let hits: [RAGSearchHit]
         if let name = parsed.collection?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
             guard let id = try await retriever.collection(named: name) else {
-                let body = #"{"error":"unknown collection '\#(name)'"}"#
+                let body = #"{"error":"unknown collection '\#(name.escapedForJSONInline())'"}"#
                 return ToolOutput(outputJSON: body, isError: true, display: .markdown)
             }
             collectionLabel = name

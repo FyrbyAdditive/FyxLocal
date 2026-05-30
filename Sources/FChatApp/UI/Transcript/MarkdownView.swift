@@ -414,7 +414,15 @@ enum InlineRenderer {
 
         case let link as Markdown.Link:
             var s = attributed(from: link.inlineChildren)
-            if let dest = link.destination, let url = URL(string: dest) {
+            // Only make a link clickable if its scheme is safe. Model output can
+            // contain file://, custom app schemes, etc.; attaching those to
+            // `s.link` hands them to the system opener on click. Allowlist the
+            // schemes a transcript link should ever use; otherwise render the
+            // label as plain (non-clickable) text.
+            if let dest = link.destination,
+               let url = URL(string: dest),
+               let scheme = url.scheme?.lowercased(),
+               ["http", "https", "mailto"].contains(scheme) {
                 s.link = url
             }
             return s

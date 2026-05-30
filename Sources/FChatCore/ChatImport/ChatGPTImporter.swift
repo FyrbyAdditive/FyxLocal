@@ -87,6 +87,9 @@ public enum ChatGPTImporter {
             if let m = modelSlug(from: msg), model == nil { model = m }
             guard let imported = importedMessage(from: msg) else { continue }
             messages.append(imported)
+            // Bound message count per conversation so a crafted export can't
+            // allocate unbounded memory on import.
+            if messages.count >= ChatImportLimits.maxMessagesPerConversation { break }
         }
         guard !messages.isEmpty else { return nil }
         return ImportedChat(title: title, createdAt: created, updatedAt: updated, model: model, messages: messages)

@@ -110,12 +110,33 @@ public struct SkillStore: Sendable {
             .appendingPathComponent("fchat-skill-import-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: temp) }
         do {
+            try Self.guardArchiveSize(zipURL)   // reject zip bombs before extracting
             try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
             try FileManager.default.unzipItem(at: zipURL, to: temp)
+        } catch let e as StoreError {
+            throw e
         } catch {
             throw StoreError.notAValidZip(error.localizedDescription)
         }
         return try importSkill(fromDirectory: temp)
+    }
+
+    /// Reject zip bombs: cap the total uncompressed size and entry count of a
+    /// skill archive before extracting it.
+    private static func guardArchiveSize(_ zipURL: URL) throws {
+        let maxTotalBytes: UInt64 = 256 * 1024 * 1024   // 256 MB extracted
+        let maxEntries = 10_000
+        guard let archive = try? Archive(url: zipURL, accessMode: .read) else {
+            throw StoreError.notAValidZip("could not open archive")
+        }
+        var total: UInt64 = 0
+        var count = 0
+        for entry in archive {
+            count += 1
+            if count > maxEntries { throw StoreError.notAValidZip("archive has too many entries") }
+            total = total.addingReportingOverflow(entry.uncompressedSize).partialValue
+            if total > maxTotalBytes { throw StoreError.notAValidZip("archive expands too large") }
+        }
     }
 
     /// Import from raw `.zip` bytes (e.g. an in-memory drop). Writes to a temp

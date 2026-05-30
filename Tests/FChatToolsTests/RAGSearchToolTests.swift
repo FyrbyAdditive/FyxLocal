@@ -28,6 +28,18 @@ struct RAGSearchToolTests {
         #expect(output.isError == true)
         #expect(output.outputJSON.contains("unknown collection"))
     }
+
+    // S2: a model-supplied collection name with quotes must be escaped so it
+    // can't inject fields into the error JSON the model reads back.
+    @Test func maliciousCollectionNameIsEscapedInErrorJSON() async throws {
+        let tool = RAGSearchTool(retriever: StubRetriever(collectionByName: [:], hits: []))
+        let output = try await tool.invoke(arguments: #"{"query":"x","collection":"a\",\"injected\":\"y"}"#)
+        #expect(output.isError == true)
+        // The output must still be valid JSON with no injected top-level field.
+        let obj = try JSONSerialization.jsonObject(with: Data(output.outputJSON.utf8)) as? [String: Any]
+        #expect(obj?["injected"] == nil)
+        #expect(obj?["error"] != nil)
+    }
 }
 
 actor StubRetriever: RAGRetriever {

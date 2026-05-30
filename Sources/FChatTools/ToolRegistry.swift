@@ -49,7 +49,7 @@ public actor ToolRegistry {
                     if let tool {
                         output = await Self.runOne(tool: tool, invocation: invocation, timeout: perToolTimeout)
                     } else {
-                        let payload = #"{"error":"unknown tool '\#(invocation.name)'"}"#
+                        let payload = #"{"error":"unknown tool '\#(invocation.name.escapedForJSONInline())'"}"#
                         output = ToolOutput(outputJSON: payload, isError: true)
                     }
                     return (index, invocation, output)

@@ -97,9 +97,26 @@ public enum ChatImporter {
                     && !$0.path.contains("__MACOSX")
             })
         guard let entry else { throw ChatImportError.zipMissingConversations }
+        // Bound the extracted size so a zip bomb can't exhaust memory. 512 MB is
+        // far above any real conversations.json yet caps the blast radius.
+        let maxExtractedBytes = 512 * 1024 * 1024
+        if entry.uncompressedSize > UInt64(maxExtractedBytes) {
+            throw ChatImportError.zipUnreadable("conversations.json is too large (\(entry.uncompressedSize) bytes)")
+        }
         var data = Data()
         do {
-            _ = try archive.extract(entry) { data.append($0) }
+            _ = try archive.extract(entry, bufferSize: 64 * 1024) { chunk in
+                data.append(chunk)
+                if data.count > maxExtractedBytes {
+                    // Defensive backstop if the header understated the size.
+                    data.removeAll(keepingCapacity: false)
+                }
+            }
+            if data.isEmpty && entry.uncompressedSize > 0 {
+                throw ChatImportError.zipUnreadable("conversations.json exceeded the size limit")
+            }
+        } catch let e as ChatImportError {
+            throw e
         } catch {
             throw ChatImportError.zipUnreadable(error.localizedDescription)
         }
