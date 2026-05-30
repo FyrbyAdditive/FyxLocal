@@ -34,7 +34,7 @@ struct WebFetchToolTests {
     @Test func cacheHitSkipsExtractorOnSecondFetch() async throws {
         let extractor = CountingExtractor(body: "hello world")
         let cache = WebFetchCache()
-        let tool = WebFetchTool(extractor: extractor, cache: cache)
+        let tool = WebFetchTool(extractor: extractor, cache: cache, resolveHosts: false)
         let args = #"{"url":"https://example.com/article"}"#
 
         let first = try await tool.invoke(arguments: args)
@@ -57,7 +57,7 @@ struct WebFetchToolTests {
     @Test func differentURLBypassesCache() async throws {
         let extractor = CountingExtractor(body: "x")
         let cache = WebFetchCache()
-        let tool = WebFetchTool(extractor: extractor, cache: cache)
+        let tool = WebFetchTool(extractor: extractor, cache: cache, resolveHosts: false)
         _ = try await tool.invoke(arguments: #"{"url":"https://example.com/a"}"#)
         _ = try await tool.invoke(arguments: #"{"url":"https://example.com/b"}"#)
         #expect(await extractor.invocations == 2)
@@ -92,9 +92,27 @@ struct WebFetchToolTests {
     @Test func noCacheArgumentStillWorks() async throws {
         // Existing call sites that don't pass `cache:` should keep working.
         let extractor = CountingExtractor(body: "ok")
-        let tool = WebFetchTool(extractor: extractor)
+        let tool = WebFetchTool(extractor: extractor, resolveHosts: false)
         let output = try await tool.invoke(arguments: #"{"url":"https://x"}"#)
         #expect(output.isError == false)
         #expect(await extractor.invocations == 1)
+    }
+
+    @Test func refusesSSRFTargetsWithoutCallingExtractor() async throws {
+        // The synchronous guard must block these even with DNS resolution off,
+        // and must never reach the extractor.
+        let extractor = CountingExtractor(body: "secret")
+        let tool = WebFetchTool(extractor: extractor, resolveHosts: false)
+        for bad in [
+            #"{"url":"file:///etc/passwd"}"#,
+            #"{"url":"http://127.0.0.1/"}"#,
+            #"{"url":"http://localhost:8080/"}"#,
+            #"{"url":"http://169.254.169.254/latest/meta-data/"}"#,
+            #"{"url":"http://10.0.0.1/"}"#,
+        ] {
+            let output = try await tool.invoke(arguments: bad)
+            #expect(output.isError == true, "expected refusal for \(bad)")
+        }
+        #expect(await extractor.invocations == 0)
     }
 }

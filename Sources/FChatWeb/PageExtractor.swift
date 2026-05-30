@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Tim Ellis / Fyrby Additive Manufacturing & Engineering
 
 import Foundation
+import FChatCore
 #if canImport(WebKit)
 import WebKit
 #endif
@@ -123,6 +124,23 @@ private final class NavigationDelegate: NSObject, WKNavigationDelegate {
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             self.continuation = cont
         }
+    }
+
+    // Defence-in-depth against redirect-SSRF: even though WebFetchTool validates
+    // the initial URL, a public page can 30x-redirect to file:// or an internal
+    // host. Re-validate every navigation target and cancel non-public ones.
+    func webView(_ webView: WKWebView,
+                 decidePolicyFor navigationAction: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        if let url = navigationAction.request.url,
+           case .failure = URLSafety.validatePublicHTTP(url) {
+            self.error = PageExtractorError.navigationFailed("blocked non-public URL")
+            decisionHandler(.cancel)
+            continuation?.resume(throwing: self.error!)
+            continuation = nil
+            return
+        }
+        decisionHandler(.allow)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

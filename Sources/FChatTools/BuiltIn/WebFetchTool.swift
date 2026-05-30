@@ -23,14 +23,21 @@ public struct WebFetchTool: Tool {
     public static let headChars = 8_000
     public static let tailChars = 2_000
 
+    /// Whether to run the async DNS-resolution SSRF check (reject hostnames that
+    /// resolve to internal IPs). On in production; tests pass `false` to stay
+    /// hermetic — they still exercise the synchronous scheme/literal-IP guard.
+    public let resolveHosts: Bool
+
     public init(
         extractor: any PageExtractor,
         defaultTimeout: TimeInterval = 12.0,
-        cache: WebFetchCache? = nil
+        cache: WebFetchCache? = nil,
+        resolveHosts: Bool = true
     ) {
         self.extractor = extractor
         self.defaultTimeout = defaultTimeout
         self.cache = cache
+        self.resolveHosts = resolveHosts
     }
 
     public func definition(for language: PromptLanguage) -> ToolDefinition {
@@ -59,6 +66,16 @@ public struct WebFetchTool: Tool {
         let urlString = parsed.url.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: urlString) else {
             return ToolOutput(outputJSON: #"{"error":"Invalid URL: \#(parsed.url.escapedForJSONInline())"}"#, isError: true, display: .markdown)
+        }
+
+        // SSRF guard: the URL comes from the model, so block file://, non-HTTP
+        // schemes, localhost/loopback/link-local/private hosts, and the cloud
+        // metadata address — including hostnames that *resolve* to such IPs.
+        if case .failure(let reason) = URLSafety.validatePublicHTTP(url) {
+            return ToolOutput(outputJSON: #"{"error":"Refused to fetch \#(parsed.url.escapedForJSONInline()): \#("\(reason)".escapedForJSONInline())"}"#, isError: true, display: .markdown)
+        }
+        if resolveHosts, await URLSafety.hostResolvesToPublicOnly(url) == false {
+            return ToolOutput(outputJSON: #"{"error":"Refused to fetch \#(parsed.url.escapedForJSONInline()): the host resolves to a local or private address"}"#, isError: true, display: .markdown)
         }
 
         // Cache hit: skip the network entirely.
