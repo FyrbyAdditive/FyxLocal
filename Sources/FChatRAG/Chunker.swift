@@ -21,21 +21,24 @@ public struct Chunker: Sendable {
 
     public func chunk(_ text: String) -> [String] {
         var pieces: [String] = []
-        splitRecursive(text, separators: separators, into: &pieces)
+        splitRecursive(text, separatorIndex: 0, into: &pieces)
         return mergePieces(pieces)
     }
 
-    private func splitRecursive(_ text: String, separators: [String], into output: inout [String]) {
+    /// `separatorIndex` walks the fixed `separators` array instead of slicing
+    /// a fresh `[String]` on each recursive call — identical traversal, no
+    /// per-call array allocation.
+    private func splitRecursive(_ text: String, separatorIndex: Int, into output: inout [String]) {
         if text.isEmpty { return }
         if text.count <= targetSize {
             output.append(text)
             return
         }
-        guard let separator = separators.first else {
+        guard separatorIndex < separators.count else {
             output.append(text)
             return
         }
-        let remainder = Array(separators.dropFirst())
+        let separator = separators[separatorIndex]
         if separator.isEmpty {
             // Hard character split fallback.
             var index = text.startIndex
@@ -52,7 +55,7 @@ public struct Chunker: Sendable {
             if glued.count <= targetSize {
                 output.append(glued)
             } else {
-                splitRecursive(glued, separators: remainder, into: &output)
+                splitRecursive(glued, separatorIndex: separatorIndex + 1, into: &output)
             }
         }
     }
@@ -60,19 +63,24 @@ public struct Chunker: Sendable {
     private func mergePieces(_ pieces: [String]) -> [String] {
         var merged: [String] = []
         var current = ""
+        // The accumulator grows up to ~targetSize (+overlap+one piece) before
+        // being flushed; reserving avoids repeated reallocation as we append.
+        // Resulting strings are byte-identical to the previous `+=` version.
+        current.reserveCapacity(targetSize + overlap)
         for piece in pieces {
             if current.isEmpty {
                 current = piece
                 continue
             }
             if current.count + piece.count <= targetSize {
-                current += piece
+                current.append(contentsOf: piece)
             } else {
                 merged.append(current)
                 if overlap > 0 && current.count > overlap {
                     let start = current.index(current.endIndex, offsetBy: -overlap)
                     let tail = String(current[start...])
-                    current = tail + piece
+                    current = tail
+                    current.append(contentsOf: piece)
                 } else {
                     current = piece
                 }

@@ -555,6 +555,18 @@ final class ChatViewModel {
         return "\(error)"
     }
 
+    /// Strip leading whitespace from a freshly-opened assistant text block,
+    /// preserving the exact `^[\s]+` regex semantics used previously but
+    /// skipping the regex entirely when the string can't start with `\s`.
+    /// `CharacterSet.whitespacesAndNewlines` is a superset of the regex's `\s`,
+    /// so the guard never skips a string the regex would have trimmed — the
+    /// output is byte-identical to calling the regex unconditionally.
+    static func strippingLeadingWhitespace(_ s: String) -> String {
+        guard let first = s.unicodeScalars.first,
+              CharacterSet.whitespacesAndNewlines.contains(first) else { return s }
+        return s.replacingOccurrences(of: "^[\\s]+", with: "", options: .regularExpression)
+    }
+
     private func apply(event: ChatTurnEvent, assistantIndex: Int) async {
         guard conversation.messages.indices.contains(assistantIndex) else { return }
         var message = conversation.messages[assistantIndex]
@@ -572,13 +584,13 @@ final class ChatViewModel {
             if case .text(let existing) = message.contentItems.last {
                 message.contentItems[message.contentItems.count - 1] = .text(existing + delta)
             } else {
-                let trimmedDelta = delta.replacingOccurrences(of: "^[\\s]+", with: "", options: .regularExpression)
+                let trimmedDelta = Self.strippingLeadingWhitespace(delta)
                 if !trimmedDelta.isEmpty {
                     message.contentItems.append(.text(trimmedDelta))
                 }
             }
         case .textCompleted(_, let full):
-            let trimmed = full.replacingOccurrences(of: "^[\\s]+", with: "", options: .regularExpression)
+            let trimmed = Self.strippingLeadingWhitespace(full)
             if case .text = message.contentItems.last {
                 message.contentItems[message.contentItems.count - 1] = .text(trimmed)
             } else {

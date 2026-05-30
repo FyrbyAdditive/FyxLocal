@@ -97,21 +97,26 @@ private func runSSEStream(
 ) async throws {
     let (bytes, response) = try await session.bytes(for: request)
     if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-        var body = ""
-        for try await line in bytes.lines { body += line + "\n" }
-        throw ProviderError.httpStatus(http.statusCode, body: body)
+        var lines: [String] = []
+        for try await line in bytes.lines { lines.append(line) }
+        throw ProviderError.httpStatus(http.statusCode, body: lines.joined(separator: "\n"))
     }
 
+    // Drain the raw byte stream and feed the parser at each newline boundary.
+    // We iterate `bytes` directly (NOT `bytes.lines`): `.lines` adds its own
+    // buffering layer that can delay delivery of partial SSE frames, which
+    // visibly stalls incremental streaming (e.g. live "thinking" text). The
+    // raw byte iterator flushes a region to the parser the instant its
+    // terminating "\n" arrives, preserving real-time streaming. We accumulate
+    // into a [UInt8] and decode each region once per line (not per byte).
     let parser = SSEParser()
-    var buffer = Data()
+    var lineBuffer: [UInt8] = []
     for try await byte in bytes {
         try Task.checkCancellation()
-        buffer.append(byte)
-        // Flush whenever we have a newline boundary, to avoid string conversion
-        // on every byte.
+        lineBuffer.append(byte)
         if byte == UInt8(ascii: "\n") {
-            if let chunk = String(data: buffer, encoding: .utf8) {
-                buffer.removeAll(keepingCapacity: true)
+            if let chunk = String(bytes: lineBuffer, encoding: .utf8) {
+                lineBuffer.removeAll(keepingCapacity: true)
                 for sse in parser.feed(chunk) {
                     if isDone(sse) {
                         continuation.yield(.completed)
@@ -122,6 +127,12 @@ private func runSSEStream(
                     }
                 }
             }
+        }
+    }
+    if !lineBuffer.isEmpty, let chunk = String(bytes: lineBuffer, encoding: .utf8) {
+        for sse in parser.feed(chunk) {
+            if isDone(sse) { continuation.yield(.completed); return }
+            if let event = try decode(sse) { continuation.yield(event) }
         }
     }
     for sse in parser.finish() {

@@ -42,17 +42,18 @@ public actor SQLiteVecVectorStore: VectorStore {
             }
         }
         try database.queue.write { db in
+            // sqlite-vec's vec0 doesn't support ON CONFLICT UPDATE for the
+            // embedding column directly; delete + insert is the documented
+            // upsert pattern. Prepare both statements once and re-execute per
+            // row so SQLite parses each SQL string a single time per batch
+            // rather than once per row — identical rows, same transaction.
+            let deleteStmt = try db.makeStatement(sql: "DELETE FROM \(self.tableName) WHERE chunk_id = ?")
+            let insertStmt = try db.makeStatement(sql: "INSERT INTO \(self.tableName)(chunk_id, embedding) VALUES (?, vec_f32(?))")
             for (id, vector) in entries {
                 let key = id.rawValue.uuidString
                 let bytes = Self.vectorAsBytes(vector)
-                // sqlite-vec's vec0 doesn't support ON CONFLICT UPDATE for the
-                // embedding column directly; delete + insert is the documented
-                // upsert pattern.
-                try db.execute(sql: "DELETE FROM \(self.tableName) WHERE chunk_id = ?", arguments: [key])
-                try db.execute(
-                    sql: "INSERT INTO \(self.tableName)(chunk_id, embedding) VALUES (?, vec_f32(?))",
-                    arguments: [key, bytes]
-                )
+                try deleteStmt.execute(arguments: [key])
+                try insertStmt.execute(arguments: [key, bytes])
             }
         }
     }
