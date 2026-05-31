@@ -4,14 +4,16 @@
 
 <h1 align="center">F-Chat</h1>
 
-After looking through various open source clients and being dissatisfied with all of them in various different ways, I set out to make my own with the following objectives.
+After looking through various open source clients and being dissatisfied with all of them in various different ways I set out to make my own with the following objectives.
 
+* I'm not a big fan of big-AI, and want to keep it local and not creepy with a focus on privacy where possible.
 * The interface should be clean, easy to understand and therefore expose features in a hopefully obvious way.
-* Focus on doing as much as possible locally for privacy reasons
 * Not bundle lots of commercial providers built in, but include support for the most popular APIs used by locally running models, if there is commercial cross-over (there is) that's fine.
 * Users should opt-in to skills, MCP services and so on and we should not bundle any, to keep the client clean and minimal.
 
-If you plan to contribute to F-Chat please bear in mind the above, and that I would like to keep the client as clean, un-commercialised and local as possible.
+If you plan to contribute to F-Chat please bear in mind the above, and that I would like to keep the client as clean, un-commercialised and local as possible. 
+
+That means a provider probably won't get specifically added unless it has a commonly used or open API.
 
 This client has the following features:
 
