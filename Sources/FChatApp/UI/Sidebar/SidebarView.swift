@@ -28,6 +28,17 @@ struct SidebarView: View {
     @State private var pendingExportBundle: ChatExportBundle?
     @State private var showExportSavePanel = false
     @State private var exportError: String?
+    @State private var searchText: String = ""
+
+    /// Conversations after applying the sidebar search (title + message text).
+    /// Empty query returns everything, preserving the user's order.
+    private var visibleConversations: [Conversation] {
+        conversationsMatching(query: searchText, in: environment.conversations)
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         // The conversations list scrolls on its own; Collections + Settings are
@@ -35,27 +46,38 @@ struct SidebarView: View {
         // of view no matter how many chats there are.
         List(selection: $environment.sidebarSelection) {
             Section {
-                ForEach(environment.conversations) { conversation in
-                    conversationRow(conversation)
-                }
-                // Drag-to-reorder. Mutating environment.conversations
-                // in place takes the new order through the existing
-                // scheduleSave debounce; no schema change required.
-                .onMove { indices, newOffset in
-                    environment.conversations.move(fromOffsets: indices, toOffset: newOffset)
+                if isSearching && visibleConversations.isEmpty {
+                    Text("No matches")
+                        .foregroundStyle(.secondary)
+                        .font(.callout)
+                } else {
+                    ForEach(visibleConversations) { conversation in
+                        conversationRow(conversation)
+                    }
+                    // Drag-to-reorder. Mutating environment.conversations
+                    // in place takes the new order through the existing
+                    // scheduleSave debounce; no schema change required.
+                    // Suppressed while searching: offsets from a filtered
+                    // subset don't map back to the full array correctly.
+                    .onMove(perform: isSearching ? nil : { indices, newOffset in
+                        environment.conversations.move(fromOffsets: indices, toOffset: newOffset)
+                    })
                 }
             } header: {
                 HStack {
                     Text("Conversations")
                     Spacer()
                     if !environment.conversations.isEmpty {
-                        Text("\(environment.conversations.count)")
+                        Text(isSearching
+                             ? "\(visibleConversations.count)/\(environment.conversations.count)"
+                             : "\(environment.conversations.count)")
                             .foregroundStyle(.secondary)
                             .padding(.trailing, 6)
                     }
                 }
             }
         }
+        .searchable(text: $searchText, placement: .sidebar, prompt: "Search chats")
         // Keep the List's own (darker) sidebar background; the pinned footer
         // paints that exact colour itself so it matches the chat list above.
         .safeAreaInset(edge: .bottom, spacing: 0) {
