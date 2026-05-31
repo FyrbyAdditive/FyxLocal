@@ -430,68 +430,94 @@ private struct AddProviderSheet: View {
 private struct ToolsTab: View {
     @Bindable var environment: AppEnvironment
 
+    // Per-section expand/collapse, session-only (matches every other collapsible
+    // in the app — provider/skill/MCP cards are all ephemeral @State). All start
+    // expanded so no toggle is hidden on first view.
+    @State private var appleExpanded = true
+    @State private var webExpanded = true
+    @State private var utilitiesExpanded = true
+
     var body: some View {
+        // Grouped Form (same style as every other Settings tab) for the native
+        // macOS toggle look; collapsibility comes from DisclosureGroup per group,
+        // mirroring ProviderCard / SkillCard / MCP cards.
         Form {
             Section {
-                ToolToggleRow(
-                    environment: environment,
-                    name: "web_search",
-                    title: "Web search",
-                    description: "Search the public web via DuckDuckGo. No API key required."
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "web_fetch",
-                    title: "Web fetch",
-                    description: "Fetch a URL and extract main readable text using WKWebView + Mozilla Readability."
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "current_time",
-                    title: "Current time",
-                    description: "Lets the model fetch the precise current time on demand. Off by default — the date is already in every message; enable this only when sub-day precision matters."
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "make_chart",
-                    title: "Make chart",
-                    description: "Lets the model render a bar, line, or pie chart inline in the chat. Off by default; enable when you want visual data displays."
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "contacts_search",
-                    title: "Search Contacts",
-                    description: "Lets the model look up your macOS Contacts (read-only — it never changes them). Off by default; enabling it asks macOS for Contacts permission.",
-                    onEnable: { environment.requestContactsAccess() }
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "calendar",
-                    title: "Calendar",
-                    description: "Lets the model read your Calendar (e.g. “what's on this week?”). Off by default; enabling it asks macOS for Calendar permission.",
-                    onEnable: { environment.requestCalendarAccess() }
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "calendar_write",
-                    title: "Allow calendar changes",
-                    description: "Lets the model PROPOSE adding, editing, or deleting calendar events. Every change is shown for you to confirm before it happens. Requires the Calendar tool above."
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "reminders",
-                    title: "Reminders",
-                    description: "Lets the model read your Reminders (e.g. “what's on my list?”). Off by default; enabling it asks macOS for Reminders permission.",
-                    onEnable: { environment.requestReminderAccess() }
-                )
-                ToolToggleRow(
-                    environment: environment,
-                    name: "reminders_write",
-                    title: "Allow reminder changes",
-                    description: "Lets the model PROPOSE adding, editing, deleting, or completing reminders. Every change is shown for you to confirm before it happens. Requires the Reminders tool above."
-                )
-            } header: {
-                Text("Built-in tools")
+                DisclosureGroup(isExpanded: $appleExpanded) {
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "contacts_search",
+                        title: "Search Contacts",
+                        description: "Lets the model look up your macOS Contacts (read-only — it never changes them). Off by default; enabling it asks macOS for Contacts permission.",
+                        onEnable: { environment.requestContactsAccess() }
+                    )
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "calendar",
+                        title: "Calendar",
+                        description: "Lets the model read your Calendar (e.g. “what's on this week?”). Off by default; enabling it asks macOS for Calendar permission.",
+                        onEnable: { environment.requestCalendarAccess() }
+                    )
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "calendar_write",
+                        title: "Allow calendar changes",
+                        description: "Lets the model PROPOSE adding, editing, or deleting calendar events. Every change is shown for you to confirm before it happens. Requires the Calendar tool above."
+                    )
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "reminders",
+                        title: "Reminders",
+                        description: "Lets the model read your Reminders (e.g. “what's on my list?”). Off by default; enabling it asks macOS for Reminders permission.",
+                        onEnable: { environment.requestReminderAccess() }
+                    )
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "reminders_write",
+                        title: "Allow reminder changes",
+                        description: "Lets the model PROPOSE adding, editing, deleting, or completing reminders. Every change is shown for you to confirm before it happens. Requires the Reminders tool above."
+                    )
+                } label: {
+                    Text("Apple").font(.headline)
+                }
+            }
+
+            Section {
+                DisclosureGroup(isExpanded: $webExpanded) {
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "web_search",
+                        title: "Web search",
+                        description: "Search the public web via DuckDuckGo. No API key required."
+                    )
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "web_fetch",
+                        title: "Web fetch",
+                        description: "Fetch a URL and extract main readable text using WKWebView + Mozilla Readability."
+                    )
+                } label: {
+                    Text("Web").font(.headline)
+                }
+            }
+
+            Section {
+                DisclosureGroup(isExpanded: $utilitiesExpanded) {
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "current_time",
+                        title: "Current time",
+                        description: "Lets the model fetch the precise current time on demand. Off by default — the date is already in every message; enable this only when sub-day precision matters."
+                    )
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "make_chart",
+                        title: "Make chart",
+                        description: "Lets the model render a bar, line, or pie chart inline in the chat. Off by default; enable when you want visual data displays."
+                    )
+                } label: {
+                    Text("Utilities").font(.headline)
+                }
             } footer: {
                 Text("Disabled tools are not advertised to the model and cannot be invoked.")
                     .font(.caption2)
