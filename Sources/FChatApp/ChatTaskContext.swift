@@ -21,6 +21,10 @@ enum ChatTaskContext {
     /// so it only ever runs code inside a skill the current chat enabled,
     /// and so concurrent chats never see each other's skills.
     @TaskLocal static var enabledSkills: [SkillRuntimeRef] = []
+    /// Whether the chat that initiated this turn has "Allow calendar changes"
+    /// on. The shared `CalendarTool` reads this so it only stages write
+    /// proposals when writes are enabled, scoped per-turn like the above.
+    @TaskLocal static var calendarWritesAllowed: Bool = false
 }
 
 /// A per-turn reference to an enabled skill: its name and unpacked directory.

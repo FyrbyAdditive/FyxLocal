@@ -219,6 +219,8 @@ final class ChatViewModel {
         let enabledSkillRefs: [SkillRuntimeRef] = environment.resolveEnabledSkills(for: conversation).map {
             SkillRuntimeRef(name: $0.name, directory: environment.skillStore.skillRootDirectory(for: $0.id))
         }
+        // Whether the calendar tool may stage write proposals this turn.
+        let calendarWritesAllowed = environment.enabledTools.contains("calendar_write")
 
         isStreaming = true
         firstDeltaAt = nil
@@ -239,6 +241,7 @@ final class ChatViewModel {
             await mcpRegistry.ensureLoaded(servers: mcpServers)
             await ChatTaskContext.$attachedCollections.withValue(attachedCollections) {
               await ChatTaskContext.$enabledSkills.withValue(enabledSkillRefs) {
+               await ChatTaskContext.$calendarWritesAllowed.withValue(calendarWritesAllowed) {
                 do {
                     let allDefinitions = await registry.definitions(for: promptLanguage)
                     // MCP tools admitted unconditionally; built-ins gated
@@ -276,6 +279,7 @@ final class ChatViewModel {
                 self.environment?.update(self.conversation)
                 self.refreshProjectionNow()
                 self.maybeAutoTitle(providerRecord: providerRecord, modelID: trimmedModel, language: promptLanguage)
+               }
               }
             }
         }

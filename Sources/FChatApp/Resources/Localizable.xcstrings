@@ -5659,6 +5659,167 @@
           }
         }
       }
+    },
+    "Calendar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalender"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalender"
+          }
+        }
+      }
+    },
+    "Lets the model read your Calendar (e.g. “what's on this week?”). Off by default; enabling it asks macOS for Calendar permission.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets the model read your Calendar (e.g. “what's on this week?”). Off by default; enabling it asks macOS for Calendar permission."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Låter modellen läsa din kalender (t.ex. ”vad händer den här veckan?”). Av som standard; att aktivera det ber macOS om behörighet till Kalender."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lader modellen læse din kalender (f.eks. ”hvad sker der i denne uge?”). Slået fra som standard; aktivering beder macOS om tilladelse til Kalender."
+          }
+        }
+      }
+    },
+    "Allow calendar changes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow calendar changes"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tillåt kalenderändringar"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tillad kalenderændringer"
+          }
+        }
+      }
+    },
+    "Lets the model PROPOSE adding, editing, or deleting calendar events. Every change is shown for you to confirm before it happens. Requires the Calendar tool above.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets the model PROPOSE adding, editing, or deleting calendar events. Every change is shown for you to confirm before it happens. Requires the Calendar tool above."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Låter modellen FÖRESLÅ att lägga till, ändra eller ta bort kalenderhändelser. Varje ändring visas för dig att bekräfta innan den sker. Kräver kalenderverktyget ovan."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lader modellen FORESLÅ at tilføje, ændre eller slette kalenderhændelser. Hver ændring vises, så du kan bekræfte den, før den sker. Kræver kalenderværktøjet ovenfor."
+          }
+        }
+      }
+    },
+    "Confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekräfta"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekræft"
+          }
+        }
+      }
+    },
+    "Confirm calendar change?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm calendar change?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekräfta kalenderändring?"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekræft kalenderændring?"
+          }
+        }
+      }
+    },
+    "The assistant proposed this change. It will only happen if you confirm.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The assistant proposed this change. It will only happen if you confirm."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistenten föreslog den här ändringen. Den sker bara om du bekräftar."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistenten foreslog denne ændring. Den sker kun, hvis du bekræfter."
+          }
+        }
+      }
     }
   }
 }

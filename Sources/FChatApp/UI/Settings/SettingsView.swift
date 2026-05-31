@@ -464,6 +464,19 @@ private struct ToolsTab: View {
                     description: "Lets the model look up your macOS Contacts (read-only — it never changes them). Off by default; enabling it asks macOS for Contacts permission.",
                     onEnable: { environment.requestContactsAccess() }
                 )
+                ToolToggleRow(
+                    environment: environment,
+                    name: "calendar",
+                    title: "Calendar",
+                    description: "Lets the model read your Calendar (e.g. “what's on this week?”). Off by default; enabling it asks macOS for Calendar permission.",
+                    onEnable: { environment.requestCalendarAccess() }
+                )
+                ToolToggleRow(
+                    environment: environment,
+                    name: "calendar_write",
+                    title: "Allow calendar changes",
+                    description: "Lets the model PROPOSE adding, editing, or deleting calendar events. Every change is shown for you to confirm before it happens. Requires the Calendar tool above."
+                )
             } header: {
                 Text("Built-in tools")
             } footer: {

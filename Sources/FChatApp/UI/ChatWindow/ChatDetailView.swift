@@ -3,6 +3,7 @@
 
 import SwiftUI
 import FChatCore
+import FChatTools
 
 struct ChatDetailView: View {
     @Bindable var environment: AppEnvironment
@@ -66,6 +67,33 @@ struct ChatDetailView: View {
             if vm.conversation.title != newTitle {
                 vm.conversation.title = newTitle
             }
+        }
+        // The calendar tool never writes directly: when the model proposes a
+        // create/edit/delete it stages it here, and the user must confirm before
+        // it commits. Mirrors the sidebar's pendingDeletion confirmation pattern.
+        .confirmationDialog(
+            environment.pendingCalendarWrite?.summary ?? "Confirm calendar change?",
+            isPresented: Binding(
+                // Only mirror presence; do NOT clear state in the setter — the
+                // dismiss path races the Confirm action otherwise. The buttons
+                // own the state transition.
+                get: { environment.pendingCalendarWrite != nil },
+                set: { _ in }
+            ),
+            titleVisibility: .visible,
+            // Capture the proposal NOW so the dialog's dismissal can't null it
+            // out before Confirm's async commit reads it.
+            presenting: environment.pendingCalendarWrite
+        ) { proposal in
+            Button("Confirm", role: proposal.op == .delete ? .destructive : nil) {
+                environment.pendingCalendarWrite = nil
+                Task { await environment.commitCalendarWrite(proposal) }
+            }
+            Button("Cancel", role: .cancel) {
+                environment.cancelPendingCalendarWrite()
+            }
+        } message: { _ in
+            Text("The assistant proposed this change. It will only happen if you confirm.")
         }
     }
 }

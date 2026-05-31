@@ -25,5 +25,13 @@
          Info.plist + the runtime CNContactStore.requestAccess prompt. -->
     <key>com.apple.security.personal-information.addressbook</key>
     <true/>
+
+    <!-- Calendar access for the (opt-in) calendar tool. Same hardened-runtime
+         requirement as addressbook above: without this entitlement EventKit's
+         requestFullAccessToEvents() is denied before the TCC prompt can appear,
+         even though the app is non-sandboxed. Pairs with
+         NSCalendarsFullAccessUsageDescription in Info.plist. -->
+    <key>com.apple.security.personal-information.calendars</key>
+    <true/>
 </dict>
 </plist>

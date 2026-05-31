@@ -39,6 +39,16 @@ final class AppEnvironment {
     /// Read-only Contacts access for the `contacts_search` tool. Concrete
     /// `CNContactStore`-backed; the TCC prompt is triggered from Settings → Tools.
     let contactsProvider: any ContactsProvider
+    /// Read + (confirmed) write Calendar access for the `calendar` tool.
+    let calendarProvider: any CalendarProvider
+    /// A calendar change the model proposed, awaiting the user's confirmation in
+    /// the chat. nil = nothing pending. Drives the confirm dialog in ChatDetailView.
+    var pendingCalendarWrite: CalendarWriteProposal? {
+        didSet { /* not persisted — session-only confirmation state */ }
+    }
+    /// Surfaced to the chat after a confirmed/declined write so the transcript can
+    /// note the outcome. nil = no recent result to show.
+    var lastCalendarWriteResult: String?
     let stateStore: AppStateStore
     var providerRecords: [ProviderRecord] {
         didSet { scheduleSave() }
@@ -180,6 +190,7 @@ final class AppEnvironment {
         self.webFetchCache = WebFetchCache()
         self.searchProvider = DuckDuckGoProvider()
         self.contactsProvider = CNContactsProvider()
+        self.calendarProvider = EKCalendarProvider()
         self.stateStore = AppStateStore()
         self.skillStore = SkillStore()
         // Restore from disk if present; otherwise fall back to defaults.
@@ -413,6 +424,17 @@ final class AppEnvironment {
         // contacts_search is opt-in (not in defaultEnabledTools); enabling it in
         // Settings → Tools triggers the macOS Contacts permission prompt.
         let contacts = ContactsSearchTool(provider: contactsProvider)
+        // calendar reads immediately; writes are gated by the live `calendar_write`
+        // toggle and staged for user confirmation (never written by the tool).
+        let calendar = CalendarTool(
+            provider: calendarProvider,
+            // Read the per-turn TaskLocal (set by ChatViewModel.send), not env
+            // state — safe to read from the tool's non-MainActor task.
+            allowWrites: { ChatTaskContext.calendarWritesAllowed },
+            stageWrite: { [weak self] proposal in
+                Task { @MainActor in self?.pendingCalendarWrite = proposal }
+            }
+        )
         await toolRegistry.register(webSearch)
         await toolRegistry.register(webFetch)
         await toolRegistry.register(rag)
@@ -420,12 +442,52 @@ final class AppEnvironment {
         await toolRegistry.register(makeChart)
         await toolRegistry.register(runCode)
         await toolRegistry.register(contacts)
+        await toolRegistry.register(calendar)
     }
 
     /// Trigger the macOS Contacts TCC permission prompt (when not yet decided).
     /// Called when the user enables the Contacts tool in Settings → Tools.
     func requestContactsAccess() {
         Task { _ = await contactsProvider.requestAccess() }
+    }
+
+    /// Trigger the macOS Calendar (full-access) permission prompt when the user
+    /// enables the Calendar tool in Settings → Tools.
+    func requestCalendarAccess() {
+        Task { _ = await calendarProvider.requestAccess() }
+    }
+
+    /// Commit the pending calendar write proposal (user tapped Confirm). Surfaces
+    /// success/failure in `lastCalendarWriteResult` and clears the proposal.
+    func confirmPendingCalendarWrite() async {
+        guard let proposal = pendingCalendarWrite else { return }
+        pendingCalendarWrite = nil
+        do {
+            try await calendarProvider.commit(proposal)
+            lastCalendarWriteResult = "Calendar updated: \(proposal.summary)"
+        } catch {
+            lastCalendarWriteResult = "Calendar change failed: \(error.localizedDescription)"
+        }
+    }
+
+    /// Commit a specific proposal directly — used by the confirm dialog, which
+    /// captures the proposal at button-tap time so the dialog's dismiss handler
+    /// (which clears `pendingCalendarWrite`) can't race the commit to nil.
+    func commitCalendarWrite(_ proposal: CalendarWriteProposal) async {
+        do {
+            try await calendarProvider.commit(proposal)
+            lastCalendarWriteResult = "Calendar updated: \(proposal.summary)"
+        } catch {
+            lastCalendarWriteResult = "Calendar change failed: \(error.localizedDescription)"
+        }
+    }
+
+    /// Discard the pending calendar write (user tapped Cancel).
+    func cancelPendingCalendarWrite() {
+        if let proposal = pendingCalendarWrite {
+            lastCalendarWriteResult = "Calendar change cancelled: \(proposal.summary)"
+        }
+        pendingCalendarWrite = nil
     }
 
     static func defaultProviders() -> [ProviderRecord] {
