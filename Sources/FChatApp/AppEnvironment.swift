@@ -180,7 +180,11 @@ final class AppEnvironment {
         self.skillStore = SkillStore()
         // Restore from disk if present; otherwise fall back to defaults.
         if let snapshot = self.stateStore.load() {
-            self.providerRecords = snapshot.providers.isEmpty ? AppEnvironment.defaultProviders() : snapshot.providers
+            // A persisted snapshot exists: respect the saved providers list AS-IS,
+            // including an empty one. Seeding defaults here re-created a provider
+            // the user had deliberately deleted (the last one) on next launch.
+            // Defaults are only for genuine first run (the `else` branch below).
+            self.providerRecords = snapshot.providers
             self.conversations = snapshot.conversations
             self.selectedConversationID = snapshot.selectedConversationID
             self.promptLanguage = snapshot.promptLanguage

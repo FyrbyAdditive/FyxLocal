@@ -38,6 +38,26 @@ struct SanitizationFixesTests {
         #expect(store.load() == nil)   // genuine first run, no error path
     }
 
+    // Deleting the last provider persists an EMPTY providers array; it must
+    // survive a save/load round-trip. (AppEnvironment only seeds defaults when
+    // there's no state file at all — not when a saved file has zero providers,
+    // which used to re-create a deleted provider on next launch.)
+    @Test func emptyProvidersListSurvivesRoundTrip() throws {
+        let stateURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("providers-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: stateURL) }
+        let store = AppStateStore(fileURL: stateURL)
+        let state = PersistedAppState(
+            providers: [],
+            conversations: [],
+            selectedConversationID: nil,
+            promptLanguage: .english
+        )
+        try store.save(state)
+        let loaded = try #require(store.load())
+        #expect(loaded.providers.isEmpty)   // not re-seeded to defaults
+    }
+
     // S4: chat import bounds the message count per conversation.
     @Test func chatImportCapsMessageCount() throws {
         // Build a Claude export with way more than the cap.
