@@ -58,6 +58,9 @@ final class AppEnvironment {
     }
     /// Surfaced to the chat after a confirmed/declined reminder write.
     var lastReminderWriteResult: String?
+    /// Read-only Apple Maps / Core Location access for the `maps` tool. MapKit-
+    /// backed; needs no entitlement. Location is requested only for "near me".
+    let mapProvider: any MapProvider
     let stateStore: AppStateStore
     var providerRecords: [ProviderRecord] {
         didSet { scheduleSave() }
@@ -201,6 +204,7 @@ final class AppEnvironment {
         self.contactsProvider = CNContactsProvider()
         self.calendarProvider = EKCalendarProvider()
         self.reminderProvider = EKReminderProvider()
+        self.mapProvider = MKMapProvider()
         self.stateStore = AppStateStore()
         self.skillStore = SkillStore()
         // Restore from disk if present; otherwise fall back to defaults.
@@ -460,9 +464,13 @@ final class AppEnvironment {
         await toolRegistry.register(currentTime)
         await toolRegistry.register(makeChart)
         await toolRegistry.register(runCode)
+        // maps: read-only Apple Maps (search/directions/geocode) + an inline
+        // interactive map widget. No writes, no entitlement; "near me" only.
+        let maps = MapsTool(provider: mapProvider)
         await toolRegistry.register(contacts)
         await toolRegistry.register(calendar)
         await toolRegistry.register(reminders)
+        await toolRegistry.register(maps)
     }
 
     /// Trigger the macOS Contacts TCC permission prompt (when not yet decided).
@@ -514,6 +522,13 @@ final class AppEnvironment {
     /// enables the Reminders tool in Settings → Tools.
     func requestReminderAccess() {
         Task { _ = await reminderProvider.requestAccess() }
+    }
+
+    /// Trigger the macOS Location (when-in-use) prompt when the user enables the
+    /// Maps tool. Only "near me" queries need it; all other map actions work
+    /// without it.
+    func requestLocationAccess() {
+        Task { _ = await mapProvider.requestLocationAccess() }
     }
 
     /// Commit the pending reminder write proposal (user tapped Confirm).

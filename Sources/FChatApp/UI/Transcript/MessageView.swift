@@ -253,10 +253,10 @@ struct ToolCallResultBlock: View {
     init(call: ToolCallRecord?, result: ToolResultRecord?) {
         self.call = call
         self.result = result
-        // Chart results render the chart as their primary affordance —
+        // Chart and map results render the visual as their primary affordance —
         // start expanded so the user sees it immediately. Other tool
         // results default to collapsed to keep the transcript scan-able.
-        _expanded = State(initialValue: result?.display == .chart)
+        _expanded = State(initialValue: result?.display == .chart || result?.display == .map)
     }
 
     /// If the result reports an error, treat the whole invocation as failed
@@ -305,15 +305,21 @@ struct ToolCallResultBlock: View {
     private var isChart: Bool {
         result?.display == .chart && !(result?.isError ?? false)
     }
+    private var isMap: Bool {
+        result?.display == .map && !(result?.isError ?? false)
+    }
+    /// A self-contained visual widget (chart/map) renders without the
+    /// arguments/Result-label/divider chrome — just the widget.
+    private var isWidget: Bool { isChart || isMap }
 
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
             VStack(alignment: .leading, spacing: 8) {
-                if !isChart, let call {
+                if !isWidget, let call {
                     argumentsSection(call)
                 }
                 if let result {
-                    if !isChart, call != nil { Divider() }
+                    if !isWidget, call != nil { Divider() }
                     resultSection(result)
                 } else if call?.status == .running {
                     Label("Awaiting result\u{2026}", systemImage: "ellipsis")
@@ -365,18 +371,20 @@ struct ToolCallResultBlock: View {
             // Charts are their own affordance — no "Result" label above
             // the chart. Errors and other tool results still get one so
             // the user has visual context for the payload below.
-            if !isChart {
+            if !isWidget {
                 Text(result.isError ? "Result (error)" : "Result")
                     .font(.caption2)
                     .foregroundStyle(result.isError ? .red : .secondary)
             }
             // Dispatch on the display hint so non-JSON-shaped results can
             // render as their own widgets. .chart → ToolChartView (Swift
-            // Charts bar/line/pie). Default falls back to pretty-printed
-            // JSON — same as the original behaviour.
+            // Charts bar/line/pie); .map → ToolMapView (MapKit). Default
+            // falls back to pretty-printed JSON — same as original behaviour.
             switch result.display {
             case .chart:
                 ToolChartView(json: result.outputJSON)
+            case .map:
+                ToolMapView(json: result.outputJSON)
             default:
                 Text(Self.prettyJSON(for: result.outputJSON))
                     .font(.system(.caption, design: .monospaced))

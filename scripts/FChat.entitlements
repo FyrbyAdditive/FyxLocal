@@ -41,5 +41,13 @@
          NSRemindersFullAccessUsageDescription in Info.plist. -->
     <key>com.apple.security.personal-information.reminders</key>
     <true/>
+
+    <!-- Location access for the (opt-in) maps tool's "near me" queries. Not
+         strictly required for a non-sandboxed app (Core Location is mediated by
+         locationd, not the sandbox), but declared defensively so the prompt is
+         never suppressed. Pairs with NSLocationWhenInUseUsageDescription in
+         Info.plist. -->
+    <key>com.apple.security.personal-information.location</key>
+    <true/>
 </dict>
 </plist>

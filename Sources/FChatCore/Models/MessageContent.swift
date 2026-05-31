@@ -152,7 +152,7 @@ public enum ToolStatus: String, Codable, Sendable, Hashable {
 }
 
 public enum ToolDisplayHint: String, Codable, Sendable, Hashable {
-    case markdown, image, table, json, htmlIsland, chart
+    case markdown, image, table, json, htmlIsland, chart, map
 }
 
 public struct UsageInfo: Codable, Sendable, Hashable {

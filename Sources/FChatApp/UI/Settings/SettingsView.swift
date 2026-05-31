@@ -477,6 +477,13 @@ private struct ToolsTab: View {
                         title: "Allow reminder changes",
                         description: "Lets the model PROPOSE adding, editing, deleting, or completing reminders. Every change is shown for you to confirm before it happens. Requires the Reminders tool above."
                     )
+                    ToolToggleRow(
+                        environment: environment,
+                        name: "maps",
+                        title: "Maps",
+                        description: "Lets the model search Apple Maps, get directions, and show results on an interactive map (read-only). Enabling asks for Location only so “near me” works; other searches don't need it.",
+                        onEnable: { environment.requestLocationAccess() }
+                    )
                 } label: {
                     Text("Apple").font(.headline)
                 }

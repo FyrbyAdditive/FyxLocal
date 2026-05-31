@@ -5913,6 +5913,52 @@
         }
       }
     },
+    "Maps": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maps"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartor"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kort"
+          }
+        }
+      }
+    },
+    "Lets the model search Apple Maps, get directions, and show results on an interactive map (read-only). Enabling asks for Location only so “near me” works; other searches don't need it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets the model search Apple Maps, get directions, and show results on an interactive map (read-only). Enabling asks for Location only so “near me” works; other searches don't need it."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Låter modellen söka i Apple Kartor, hämta vägbeskrivningar och visa resultat på en interaktiv karta (skrivskyddat). Att aktivera ber om plats endast för att ”nära mig” ska fungera; andra sökningar behöver det inte."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lader modellen søge i Apple Kort, hente rutevejledninger og vise resultater på et interaktivt kort (skrivebeskyttet). Aktivering beder kun om placering, så ”nær mig” virker; andre søgninger kræver det ikke."
+          }
+        }
+      }
+    },
     "Confirm reminder change?": {
       "extractionState": "manual",
       "localizations": {
