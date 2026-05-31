@@ -5,5 +5,5 @@ import Foundation
 
 public enum FChat {
     public static let appIdentifier = "com.fyrbyadditive.fchat"
-    public static let version = "0.4.0"
+    public static let version = "0.4.1"
 }

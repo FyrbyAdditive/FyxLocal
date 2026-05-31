@@ -64,7 +64,7 @@ public actor MCPClient {
     public init(
         transport: any MCPTransport,
         clientName: String = "F-Chat",
-        clientVersion: String = "0.4.0",
+        clientVersion: String = "0.4.1",
         protocolVersion: String = "2025-11-25"
     ) {
         self.transport = transport
