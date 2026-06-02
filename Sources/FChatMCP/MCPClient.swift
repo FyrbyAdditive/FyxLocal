@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Tim Ellis / Fyrby Additive Manufacturing & Engineering
 
 import Foundation
+import FChatCore
 
 public struct MCPServerInfo: Sendable, Hashable {
     public var name: String
@@ -64,7 +65,7 @@ public actor MCPClient {
     public init(
         transport: any MCPTransport,
         clientName: String = "F-Chat",
-        clientVersion: String = "0.5.0",
+        clientVersion: String = FChat.version,
         protocolVersion: String = "2025-11-25"
     ) {
         self.transport = transport
