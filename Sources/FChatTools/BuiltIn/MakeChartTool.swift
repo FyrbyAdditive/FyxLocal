@@ -24,51 +24,7 @@ public struct MakeChartTool: Tool {
     public init() {}
 
     public func definition(for language: PromptLanguage) -> ToolDefinition {
-        let description: String
-        switch language {
-        case .english:
-            description = """
-            Render a small chart inline in the chat. Supported types: \
-            "bar", "line", "pie". Provide a `series` array of \
-            `{name, points}`; each point is `{x, y, label?}`. `x` can be \
-            a string (categorical axis) or a number (continuous axis); \
-            mix-and-match isn't supported — pick one per chart. `y` is \
-            always a number. Optional top-level fields: `title`, \
-            `xLabel`, `yLabel` (xLabel/yLabel are ignored for pies). \
-            For pie charts use one series; each point's `x` becomes the \
-            slice label and `y` its size. Use this when the user asks \
-            for a chart, a "graph", or when a visual comparison would \
-            be much clearer than a table.
-            """
-        case .swedish:
-            description = """
-            Rita ett litet diagram direkt i chatten. Stödda typer: \
-            "bar", "line", "pie". Skicka en `series`-array med \
-            `{name, points}`; varje punkt är `{x, y, label?}`. `x` kan \
-            vara en sträng (kategorisk axel) eller ett tal (kontinuerlig \
-            axel) — blanda inte i samma diagram. `y` är alltid ett tal. \
-            Valfria toppfält: `title`, `xLabel`, `yLabel` (de senare \
-            ignoreras för pajdiagram). För pajdiagram, använd en serie \
-            där varje punkts `x` blir tårtbitens etikett och `y` dess \
-            storlek. Använd verktyget när användaren ber om en graf, \
-            ett diagram eller när en visuell jämförelse är mycket \
-            tydligare än en tabell.
-            """
-        case .danish:
-            description = """
-            Tegn et lille diagram direkte i chatten. Understøttede typer: \
-            "bar", "line", "pie". Send et `series`-array med \
-            `{name, points}`; hvert punkt er `{x, y, label?}`. `x` kan \
-            være en streng (kategorisk akse) eller et tal (kontinuerlig \
-            akse) — bland ikke i samme diagram. `y` er altid et tal. \
-            Valgfrie topfelter: `title`, `xLabel`, `yLabel` (de sidste \
-            ignoreres for cirkeldiagrammer). Til cirkeldiagrammer bruges \
-            én serie, hvor hvert punkts `x` bliver lagkagestykkets etiket \
-            og `y` dets størrelse. Brug værktøjet, når brugeren beder om \
-            en graf, et diagram, eller når en visuel sammenligning er \
-            meget tydeligere end en tabel.
-            """
-        }
+        let description = PromptStrings.string("tool.make_chart.desc", language)
         let schema = JSONSchema(raw: #"""
         {"type":"object","properties":{"type":{"type":"string","enum":["bar","line","pie"]},"title":{"type":"string"},"xLabel":{"type":"string"},"yLabel":{"type":"string"},"series":{"type":"array","minItems":1,"items":{"type":"object","properties":{"name":{"type":"string"},"points":{"type":"array","minItems":1,"items":{"type":"object","properties":{"x":{},"y":{"type":"number"},"label":{"type":"string"}},"required":["x","y"]}}},"required":["points"]}}},"required":["type","series"],"additionalProperties":false}
         """#)

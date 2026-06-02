@@ -121,20 +121,7 @@ public struct ConversationTitler: Sendable {
     }
 
     private func prompt(for language: PromptLanguage) -> String {
-        switch language {
-        case .english:
-            return """
-            You write a short title for a chat conversation. Look at the user's first message and the assistant's first reply, then output a title of at most 6 words and 60 characters that captures the topic. Use title case. No quotes, no trailing punctuation, no preamble. Just the title.
-            """
-        case .swedish:
-            return """
-            Du skriver en kort titel för en chattkonversation. Titta på användarens första meddelande och assistentens första svar, och skriv en titel på högst 6 ord och 60 tecken som fångar ämnet. Använd inledande versaler på huvudord. Inga citattecken, ingen avslutande interpunktion, ingen inledning. Bara titeln.
-            """
-        case .danish:
-            return """
-            Du skriver en kort titel til en chatsamtale. Se på brugerens første besked og assistentens første svar, og skriv derefter en titel på højst 6 ord og 60 tegn, der fanger emnet. Brug stort begyndelsesbogstav på hovedord. Ingen anførselstegn, ingen afsluttende tegnsætning, ingen indledning. Kun titlen.
-            """
-        }
+        PromptStrings.string("titler.prompt", language)
     }
 }
 

@@ -60,6 +60,10 @@ let package = Package(
                 .copy("Tokenization/Resources/cl100k_base.tiktoken"),
                 .copy("Tokenization/Resources/o200k_base.tiktoken"),
                 .copy("Tokenization/Resources/minimax-m2.7.json"),
+                // Model-facing prompt strings (system prompt, tool descriptions,
+                // temporal text) in en/sv/da. `.process` compiles the catalog to
+                // per-locale .lproj/.strings so PromptStrings can resolve them.
+                .process("Resources/Prompts.xcstrings"),
             ]
         ),
         .target(

@@ -41,15 +41,7 @@ public struct WebFetchTool: Tool {
     }
 
     public func definition(for language: PromptLanguage) -> ToolDefinition {
-        let description: String
-        switch language {
-        case .english:
-            description = "Fetch a web page by URL and return its main readable text, title, byline, and excerpt. Use after web_search when you need the page contents, not just the search snippet."
-        case .swedish:
-            description = "Hämta en webbsida på en URL och returnera sidans läsbara huvudtext, titel, författare och utdrag. Använd efter web_search när du behöver sidans innehåll, inte bara sökutdraget."
-        case .danish:
-            description = "Hent en webside via en URL, og returnér sidens læsbare hovedtekst, titel, forfatter og uddrag. Brug det efter web_search, når du har brug for sidens indhold, ikke kun søgeuddraget."
-        }
+        let description = PromptStrings.string("tool.web_fetch.desc", language)
         let schema = JSONSchema(raw: #"""
         {"type":"object","properties":{"url":{"type":"string","format":"uri"}},"required":["url"],"additionalProperties":false}
         """#)

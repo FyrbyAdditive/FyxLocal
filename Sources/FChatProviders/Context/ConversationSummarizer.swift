@@ -93,47 +93,7 @@ public struct ConversationSummarizer: Sendable {
     }
 
     private func prompt(for language: PromptLanguage) -> String {
-        switch language {
-        case .english:
-            return """
-            You are summarizing the early portion of an ongoing conversation between a user and an assistant so that the assistant can continue the conversation in a new turn without seeing those earlier messages directly.
-
-            Preserve, in order:
-            1. Decisions made and conclusions reached.
-            2. Named entities (people, files, URLs, function names, places).
-            3. Facts the user stated as true.
-            4. Open questions or tasks the user has not received an answer for yet.
-            5. Tools that were invoked and the gist of their results.
-
-            Drop chitchat, repeated context, verbose explanations, and step-by-step reasoning. Write as a third-person bulleted briefing, not a transcript. Target ~10–20% of original length. Output the summary text only, with no preamble or sign-off.
-            """
-        case .swedish:
-            return """
-            Du sammanfattar den tidiga delen av en pågående konversation mellan en användare och en assistent så att assistenten kan fortsätta konversationen i ett nytt steg utan att se de tidigare meddelandena direkt.
-
-            Bevara, i ordning:
-            1. Beslut som fattats och slutsatser som dragits.
-            2. Namngivna enheter (personer, filer, URL:er, funktionsnamn, platser).
-            3. Fakta som användaren har angett som sanna.
-            4. Öppna frågor eller uppgifter som användaren inte har fått svar på än.
-            5. Verktyg som anropats och resultatet i korthet.
-
-            Ta bort småprat, upprepat sammanhang, utförliga förklaringar och stegvis resonemang. Skriv som en punktlista i tredje person, inte ett protokoll. Sikta på 10–20 % av originalets längd. Skriv endast själva sammanfattningen, utan inledning eller avslutning.
-            """
-        case .danish:
-            return """
-            Du sammenfatter den tidlige del af en igangværende samtale mellem en bruger og en assistent, så assistenten kan fortsætte samtalen i et nyt trin uden at se de tidligere beskeder direkte.
-
-            Bevar, i rækkefølge:
-            1. Beslutninger, der er truffet, og konklusioner, der er nået.
-            2. Navngivne enheder (personer, filer, URL'er, funktionsnavne, steder).
-            3. Fakta, som brugeren har angivet som sande.
-            4. Åbne spørgsmål eller opgaver, som brugeren endnu ikke har fået svar på.
-            5. Værktøjer, der blev kaldt, og hovedindholdet af deres resultater.
-
-            Fjern smalltalk, gentaget kontekst, omstændelige forklaringer og trinvis ræsonnement. Skriv som en punktopstillet briefing i tredje person, ikke et referat. Sigt efter ca. 10-20 % af den oprindelige længde. Skriv kun selve sammenfatningen, uden indledning eller afslutning.
-            """
-        }
+        PromptStrings.string("summarizer.prompt", language)
     }
 }
 

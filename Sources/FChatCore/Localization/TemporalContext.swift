@@ -47,14 +47,8 @@ public struct TemporalContext: Sendable {
         f.timeStyle = .none
         let tzAbbrev = timeZone.abbreviation(for: date) ?? timeZone.identifier
         let tzName = timeZone.identifier
-        switch language {
-        case .english:
-            return "[Today is \(f.string(from: date)); timezone \(tzName) (\(tzAbbrev))]"
-        case .swedish:
-            return "[Idag är \(f.string(from: date)); tidszon \(tzName) (\(tzAbbrev))]"
-        case .danish:
-            return "[I dag er \(f.string(from: date)); tidszone \(tzName) (\(tzAbbrev))]"
-        }
+        return PromptStrings.string("temporal.dayheader", language,
+                                    f.string(from: date), tzName, tzAbbrev)
     }
 
     /// Full sub-second precision rendering as a small JSON object, suitable
@@ -91,29 +85,8 @@ public struct TemporalContext: Sendable {
         let tzAbbrev = timeZone.abbreviation(for: date) ?? timeZone.identifier
         let tzName = timeZone.identifier
 
-        switch language {
-        case .english:
-            return """
-            The current date and time is \(human) (\(tzAbbrev), \(tzName)). \
-            Machine-readable: \(iso). Use these when the question depends on \
-            "today", "now", or how recent something is; do not rely on your \
-            training cutoff for date-sensitive answers.
-            """
-        case .swedish:
-            return """
-            Aktuellt datum och tid är \(human) (\(tzAbbrev), \(tzName)). \
-            Maskinläsbart: \(iso). Använd dessa när frågan beror på "idag", \
-            "nu" eller hur färsk en händelse är; förlita dig inte på din \
-            träningsdata för datumkänsliga svar.
-            """
-        case .danish:
-            return """
-            Den aktuelle dato og tid er \(human) (\(tzAbbrev), \(tzName)). \
-            Maskinlæsbart: \(iso). Brug disse, når spørgsmålet afhænger af \
-            "i dag", "nu" eller hvor nyt noget er; stol ikke på din \
-            træningsdata til datofølsomme svar.
-            """
-        }
+        // Arg order matches the catalog template: human, tzAbbrev, tzName, iso.
+        return PromptStrings.string("temporal.full", language, human, tzAbbrev, tzName, iso)
     }
 
 }

@@ -78,56 +78,16 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
 
     private enum Strings {
         static func base(for language: PromptLanguage) -> String {
-            switch language {
-            case .english:
-                return """
-                You are F-Chat, a helpful native macOS assistant created by Fyrby \
-                Additive. Be concise, accurate, and direct. Cite sources when you \
-                use information from web searches, fetched pages, or retrieved \
-                documents.
-                """
-            case .swedish:
-                return """
-                Du är F-Chat, en hjälpsam macOS-assistent skapad av Fyrby Additive. \
-                Var kortfattad, korrekt och direkt. Svara på svenska om inte \
-                användaren skriver på ett annat språk. Ange källor när du använder \
-                information från webbsökningar, hämtade sidor eller indexerade \
-                dokument.
-                """
-            case .danish:
-                return """
-                Du er F-Chat, en hjælpsom macOS-assistent skabt af Fyrby Additive. \
-                Vær kortfattet, præcis og direkte. Svar på dansk, medmindre \
-                brugeren skriver på et andet sprog. Angiv kilder, når du bruger \
-                information fra websøgninger, hentede sider eller indekserede \
-                dokumenter.
-                """
-            }
+            PromptStrings.string("systemprompt.base", language)
         }
 
         static func toolGuidance(for language: PromptLanguage) -> String {
-            switch language {
-            case .english:
-                return """
-                You may call the provided tools when they help answer the user's question. \
-                Prefer fewer, well-formed calls over many small ones. Do not call a tool \
-                if you already have the answer.
-                """
-            case .swedish:
-                return """
-                Du får använda de tillgängliga verktygen när de hjälper dig att svara. \
-                Föredra färre välformulerade anrop framför många små. Anropa inte ett \
-                verktyg om du redan vet svaret.
-                """
-            case .danish:
-                return """
-                Du må bruge de tilgængelige værktøjer, når de hjælper dig med at svare. \
-                Foretræk færre velformede kald frem for mange små. Kald ikke et \
-                værktøj, hvis du allerede kender svaret.
-                """
-            }
+            PromptStrings.string("systemprompt.tools", language)
         }
 
+        // kept inline (not in Prompts.xcstrings): the body splices a
+        // runtime-built `\(bullets)` list, so the surrounding prose lives with
+        // the assembly logic. The per-language wording is still here.
         static func skillsGuidance(for language: PromptLanguage, skills: [SkillSummary]) -> String {
             // Skill name/description come from a third-party skill package and
             // land in the system prompt. Sanitize so a malicious skill can't
@@ -191,29 +151,7 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
         }
 
         static func ragGuidance(for language: PromptLanguage) -> String {
-            switch language {
-            case .english:
-                return """
-                One or more document collections are attached to this chat. Use the \
-                `rag_search` tool to look up information before answering questions that \
-                might be covered by the attached material, and cite the document and \
-                section in your response.
-                """
-            case .swedish:
-                return """
-                En eller flera dokumentsamlingar är kopplade till denna chatt. Använd \
-                verktyget `rag_search` för att slå upp information innan du svarar på \
-                frågor som kan täckas av det bifogade materialet, och ange dokument och \
-                avsnitt i ditt svar.
-                """
-            case .danish:
-                return """
-                En eller flere dokumentsamlinger er knyttet til denne chat. Brug \
-                værktøjet `rag_search` til at slå information op, før du svarer på \
-                spørgsmål, der kan være dækket af det vedhæftede materiale, og angiv \
-                dokument og afsnit i dit svar.
-                """
-            }
+            PromptStrings.string("systemprompt.rag", language)
         }
     }
 }
