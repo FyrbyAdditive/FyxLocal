@@ -11,18 +11,24 @@ After looking through various open source clients and being dissatisfied with al
 * Not bundle lots of commercial providers built in, but include support for the most popular APIs used by locally running models, if there is commercial cross-over (there is) that's fine.
 * Users should opt-in to skills, MCP services and so on and we should not bundle any, to keep the client clean and minimal.
 
-If you plan to contribute to F-Chat please bear in mind the above, and that I would like to keep the client as clean, un-commercialised and local as possible. 
-
-That means a provider probably won't get specifically added unless it has a commonly used or open API.
+If you plan to contribute to F-Chat please bear in mind the above, and that I would like to keep the client as clean, un-commercialised and local as possible. That means a provider probably won't specifically be added unless it has a commonly used or open API.
 
 This client has the following features:
 
 * Skills, including sandboxed Python/bash script support
 * MCP via stdio/http with API key or OAuth
 * RAG, with local embedding via Qwen3-Embedding-4B
-* Extensible in-built tools with a basic set provided
 * Import from Anthropic/OpenAI exports
 * Export to multiple file formats
+
+The latest version has support for various tools, including:
+
+* Web search and web fetch
+* Time of day
+* Chart creation
+* Local integration of Apple Maps, Reminders, Calendar and Contacts
+
+_Please note that some of these tools have optional write access (disabled by default) and that you use these at your own risk. Different LLMs will perform vastly differently with these tools, and I am not responsible for anything they do or your choice to use these features._
 
 The following provider types are supported, which are included as they work with certain models via vLLM:
 
