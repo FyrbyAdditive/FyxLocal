@@ -16,7 +16,11 @@ public struct AppStateStore: Sendable {
         self.fileURL = fileURL ?? AppDataDirectories.ensureRoot().appendingPathComponent("state.json")
     }
 
-    public func load() -> PersistedAppState? {
+    /// Load the persisted snapshot, applying versioned migrations. Returns the
+    /// migrated state plus any user-facing migration notices (empty when nothing
+    /// migrated). nil only on genuine first run (no file). `load()` is a value
+    /// type's non-mutating read, so notices are returned rather than stored.
+    public func load() -> (state: PersistedAppState, notices: [MigrationNotice])? {
         // No file yet → genuine first run; return nil so the caller starts fresh.
         guard let data = try? Data(contentsOf: fileURL) else { return nil }
         let decoder = JSONDecoder()
@@ -25,15 +29,15 @@ public struct AppStateStore: Sendable {
             let decoded = try decoder.decode(PersistedAppState.self, from: data)
             // Apply versioned state migrations (e.g. disabling TCC tools after
             // the bundle-id rename) so every caller sees an up-to-date snapshot.
-            let migrated = StateMigrations.migrate(decoded)
+            let result = StateMigrations.migrate(decoded)
             // If a migration actually ran, persist the upgraded snapshot now so
             // it doesn't re-run on every launch and the on-disk version is
             // accurate. (AppEnvironment assigns these into properties during
             // init, where `didSet` autosave does NOT fire — so we write here.)
-            if migrated.version != decoded.version {
-                try? save(migrated)
+            if result.state.version != decoded.version {
+                try? save(result.state)
             }
-            return migrated
+            return (result.state, result.notices)
         } catch {
             // The file EXISTS but won't decode (corruption, or a schema change
             // that broke Codable). Returning nil here used to let the app boot

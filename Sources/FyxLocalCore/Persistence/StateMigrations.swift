@@ -16,6 +16,26 @@ import Foundation
 ///   3. write the `vN_…` function + a test.
 /// Keeping them numbered and pure means every migration is testable in
 /// isolation and the history of schema changes reads top-to-bottom.
+/// A user-facing notice produced by a migration, shown once on launch. Carries
+/// stable localization KEYS (resolved by the UI layer against its string
+/// catalog), never finished prose — so Core stays free of UI/localization deps.
+public struct MigrationNotice: Equatable, Sendable {
+    public let titleKey: String
+    public let bodyKey: String
+    public init(titleKey: String, bodyKey: String) {
+        self.titleKey = titleKey
+        self.bodyKey = bodyKey
+    }
+}
+
+/// The outcome of running `StateMigrations.migrate`: the upgraded state plus any
+/// notices the migrations want surfaced to the user (aggregated in order, so a
+/// combined multi-version upgrade yields one notice per step that did something).
+public struct MigrationResult: Sendable {
+    public let state: PersistedAppState
+    public let notices: [MigrationNotice]
+}
+
 public enum StateMigrations {
     /// The schema version produced by the current build. Equals the highest
     /// migration step below; `migrate(_:)` stamps state to this value.
@@ -32,16 +52,31 @@ public enum StateMigrations {
     ]
 
     /// Apply every migration newer than `state.version`, in order, returning the
-    /// upgraded state stamped to `currentVersion`. Pure — no I/O, no globals —
-    /// so it's trivially testable and safe to run on every load (idempotent
-    /// once `version` reaches `currentVersion`).
-    public static func migrate(_ state: PersistedAppState) -> PersistedAppState {
+    /// upgraded state (stamped to `currentVersion`) plus any user notices. Pure —
+    /// no I/O, no globals — so it's trivially testable and safe to run on every
+    /// load (idempotent once `version` reaches `currentVersion`: no step fires,
+    /// no notices). Notices accumulate across steps so a combined upgrade shows
+    /// them all; each step only adds a notice if it actually changed this user's
+    /// state.
+    public static func migrate(_ state: PersistedAppState) -> MigrationResult {
         var s = state
-        if s.version < 5 { s = v5_disableTCCTools(s) }
+        var notices: [MigrationNotice] = []
+        if s.version < 5 {
+            let before = s.enabledTools ?? []
+            s = v5_disableTCCTools(s)
+            // Only notify if at least one TCC tool was actually enabled (and thus
+            // turned off) — a user who had them all off needs no explanation.
+            if !before.isDisjoint(with: tccTools) {
+                notices.append(MigrationNotice(
+                    titleKey: "migration.v5.tcc.title",
+                    bodyKey: "migration.v5.tcc.body"
+                ))
+            }
+        }
         // Future migrations go here, in ascending order:
-        // if s.version < 6 { s = v6_…(s) }
+        // if s.version < 6 { s = v6_…(s); notices.append(…) }
         s.version = currentVersion
-        return s
+        return MigrationResult(state: s, notices: notices)
     }
 
     /// #5 — disable the TCC-requiring tools.

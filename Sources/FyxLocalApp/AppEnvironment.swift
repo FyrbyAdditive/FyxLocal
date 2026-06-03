@@ -49,6 +49,10 @@ final class AppEnvironment {
     /// Surfaced to the chat after a confirmed/declined write so the transcript can
     /// note the outcome. nil = no recent result to show.
     var lastCalendarWriteResult: String?
+    /// User-facing notices produced by state migrations on this launch (e.g. the
+    /// Apple tools being disabled after an upgrade). Shown once in a sheet, then
+    /// cleared on dismiss. Session-only; not persisted. Empty = nothing to show.
+    var pendingMigrationNotices: [MigrationNotice] = []
     /// Read + (confirmed) write Reminders access for the `reminders` tool.
     let reminderProvider: any ReminderProvider
     /// A reminder change the model proposed, awaiting the user's confirmation in
@@ -213,7 +217,11 @@ final class AppEnvironment {
         self.stateStore = AppStateStore()
         self.skillStore = SkillStore()
         // Restore from disk if present; otherwise fall back to defaults.
-        if let snapshot = self.stateStore.load() {
+        if let loaded = self.stateStore.load() {
+            let snapshot = loaded.state
+            // Surface any migration notices (e.g. tools disabled by an upgrade)
+            // for the launch sheet to show once.
+            self.pendingMigrationNotices = loaded.notices
             // A persisted snapshot exists: respect the saved providers list AS-IS,
             // including an empty one. Seeding defaults here re-created a provider
             // the user had deliberately deleted (the last one) on next launch.

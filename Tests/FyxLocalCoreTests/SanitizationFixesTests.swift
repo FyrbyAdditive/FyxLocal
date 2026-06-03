@@ -55,7 +55,7 @@ struct SanitizationFixesTests {
         )
         try store.save(state)
         let loaded = try #require(store.load())
-        #expect(loaded.providers.isEmpty)   // not re-seeded to defaults
+        #expect(loaded.state.providers.isEmpty)   // not re-seeded to defaults
     }
 
     // S4: chat import bounds the message count per conversation.

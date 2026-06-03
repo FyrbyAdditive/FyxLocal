@@ -39,6 +39,16 @@ struct RootView: View {
                 }
             }
         }
+        // One-time post-upgrade notice (e.g. tools disabled after the rebrand).
+        // Presence-driven; the Dismiss button owns clearing the state.
+        .sheet(isPresented: Binding(
+            get: { !environment.pendingMigrationNotices.isEmpty },
+            set: { _ in }
+        )) {
+            MigrationNoticeSheet(notices: environment.pendingMigrationNotices) {
+                environment.pendingMigrationNotices = []
+            }
+        }
     }
 }
 

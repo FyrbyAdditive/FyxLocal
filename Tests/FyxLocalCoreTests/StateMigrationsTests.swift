@@ -29,38 +29,53 @@ struct StateMigrationsTests {
             "web_search", "web_fetch", "current_time", "make_chart",
             "rag_search", "run_code",
         ]
-        let migrated = StateMigrations.migrate(state(version: 4, tools: before))
+        let result = StateMigrations.migrate(state(version: 4, tools: before))
 
         // All six TCC tools (incl. write children) gone.
         for t in ["calendar", "calendar_write", "reminders", "reminders_write", "contacts_search", "maps"] {
-            #expect(migrated.enabledTools?.contains(t) == false, "\(t) should be disabled")
+            #expect(result.state.enabledTools?.contains(t) == false, "\(t) should be disabled")
         }
         // Non-TCC tools untouched.
         for t in ["web_search", "web_fetch", "current_time", "make_chart", "rag_search", "run_code"] {
-            #expect(migrated.enabledTools?.contains(t) == true, "\(t) should survive")
+            #expect(result.state.enabledTools?.contains(t) == true, "\(t) should survive")
         }
         // Version stamped current.
-        #expect(migrated.version == StateMigrations.currentVersion)
+        #expect(result.state.version == StateMigrations.currentVersion)
+        // A notice is produced because TCC tools were actually turned off.
+        #expect(result.notices == [MigrationNotice(titleKey: "migration.v5.tcc.title",
+                                                   bodyKey: "migration.v5.tcc.body")])
     }
 
-    @Test func idempotentForCurrentVersion() {
+    @Test func idempotentForCurrentVersionAndNoNotices() {
         // A user who RE-enabled Calendar after upgrading (state already at v5)
-        // must NOT have it stripped again — the migration keys on version.
+        // must NOT have it stripped again — the migration keys on version — and
+        // must see no notice.
         let s = state(version: StateMigrations.currentVersion, tools: ["calendar", "web_search"])
-        let migrated = StateMigrations.migrate(s)
-        #expect(migrated.enabledTools == ["calendar", "web_search"])
-        #expect(migrated.version == StateMigrations.currentVersion)
+        let result = StateMigrations.migrate(s)
+        #expect(result.state.enabledTools == ["calendar", "web_search"])
+        #expect(result.state.version == StateMigrations.currentVersion)
+        #expect(result.notices.isEmpty)
     }
 
-    @Test func nilToolsIsNoOp() {
-        let migrated = StateMigrations.migrate(state(version: 4, tools: nil))
-        #expect(migrated.enabledTools == nil)
-        #expect(migrated.version == StateMigrations.currentVersion)
+    @Test func nilToolsIsNoOpWithNoNotice() {
+        let result = StateMigrations.migrate(state(version: 4, tools: nil))
+        #expect(result.state.enabledTools == nil)
+        #expect(result.state.version == StateMigrations.currentVersion)
+        #expect(result.notices.isEmpty)   // nothing was turned off → no notice
+    }
+
+    @Test func noNoticeWhenNoTCCToolsWereEnabled() {
+        // Migrates (version bumps) but the user had no TCC tools on, so there's
+        // nothing to explain → no notice.
+        let result = StateMigrations.migrate(state(version: 4, tools: ["web_search", "run_code"]))
+        #expect(result.state.version == StateMigrations.currentVersion)
+        #expect(result.state.enabledTools == ["web_search", "run_code"])
+        #expect(result.notices.isEmpty)
     }
 
     /// Guards the decodable-defaults pitfall: a hand-written v4 JSON (with the
     /// `version` key present) decodes, then migrates cleanly — TCC tools off,
-    /// version bumped. This is the shape a real 0.5.1 state.json has.
+    /// version bumped, notice produced. This is the shape a real 0.5.1 state has.
     @Test func decodesV4JSONThenMigrates() throws {
         let json = """
         {
@@ -74,17 +89,17 @@ struct StateMigrationsTests {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let decoded = try decoder.decode(PersistedAppState.self, from: Data(json.utf8))
-        let migrated = StateMigrations.migrate(decoded)
+        let result = StateMigrations.migrate(decoded)
 
-        #expect(migrated.enabledTools == ["web_search"])
-        #expect(migrated.version == StateMigrations.currentVersion)
+        #expect(result.state.enabledTools == ["web_search"])
+        #expect(result.state.version == StateMigrations.currentVersion)
+        #expect(result.notices.count == 1)
     }
 
-    /// `AppStateStore.load()` applies migrations AND persists the upgraded
-    /// snapshot back to disk (so it doesn't re-run every launch). After loading
-    /// a v4 file, the on-disk file must be rewritten at the current version with
-    /// the TCC tools removed.
-    @Test func loadMigratesAndPersistsToDisk() throws {
+    /// `AppStateStore.load()` applies migrations, persists the upgraded snapshot
+    /// (so it doesn't re-run every launch), AND returns the notices. A second
+    /// load of the now-current file migrates nothing and returns no notices.
+    @Test func loadMigratesPersistsAndReturnsNotices() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("statemig-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: tmp) }
@@ -94,13 +109,18 @@ struct StateMigrationsTests {
         try Data(json.utf8).write(to: tmp)
 
         let store = AppStateStore(fileURL: tmp)
-        let loaded = store.load()
-        #expect(loaded?.version == StateMigrations.currentVersion)
-        #expect(loaded?.enabledTools == ["web_search"])
+        let loaded = try #require(store.load())
+        #expect(loaded.state.version == StateMigrations.currentVersion)
+        #expect(loaded.state.enabledTools == ["web_search"])
+        #expect(loaded.notices.count == 1)   // TCC notice surfaced
 
-        // The file on disk was rewritten at the current version.
+        // The file on disk was rewritten at the current version…
         let onDisk = try JSONDecoder().decode(PersistedAppState.self, from: Data(contentsOf: tmp))
         #expect(onDisk.version == StateMigrations.currentVersion)
         #expect(onDisk.enabledTools == ["web_search"])
+
+        // …so a second load migrates nothing and reports no notices (no re-notify).
+        let reloaded = try #require(store.load())
+        #expect(reloaded.notices.isEmpty)
     }
 }

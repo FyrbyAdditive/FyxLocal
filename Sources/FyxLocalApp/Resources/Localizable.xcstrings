@@ -7773,6 +7773,151 @@
           }
         }
       }
+    },
+    "migration.sheet.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FyxLocal was updated"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FyxLocal was updated"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FyxLocal har uppdaterats"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FyxLocal er blevet opdateret"
+          }
+        }
+      }
+    },
+    "migration.sheet.intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some changes were made during this update:"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some changes were made during this update:"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Några ändringar gjordes under den här uppdateringen:"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der blev foretaget nogle ændringer under denne opdatering:"
+          }
+        }
+      }
+    },
+    "migration.sheet.dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stäng"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luk"
+          }
+        }
+      }
+    },
+    "migration.v5.tcc.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple tools were turned off"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple tools were turned off"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-verktyg stängdes av"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-værktøjer blev slået fra"
+          }
+        }
+      }
+    },
+    "migration.v5.tcc.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar, Reminders, Contacts and Maps were disabled because this update changed the app's identity, and macOS requires you to grant permission again. Re-enable them in Settings → Tools when you want them, and approve the macOS prompt."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar, Reminders, Contacts and Maps were disabled because this update changed the app's identity, and macOS requires you to grant permission again. Re-enable them in Settings → Tools when you want them, and approve the macOS prompt."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalender, Påminnelser, Kontakter och Kartor inaktiverades eftersom den här uppdateringen ändrade appens identitet, och macOS kräver att du ger åtkomst igen. Aktivera dem igen i Inställningar → Verktyg när du vill ha dem, och godkänn macOS-dialogen."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalender, Påmindelser, Kontakter og Kort blev deaktiveret, fordi denne opdatering ændrede appens identitet, og macOS kræver, at du giver tilladelse igen. Aktivér dem igen i Indstillinger → Værktøjer, når du vil bruge dem, og godkend macOS-dialogen."
+          }
+        }
+      }
     }
   }
 }
