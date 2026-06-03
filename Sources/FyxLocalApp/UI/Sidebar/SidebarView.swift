@@ -262,7 +262,15 @@ struct SidebarView: View {
         Button {
             environment.sidebarSelection = selection
         } label: {
-            Label(title, systemImage: icon)
+            // Custom label (not `Label`) so the icon sits in a fixed-width
+            // column: `books.vertical` and `gearshape` have different intrinsic
+            // widths, which left the two titles misaligned under the default
+            // Label layout.
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .frame(width: 18, alignment: .center)
+                Text(title)
+            }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 5)
                 .padding(.horizontal, 8)
