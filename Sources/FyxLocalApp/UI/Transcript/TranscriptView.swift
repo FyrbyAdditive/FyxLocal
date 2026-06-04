@@ -25,6 +25,10 @@ struct TranscriptView: View {
     /// token delta and we measure its height so we can anchor-compensate the
     /// scroll offset when the user has scrolled away from the bottom.
     var streamingMessageID: MessageID? = nil
+    /// Per-message action callbacks (copy/edit/regenerate/delete), threaded
+    /// down to each row. Closures rather than a VM reference to keep rows
+    /// value-typed (see `MessageActions`).
+    var actions: MessageActions = MessageActions()
     /// Indices of compaction record ids whose dropped originals are currently
     /// expanded by the user. Empty by default — originals are collapsed.
     @State private var expandedCompactions: Set<UUID> = []
@@ -190,7 +194,8 @@ struct TranscriptView: View {
                 contextTokens: contextTokens,
                 failureError: failure,
                 onRetry: retry,
-                streamingMessageID: streamingMessageID
+                streamingMessageID: streamingMessageID,
+                actions: actions
             )
             .padding(.horizontal, DesignTokens.panelPadding)
             .id(message.id)

@@ -33,6 +33,7 @@ _Please note that some of these tools have optional write access (disabled by de
 The following provider types are supported, which are included as they work with certain models via vLLM:
 
 * OpenAI Responses API
+* OpenAI Completions API
 * Anthropic Messages API (via their Platform API, not a claude.ai account)
 
 Currently FyxLocal has English, Swedish and Danish localisations and is open to submissions for more.

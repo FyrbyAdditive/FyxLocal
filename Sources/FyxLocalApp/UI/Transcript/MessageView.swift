@@ -4,6 +4,20 @@
 import SwiftUI
 import FyxLocalCore
 
+/// Per-message actions, threaded in as closures rather than a reference to the
+/// view model. Keeping `MessageView` value-typed (no `@Bindable` VM) avoids
+/// re-rendering every visible row when unrelated VM state changes — the
+/// streaming hot path the file's comments call out. `nil` actions hide their
+/// affordance (e.g. an export/preview transcript with no live VM behind it).
+struct MessageActions {
+    var copy: ((MessageID) -> Void)? = nil
+    var edit: ((MessageID) -> Void)? = nil
+    var regenerate: ((MessageID) -> Void)? = nil
+    var delete: ((MessageID) -> Void)? = nil
+    /// True while a reply is streaming — disables the mutating actions.
+    var isStreaming: Bool = false
+}
+
 struct MessageView: View {
     let message: Message
     var contextTokens: Int? = nil
@@ -13,6 +27,13 @@ struct MessageView: View {
     /// live-thinking UI: the streaming row shows a "Thinking…" pill and its
     /// reasoning block auto-expands until the first text delta arrives.
     var streamingMessageID: MessageID? = nil
+    /// Per-message action callbacks (copy/edit/regenerate/delete). Empty by
+    /// default so non-interactive renders (exports, dropped-message previews)
+    /// show no affordances.
+    var actions: MessageActions = MessageActions()
+
+    /// Whether the pointer is over this row — fades in the hover action bar.
+    @State private var isHovering = false
 
     /// True while the model is mid-turn on *this* message and hasn't started
     /// emitting visible text yet. Drives the pill + reasoning-block expand.
@@ -79,6 +100,37 @@ struct MessageView: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 6)
+        // Hover action bar, top-trailing. Fades in on hover; the same actions
+        // are also on the right-click context menu (trackpad-friendly).
+        .overlay(alignment: .topTrailing) {
+            if hasAnyAction {
+                MessageActionsBar(message: message, actions: actions)
+                    .padding(.trailing, 4)
+                    .opacity(isHovering ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.12), value: isHovering)
+                    // Don't steal hover/clicks when hidden.
+                    .allowsHitTesting(isHovering)
+            }
+        }
+        // Make the WHOLE row rect a hover target — not just the (possibly
+        // short, single-line) text. Without this, .onHover only fires over
+        // opaque content, so a one-word message left the area under the
+        // top-trailing action bar non-hoverable and the icons unreachable.
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+        .contextMenu {
+            if hasAnyAction {
+                MessageActionsMenu(message: message, actions: actions)
+            }
+        }
+    }
+
+    /// Which mutating actions apply to this row (copy is always available when
+    /// wired; edit only to user rows, regenerate only to assistant rows).
+    private var hasAnyAction: Bool {
+        actions.copy != nil || actions.delete != nil
+            || (message.role == .user && actions.edit != nil)
+            || (message.role == .assistant && actions.regenerate != nil)
     }
 
     private var metricsLine: String {
@@ -433,5 +485,95 @@ struct FailureRetryBanner: View {
         }
         .padding(8)
         .background(DesignTokens.errorFill, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - Per-message action affordances
+
+/// One per-message action: a system-image, a localized title, an enabled flag,
+/// and the closure to run. Shared by the hover bar (icon buttons) and the
+/// context menu (labeled rows) so the two stay in lockstep.
+private struct MessageActionItem: Identifiable {
+    let id: String           // stable key for ForEach (the symbol name)
+    let systemImage: String
+    let title: LocalizedStringKey
+    let isEnabled: Bool
+    let isDestructive: Bool
+    let run: () -> Void
+}
+
+/// Build the ordered list of actions that apply to `message`. Copy is always
+/// available (read-only, even mid-stream); edit only on user rows; regenerate
+/// only on assistant rows; delete on any row. Mutating actions are disabled
+/// while a reply is streaming.
+private func messageActionItems(for message: Message, _ actions: MessageActions) -> [MessageActionItem] {
+    var items: [MessageActionItem] = []
+    if let copy = actions.copy {
+        items.append(MessageActionItem(
+            id: "copy", systemImage: "doc.on.doc", title: "Copy",
+            isEnabled: true, isDestructive: false, run: { copy(message.id) }
+        ))
+    }
+    if message.role == .user, let edit = actions.edit {
+        items.append(MessageActionItem(
+            id: "edit", systemImage: "pencil", title: "Edit",
+            isEnabled: !actions.isStreaming, isDestructive: false, run: { edit(message.id) }
+        ))
+    }
+    if message.role == .assistant, let regenerate = actions.regenerate {
+        items.append(MessageActionItem(
+            id: "regen", systemImage: "arrow.clockwise", title: "Regenerate",
+            isEnabled: !actions.isStreaming, isDestructive: false, run: { regenerate(message.id) }
+        ))
+    }
+    if let delete = actions.delete {
+        items.append(MessageActionItem(
+            id: "delete", systemImage: "trash", title: "Delete",
+            isEnabled: !actions.isStreaming, isDestructive: true, run: { delete(message.id) }
+        ))
+    }
+    return items
+}
+
+/// Compact row of icon buttons shown on hover at the top-trailing of a message.
+private struct MessageActionsBar: View {
+    let message: Message
+    let actions: MessageActions
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(messageActionItems(for: message, actions)) { item in
+                Button(action: item.run) {
+                    Image(systemName: item.systemImage)
+                        .font(.system(size: 11, weight: .medium))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(item.isDestructive ? Color.red : Color.secondary)
+                .disabled(!item.isEnabled)
+                .help(item.title)
+            }
+        }
+        .padding(2)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.smallRadius)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+        )
+    }
+}
+
+/// The same actions as labeled rows for the right-click context menu.
+private struct MessageActionsMenu: View {
+    let message: Message
+    let actions: MessageActions
+
+    var body: some View {
+        ForEach(messageActionItems(for: message, actions)) { item in
+            Button(role: item.isDestructive ? .destructive : nil, action: item.run) {
+                Label(item.title, systemImage: item.systemImage)
+            }
+            .disabled(!item.isEnabled)
+        }
     }
 }

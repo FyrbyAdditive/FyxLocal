@@ -233,6 +233,31 @@ final class ChatViewModel {
         let assistantIndex = conversation.messages.count - 1
         let assistantMessageID = assistantMessage.id
 
+        runAssistantTurn(
+            providerRecord: providerRecord,
+            trimmedModel: trimmedModel,
+            budget: budget,
+            assistantIndex: assistantIndex,
+            assistantMessageID: assistantMessageID,
+            failureMessageID: userMessageID
+        )
+    }
+
+    /// Stream a single assistant turn into the placeholder at `assistantIndex`.
+    /// Factored out of `send()` so both a fresh send and a *regenerate* (which
+    /// appends no new user message) reuse the exact same compaction + tool +
+    /// streaming machinery. `failureMessageID` is the message a Retry button
+    /// attaches to if the turn fails — the just-sent user message for `send()`,
+    /// or the prior user message for a regenerate.
+    private func runAssistantTurn(
+        providerRecord: ProviderRecord,
+        trimmedModel: String,
+        budget: ContextBudget,
+        assistantIndex: Int,
+        assistantMessageID: MessageID,
+        failureMessageID: MessageID
+    ) {
+        guard let environment else { return }
         let registry = environment.toolRegistry
         let promptLanguage = environment.promptLanguage
         let llm = environment.makeRuntimeProvider(for: providerRecord)
@@ -292,7 +317,7 @@ final class ChatViewModel {
                         toolDefinitions: toolDefinitions,
                         llm: llm,
                         budget: budget,
-                        userMessageID: userMessageID
+                        userMessageID: failureMessageID
                     )
                     for try await event in runner.run(initial: request) {
                         // Honour Stop at event granularity: a large buffered chunk
@@ -305,7 +330,7 @@ final class ChatViewModel {
                     let rendered = ChatViewModel.describe(error: error)
                     FileHandle.standardError.write(Data("[FyxLocal] chat turn failed: \(rendered) — raw: \(error)\n".utf8))
                     self.lastError = rendered
-                    self.failedUserMessageID = userMessageID
+                    self.failedUserMessageID = failureMessageID
                     // Drop the empty assistant placeholder we appended; the user
                     // shouldn't see a blank assistant card next to a failed turn.
                     self.conversation.messages.removeAll { $0.id == assistantMessageID }
@@ -373,6 +398,137 @@ final class ChatViewModel {
         failedUserMessageID = nil
         draftText = text
         send()
+    }
+
+    // MARK: - Per-message actions (copy / edit / regenerate / delete)
+
+    /// A message action that would discard later turns, staged for the user to
+    /// confirm before it runs. `discardCount` is the number of messages that
+    /// will be removed *after* the target (drives the warning copy). Actions
+    /// that discard nothing run immediately and never stage one of these.
+    struct PendingMessageAction: Identifiable, Equatable {
+        enum Kind: Equatable { case edit, regenerate, delete }
+        let id = UUID()
+        let kind: Kind
+        let messageID: MessageID
+        let discardCount: Int
+    }
+
+    /// Set when an edit/regenerate/delete needs confirmation because it would
+    /// drop later messages. The detail view mirrors this into a confirmation
+    /// dialog; confirming calls `commitPendingMessageAction()`.
+    var pendingMessageAction: PendingMessageAction?
+
+    /// How many messages sit after the one with `id` (i.e. would be discarded
+    /// by an edit/regenerate that truncates from it). Returns 0 if not found.
+    func messagesAfter(_ id: MessageID) -> Int {
+        guard let index = conversation.messages.firstIndex(where: { $0.id == id }) else { return 0 }
+        return conversation.messages.count - 1 - index
+    }
+
+    /// Copy a message's plain text to the system pasteboard. Skips reasoning,
+    /// tool calls, and images — just the readable text (`Message.plainText`).
+    /// Allowed mid-stream: it's read-only.
+    func copyMessage(_ id: MessageID) {
+        guard let message = conversation.messages.first(where: { $0.id == id }) else { return }
+        Clipboard.copy(message.plainText)
+    }
+
+    /// Delete a single message, then sweep orphaned blobs. Removing a message
+    /// that carried an image/attachment would otherwise leak its blob file.
+    /// Mid-stream deletes are refused (the streaming row is being written to).
+    func deleteMessage(_ id: MessageID) {
+        guard !isStreaming else { return }
+        conversation.messages.removeAll { $0.id == id }
+        conversation.updatedAt = .now
+        // Clear stale error/retry state if we just removed the failed message.
+        if failedUserMessageID == id {
+            failedUserMessageID = nil
+            lastError = nil
+        }
+        environment?.gcBlobs()
+    }
+
+    /// Edit a user message: truncate the transcript from that message onward,
+    /// drop its text back into the composer for the user to revise and resend.
+    /// Linear (truncate + resend), mirroring `retryLastFailedMessage`. Only
+    /// valid on `.user` rows; refused mid-stream.
+    func editUserMessage(_ id: MessageID) {
+        guard !isStreaming else { return }
+        guard let index = conversation.messages.firstIndex(where: { $0.id == id }),
+              conversation.messages[index].role == .user else { return }
+        let text = conversation.messages[index].plainText
+        // NOTE: first cut prefills text only. Image/attachment parts of the
+        // edited user message are dropped — re-attach them in the composer if
+        // needed. Preserving them on edit is a noted nice-to-have.
+        conversation.messages.removeSubrange(index...)
+        conversation.updatedAt = .now
+        failedUserMessageID = nil
+        lastError = nil
+        draftText = text
+        environment?.gcBlobs()
+    }
+
+    /// Regenerate an assistant message: delete it and everything after it, then
+    /// stream a fresh reply from the preceding context (no new user message).
+    /// Refused mid-stream.
+    func regenerateAssistantMessage(_ id: MessageID) {
+        guard !isStreaming else { return }
+        guard let environment, let resolved = resolveActiveProvider() else { return }
+        guard let index = conversation.messages.firstIndex(where: { $0.id == id }),
+              conversation.messages[index].role == .assistant else { return }
+        // The user turn this assistant reply was answering — the Retry target
+        // if the regenerate fails. May be nil for an orphaned leading reply.
+        let priorUserID = conversation.messages[..<index]
+            .last(where: { $0.role == .user })?.id
+
+        // Drop the assistant reply and any messages that followed it.
+        conversation.messages.removeSubrange(index...)
+        failedUserMessageID = nil
+        lastError = nil
+        environment.gcBlobs()
+
+        // Append a fresh empty assistant placeholder and stream into it.
+        let assistantMessage = Message(role: .assistant, contentItems: [])
+        conversation.messages.append(assistantMessage)
+        let assistantIndex = conversation.messages.count - 1
+        conversation.updatedAt = .now
+
+        runAssistantTurn(
+            providerRecord: resolved.provider,
+            trimmedModel: resolved.model,
+            budget: resolved.budget,
+            assistantIndex: assistantIndex,
+            assistantMessageID: assistantMessage.id,
+            failureMessageID: priorUserID ?? assistantMessage.id
+        )
+    }
+
+    /// Run the action the user just confirmed in the discard-warning dialog.
+    func commitPendingMessageAction() {
+        guard let action = pendingMessageAction else { return }
+        pendingMessageAction = nil
+        switch action.kind {
+        case .edit:       editUserMessage(action.messageID)
+        case .regenerate: regenerateAssistantMessage(action.messageID)
+        case .delete:     deleteMessage(action.messageID)
+        }
+    }
+
+    func cancelPendingMessageAction() {
+        pendingMessageAction = nil
+    }
+
+    /// Resolve the active provider record, its trimmed default model, and the
+    /// effective context budget — the trio every streaming turn needs. Mirrors
+    /// the resolution `send()` does inline. Returns nil if unconfigured.
+    private func resolveActiveProvider() -> (provider: ProviderRecord, model: String, budget: ContextBudget)? {
+        guard let environment, let provider = environment.currentProvider() else { return nil }
+        let model = (provider.defaultModel ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !model.isEmpty else { return nil }
+        let modelInfo = environment.detectedModels[provider.id]?.first(where: { $0.id == model })
+        let budget = ContextBudget.resolve(settings: provider.context, model: modelInfo)
+        return (provider, model, budget)
     }
 
     /// Manual "Compact now" action — runs the same flow as auto-compact

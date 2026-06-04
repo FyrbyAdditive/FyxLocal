@@ -25,7 +25,8 @@ struct ChatDetailView: View {
                         onRetry: { viewModel.retryLastFailedMessage() },
                         streamingMessageID: viewModel.isStreaming
                             ? viewModel.conversation.messages.last?.id
-                            : nil
+                            : nil,
+                        actions: messageActions(for: viewModel)
                     )
                     // Force SwiftUI to treat each chat as a fresh subtree
                     // so the ScrollView's preserved scroll offset doesn't
@@ -114,6 +115,80 @@ struct ChatDetailView: View {
             }
         } message: { _ in
             Text("The assistant proposed this change. It will only happen if you confirm.")
+        }
+        // Warn before a per-message edit/regenerate/delete that would discard
+        // later turns. Same stage-and-confirm pattern as the tool writes above:
+        // the action stages a `pendingMessageAction` only when discardCount > 0;
+        // otherwise it runs immediately with no dialog.
+        .confirmationDialog(
+            discardWarningTitle(environment.viewModel(for: conversationID)?.pendingMessageAction),
+            isPresented: Binding(
+                get: { environment.viewModel(for: conversationID)?.pendingMessageAction != nil },
+                set: { _ in }
+            ),
+            titleVisibility: .visible,
+            presenting: environment.viewModel(for: conversationID)?.pendingMessageAction
+        ) { action in
+            Button(confirmLabel(action.kind), role: .destructive) {
+                environment.viewModel(for: conversationID)?.commitPendingMessageAction()
+            }
+            Button("Cancel", role: .cancel) {
+                environment.viewModel(for: conversationID)?.cancelPendingMessageAction()
+            }
+        } message: { action in
+            Text("This removes \(action.discardCount) later message(s) from the conversation.")
+        }
+    }
+
+    /// Build the per-message action set for the transcript. Edit/regenerate/
+    /// delete first check whether they'd discard later turns; if so they stage
+    /// a `pendingMessageAction` (→ confirmation dialog) instead of running
+    /// immediately. With nothing after the target, they run straight away.
+    private func messageActions(for viewModel: ChatViewModel) -> MessageActions {
+        MessageActions(
+            copy: { viewModel.copyMessage($0) },
+            edit: { id in
+                let after = viewModel.messagesAfter(id)
+                if after > 0 {
+                    viewModel.pendingMessageAction = .init(kind: .edit, messageID: id, discardCount: after)
+                } else {
+                    viewModel.editUserMessage(id)
+                }
+            },
+            regenerate: { id in
+                let after = viewModel.messagesAfter(id)
+                if after > 0 {
+                    viewModel.pendingMessageAction = .init(kind: .regenerate, messageID: id, discardCount: after)
+                } else {
+                    viewModel.regenerateAssistantMessage(id)
+                }
+            },
+            delete: { id in
+                let after = viewModel.messagesAfter(id)
+                if after > 0 {
+                    viewModel.pendingMessageAction = .init(kind: .delete, messageID: id, discardCount: after)
+                } else {
+                    viewModel.deleteMessage(id)
+                }
+            },
+            isStreaming: viewModel.isStreaming
+        )
+    }
+
+    private func discardWarningTitle(_ action: ChatViewModel.PendingMessageAction?) -> String {
+        switch action?.kind {
+        case .edit:       return String(localized: "Edit this message?")
+        case .regenerate: return String(localized: "Regenerate this reply?")
+        case .delete:     return String(localized: "Delete this message?")
+        case nil:         return ""
+        }
+    }
+
+    private func confirmLabel(_ kind: ChatViewModel.PendingMessageAction.Kind) -> LocalizedStringKey {
+        switch kind {
+        case .edit:       return "Edit"
+        case .regenerate: return "Regenerate"
+        case .delete:     return "Delete"
         }
     }
 }

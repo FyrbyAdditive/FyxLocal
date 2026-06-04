@@ -995,6 +995,22 @@ final class AppEnvironment {
         }
     }
 
+    /// Free blob files no longer referenced by any message in any conversation.
+    /// Computes the live set of blob hashes (GC roots) across all conversations
+    /// and asks the BlobStore to delete everything else. Call after deleting a
+    /// message (or conversation): an orphaned image/attachment would otherwise
+    /// linger on disk forever, since blobs are content-addressed and shared.
+    /// Cheap — it's a directory listing plus set membership, no blob reads.
+    func gcBlobs() {
+        let live = Set(
+            conversations
+                .flatMap { $0.messages }
+                .flatMap { $0.contentItems }
+                .flatMap { $0.blobHashes }
+        )
+        BlobStore.shared.garbageCollect(keeping: live)
+    }
+
     func deleteConversation(_ id: ConversationID) {
         // Cancel any in-flight stream for this chat and free its cached
         // view model before dropping the underlying conversation.
