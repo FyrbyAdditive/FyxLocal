@@ -309,6 +309,81 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
         return try await store.search(query: vectors[0], topK: topK)
     }
 
+    // MARK: - Re-embed migration (model swap)
+
+    public func collectionsNeedingReembed(currentModelID: String, currentDim: Int) -> [RAGCollection] {
+        listCollections().filter { $0.embeddingModel != currentModelID || $0.dim != currentDim }
+    }
+
+    /// Re-embed a collection's chunks from their stored text with `embedder`,
+    /// rebuilding the vector index at the new dimension. Steps:
+    ///  1. gather all chunks (text already in the DB — no re-import/re-parse),
+    ///  2. drop the old vec0 table and recreate it at the new dim,
+    ///  3. embed chunk text in bounded batches + upsert,
+    ///  4. update the collection row's embedder kind/model/dim and refresh caches.
+    /// Reuses the same batch loop + size as ingest so memory stays bounded.
+    public func reembedCollection(
+        _ collectionID: CollectionID,
+        using embedder: any Embedder,
+        progress: (@Sendable (Int, Int) -> Void)?
+    ) async throws {
+        guard let collection = collection(collectionID) else { throw IngestError.unknownCollection }
+
+        // 1. All chunks across all documents, ordinal-stable per document.
+        let docs = documents(in: collectionID)
+        var allChunks: [RAGChunk] = []
+        for doc in docs { allChunks.append(contentsOf: chunks(of: doc.id)) }
+        let total = allChunks.count
+        progress?(0, total)
+
+        // 2. Drop the old vector table and recreate at the embedder's new dim.
+        if let existing = vectorStores[collectionID] {
+            try await existing.drop()
+        } else {
+            // Not cached this session — build one at the OLD dim just to drop it.
+            let old = try SQLiteVecVectorStore(database: database, collectionID: collectionID, dim: collection.dim, distance: collection.distance)
+            try await old.drop()
+        }
+        let store = try SQLiteVecVectorStore(
+            database: database,
+            collectionID: collectionID,
+            dim: embedder.dim,
+            distance: collection.distance
+        )
+        vectorStores[collectionID] = store
+
+        // 3. Re-embed in bounded batches (same pattern + size as ingest).
+        if !allChunks.isEmpty {
+            let batchSize = Self.embedBatchSize
+            var index = 0
+            while index < allChunks.count {
+                let upper = min(index + batchSize, allChunks.count)
+                let batch = allChunks[index..<upper]
+                let vectors = try await embedder.embed(batch.map(\.text))
+                precondition(vectors.count == batch.count)
+                try await store.upsert(zip(batch.map(\.id), vectors).map { ($0, $1) })
+                index = upper
+                progress?(index, total)
+            }
+        }
+
+        // 4. Update stored embedder metadata + refresh the cached embedder.
+        try await database.queue.write { db in
+            try db.execute(sql: """
+                UPDATE collections
+                SET embedder_kind = ?, embedding_model = ?, dim = ?, updated_at = ?
+                WHERE id = ?
+                """, arguments: [
+                    embedder.kind.rawValue,
+                    embedder.modelID,
+                    embedder.dim,
+                    Date.now.timeIntervalSince1970,
+                    collectionID.rawValue.uuidString,
+                ])
+        }
+        embedderTasks[collectionID] = Task { embedder }
+    }
+
     /// FTS5 keyword search over chunk text, scoped to one collection. Joins the
     /// global `chunks_fts` index back to `chunks` (via rowid) and `documents`
     /// (to filter by collection). `bm25()` returns lower = more relevant, so we

@@ -9,7 +9,7 @@ import MLXHuggingFace
 // tokenizer macro can expand to AutoTokenizer.from(modelFolder:).
 import Tokenizers
 
-/// Loads the bundled Qwen3-Embedding-4B `EmbedderModelContainer` from
+/// Loads the bundled Qwen3-Embedding-0.6B `EmbedderModelContainer` from
 /// the app's Resources directory. Vendored — no network access required,
 /// no download progress, no first-run delay other than JIT-compiling
 /// MLX Metal kernels on the first embed call.
@@ -21,7 +21,7 @@ public actor MLXEmbedderLoader {
     public static let shared = MLXEmbedderLoader()
 
     /// Name of the bundled model directory under `Bundle.module`.
-    public static let bundledModelName = "Qwen3-Embedding-4B-4bit-DWQ"
+    public static let bundledModelName = "Qwen3-Embedding-0.6B-MLX-8bit"
 
     public enum LoaderError: Error {
         case bundledModelMissing

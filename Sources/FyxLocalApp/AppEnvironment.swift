@@ -53,6 +53,11 @@ final class AppEnvironment {
     /// Apple tools being disabled after an upgrade). Shown once in a sheet, then
     /// cleared on dismiss. Session-only; not persisted. Empty = nothing to show.
     var pendingMigrationNotices: [MigrationNotice] = []
+    /// Drives the one-time re-embed migration after the embedding model swap.
+    /// Non-nil + presented only while collections need re-indexing; nil once
+    /// done (or when nothing needs migrating). Lazily created in
+    /// `startReembedIfNeeded()`.
+    var reembedMigrator: ReembedMigrator?
     /// Read + (confirmed) write Reminders access for the `reminders` tool.
     let reminderProvider: any ReminderProvider
     /// A reminder change the model proposed, awaiting the user's confirmation in
@@ -192,12 +197,12 @@ final class AppEnvironment {
             resolvedStore = PersistentCollectionStore(
                 database: db,
                 embedderFactory: { kind, _, _ in
-                    // On-device path goes through MLX + Qwen3-Embedding-4B.
-                    // The shared container loads the ~2.26 GB weights once
-                    // per session and serves every MLX-backed collection.
-                    // Remote path falls back to the legacy OpenAI-compatible
-                    // RemoteEmbedder (instantiated elsewhere — kept for the
-                    // .openAICompatible kind once we wire the picker UI).
+                    // On-device path goes through MLX + the bundled Qwen3
+                    // embedder (currently Qwen3-Embedding-0.6B, 1024-dim). The
+                    // shared container loads the weights once per session and
+                    // serves every MLX-backed collection. Collections embedded
+                    // with the older 2560-dim model are re-embedded on launch by
+                    // ReembedMigrator before they're searched.
                     switch kind {
                     case .mlxQwen3Embedding4B:
                         let container = try await MLXEmbedderLoader.shared.shared()
@@ -1031,6 +1036,35 @@ final class AppEnvironment {
                 .flatMap { $0.blobHashes }
         )
         BlobStore.shared.garbageCollect(keeping: live)
+    }
+
+    /// Detect collections embedded with an older model and, if any, present the
+    /// blocking re-embed migration. Runs once at launch (after the store is up).
+    /// Cheap no-op when everything is already on the current model. Honors
+    /// FCHAT_SKIP_MLX (skips — tests/CI never run the MLX migration).
+    func startReembedIfNeeded() async {
+        guard reembedMigrator == nil else { return }
+        if ProcessInfo.processInfo.environment["FCHAT_SKIP_MLX"] == "1" { return }
+        let migrator = ReembedMigrator(
+            store: collectionStore,
+            currentModelID: MLXQwen3Embedder.modelID,
+            currentDim: MLXQwen3Embedder.embeddingDim,
+            makeEmbedder: {
+                let container = try await MLXEmbedderLoader.shared.shared()
+                return MLXQwen3Embedder(container: container)
+            }
+        )
+        guard await migrator.needsMigration() else { return }
+        // Present the sheet first (observing this property flips it on), then run
+        // the migration in its own task so the UI shows live progress rather
+        // than blocking on the whole run before the sheet can appear.
+        reembedMigrator = migrator
+        Task { await migrator.run() }
+    }
+
+    /// Dismiss the re-embed sheet once the user acknowledges completion.
+    func finishReembed() {
+        reembedMigrator = nil
     }
 
     /// Whether a reranker load is in flight, to avoid kicking off duplicates.

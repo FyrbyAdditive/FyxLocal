@@ -108,12 +108,14 @@ let package = Package(
                 // ZIP reader for DOCX/PPTX (Office Open XML are ZIP archives).
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
             ],
-            // Bundle the Qwen3-Embedding-4B-4bit-DWQ embedder (~2.1 GB) and the
+            // Bundle the Qwen3-Embedding-0.6B-MLX-8bit embedder (~633 MB) and the
             // Qwen3-Reranker-0.6B-mxfp8 reranker (~614 MB) so the app is
             // self-contained — no first-run Hugging Face download. Tracked via
             // git-lfs so checkouts pull binaries from LFS, not the main history.
+            // (The older 2.26 GB Qwen3-Embedding-4B-4bit-DWQ dir is kept in the
+            // repo for now but no longer bundled.)
             resources: [
-                .copy("Resources/Qwen3-Embedding-4B-4bit-DWQ"),
+                .copy("Resources/Qwen3-Embedding-0.6B-MLX-8bit"),
                 .copy("Resources/Qwen3-Reranker-0.6B-mxfp8"),
             ]
         ),

@@ -6,8 +6,8 @@ import FyxLocalCore
 @preconcurrency import MLX
 @preconcurrency import MLXEmbedders
 
-/// On-device embedder backed by Qwen3-Embedding-4B running on MLX
-/// (Apple Silicon GPU/ANE). Vectors are 2560-dim, L2-normalised.
+/// On-device embedder backed by Qwen3-Embedding-0.6B running on MLX
+/// (Apple Silicon GPU/ANE). Vectors are 1024-dim, L2-normalised.
 ///
 /// We wrap the underlying `EmbedderModelContainer` (which already
 /// serialises GPU access internally) in our own `Embedder` adapter so
@@ -20,8 +20,8 @@ import FyxLocalCore
 /// to `.last` explicitly here, mirroring Qwen3 docs. Tracked upstream
 /// at https://github.com/ml-explore/mlx-swift-lm/issues/36.
 public struct MLXQwen3Embedder: Embedder {
-    public static let modelID = "mlx-community/Qwen3-Embedding-4B-4bit-DWQ"
-    public static let embeddingDim = 2560
+    public static let modelID = "majentik/Qwen3-Embedding-0.6B-MLX-8bit"
+    public static let embeddingDim = 1024
     public static let queryInstruction =
         "Instruct: Given a query, retrieve relevant passages that answer the query\nQuery: "
 

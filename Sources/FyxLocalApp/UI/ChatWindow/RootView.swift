@@ -38,6 +38,9 @@ struct RootView: View {
                     TokenizerCache.shared.warm(modelID: model)
                 }
             }
+            // After an embedding-model upgrade, re-embed any collections still
+            // on the old model (blocking sheet below shows progress).
+            await environment.startReembedIfNeeded()
         }
         // One-time post-upgrade notice (e.g. tools disabled after the rebrand).
         // Presence-driven; the Dismiss button owns clearing the state.
@@ -47,6 +50,17 @@ struct RootView: View {
         )) {
             MigrationNoticeSheet(notices: environment.pendingMigrationNotices) {
                 environment.pendingMigrationNotices = []
+            }
+        }
+        // Blocking re-embed migration after the embedder model swap.
+        .sheet(isPresented: Binding(
+            get: { environment.reembedMigrator != nil },
+            set: { _ in }
+        )) {
+            if let migrator = environment.reembedMigrator {
+                EmbedderMigrationSheet(migrator: migrator) {
+                    environment.finishReembed()
+                }
             }
         }
     }

@@ -67,9 +67,30 @@ public protocol CollectionStoreProtocol: Actor {
     /// pool and fuses; it falls back to pure vector when keyword returns nothing
     /// (or isn't supported). Returns the fused top-K chunk ids.
     func hybridSearch(query: String, in collectionID: CollectionID, topK: Int) async throws -> [VectorSearchHit]
+
+    /// Collections whose stored embedding model/dimension differ from the given
+    /// current values — i.e. they were embedded by an older model and need
+    /// re-embedding before search will work against them.
+    func collectionsNeedingReembed(currentModelID: String, currentDim: Int) -> [RAGCollection]
+
+    /// Re-embed every chunk in `collectionID` from its STORED text using
+    /// `embedder` (no re-import), rebuilding the collection's vector index at the
+    /// new dimension and updating its stored embedder metadata. `progress` is
+    /// called with (embeddedChunks, totalChunks) as it proceeds. Used by the
+    /// model-swap migration.
+    func reembedCollection(
+        _ collectionID: CollectionID,
+        using embedder: any Embedder,
+        progress: (@Sendable (Int, Int) -> Void)?
+    ) async throws
 }
 
 public extension CollectionStoreProtocol {
+    /// Default: filter all collections by stored model/dim. Works for any store.
+    func collectionsNeedingReembed(currentModelID: String, currentDim: Int) -> [RAGCollection] {
+        listCollections().filter { $0.embeddingModel != currentModelID || $0.dim != currentDim }
+    }
+
     /// Default: no full-text index → no keyword hits. `PersistentCollectionStore`
     /// overrides this with an FTS5-backed implementation.
     func keywordSearch(query: String, in collectionID: CollectionID, topK: Int) async throws -> [VectorSearchHit] {

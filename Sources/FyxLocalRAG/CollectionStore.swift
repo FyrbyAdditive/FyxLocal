@@ -133,6 +133,34 @@ public actor CollectionStore: CollectionStoreProtocol {
         return try await store.search(query: vector[0], topK: topK)
     }
 
+    public func reembedCollection(
+        _ collectionID: CollectionID,
+        using embedder: any Embedder,
+        progress: (@Sendable (Int, Int) -> Void)?
+    ) async throws {
+        guard var collection = collections[collectionID] else { throw IngestError.unknownCollection }
+        let docs = documents(in: collectionID)
+        var allChunks: [RAGChunk] = []
+        for doc in docs { allChunks.append(contentsOf: chunks(of: doc.id)) }
+        let total = allChunks.count
+        progress?(0, total)
+
+        // Fresh vector store at the new dimension.
+        let store = InMemoryVectorStore(dim: embedder.dim, distance: collection.distance)
+        for (i, chunk) in allChunks.enumerated() {
+            let vectors = try await embedder.embed([chunk.text])
+            try await store.upsert([(chunk.id, vectors[0])])
+            progress?(i + 1, total)
+        }
+        vectorStores[collectionID] = store
+        embedders[collectionID] = embedder
+        collection.embedder = embedder.kind
+        collection.embeddingModel = embedder.modelID
+        collection.dim = embedder.dim
+        collection.updatedAt = .now
+        collections[collectionID] = collection
+    }
+
     public func chunk(_ id: ChunkID) -> RAGChunk? { chunks[id] }
     public func document(_ id: DocumentID) -> RAGDocument? { documents[id] }
 
