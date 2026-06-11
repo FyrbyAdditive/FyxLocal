@@ -3,6 +3,10 @@
 
 import SwiftUI
 import FyxLocalCore
+#if canImport(AppKit)
+import AppKit
+import ImageIO
+#endif
 
 /// Per-message actions, threaded in as closures rather than a reference to the
 /// view model. Keeping `MessageView` value-typed (no `@Bindable` VM) avoids
@@ -209,16 +213,9 @@ struct MessageView: View {
             } else {
                 ToolCallResultBlock(call: nil, result: result)
             }
-        case .image:
+        case .image(let ref):
 #if canImport(AppKit)
-            // Lazy: only the visible message reads its blob off disk.
-            if let data = item.imageData, let nsImage = NSImage(data: data) {
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: 480)
-                    .clipShape(RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
-            }
+            MessageImageView(ref: ref)
 #endif
         case .attachment(let ref):
             Label(ref.filename ?? "attachment", systemImage: "paperclip")
@@ -227,6 +224,104 @@ struct MessageView: View {
         }
     }
 }
+
+#if canImport(AppKit)
+/// Renders a message image from the BlobStore without blocking scrolling.
+///
+/// The old path read the blob and built an `NSImage` synchronously inside
+/// `body` — on the main thread, on every body evaluation — and LazyVStack
+/// tears rows down offscreen, so every scroll pass over an image re-read and
+/// re-decoded it mid-gesture. That was a visible hitch ("scroll gets stuck at
+/// the bottom of the image").
+///
+/// Now: the first appearance reads + downsamples off the main thread (ImageIO
+/// thumbnail at ≤1024px — the view renders at ≤480pt, decoding a multi-MP
+/// photo at full size was pure waste) behind a fixed-size placeholder, and the
+/// result lands in a process-wide cache keyed by content hash. Every later
+/// materialization — including all scroll-back passes — renders synchronously
+/// from cache with stable layout.
+private struct MessageImageView: View {
+    let ref: BlobRef
+    @State private var image: NSImage?
+    @State private var failed = false
+
+    init(ref: BlobRef) {
+        self.ref = ref
+        // Re-materialized rows render instantly: seed from cache so there's
+        // no placeholder flash (and no layout jump) on scroll-back.
+        _image = State(initialValue: MessageImageCache.image(for: ref))
+    }
+
+    var body: some View {
+        if let image {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 480)
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        } else if failed {
+            // Missing/undecodable blob — match the old behaviour (render
+            // nothing) rather than spin forever.
+            EmptyView()
+        } else {
+            RoundedRectangle(cornerRadius: DesignTokens.smallRadius)
+                .fill(DesignTokens.secondaryFill)
+                .frame(maxWidth: 480)
+                .frame(height: 220)
+                .overlay(ProgressView().controlSize(.small))
+                .task(id: ref.sha256) {
+                    if let loaded = await MessageImageCache.load(ref) {
+                        image = loaded
+                    } else {
+                        failed = true
+                    }
+                }
+        }
+    }
+}
+
+/// Process-wide decoded-image cache, keyed by blob content hash. Cost-bounded
+/// so a long transcript of screenshots can't pin unbounded memory; NSCache
+/// evicts under pressure.
+private enum MessageImageCache {
+    /// One transfer of an immutable, freshly-created NSImage out of the decode
+    /// task. NSImage isn't Sendable, but nothing mutates it after creation.
+    private struct Box: @unchecked Sendable { let image: NSImage }
+
+    // NSCache is documented thread-safe ("you can add, remove, and query
+    // items in the cache from different threads") but predates Sendable.
+    nonisolated(unsafe) private static let cache: NSCache<NSString, NSImage> = {
+        let c = NSCache<NSString, NSImage>()
+        c.totalCostLimit = 128 * 1024 * 1024
+        return c
+    }()
+
+    static func image(for ref: BlobRef) -> NSImage? {
+        cache.object(forKey: ref.sha256 as NSString)
+    }
+
+    /// Read + downsample off the main thread, then cache. Returns nil when the
+    /// blob is missing/undecodable (the row simply shows nothing, as before).
+    static func load(_ ref: BlobRef) async -> NSImage? {
+        if let hit = image(for: ref) { return hit }
+        let box: Box? = await Task.detached(priority: .userInitiated) {
+            guard let data = try? BlobStore.shared.data(for: ref),
+                  let source = CGImageSourceCreateWithData(data as CFData, nil),
+                  let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                      kCGImageSourceCreateThumbnailFromImageAlways: true,
+                      kCGImageSourceCreateThumbnailWithTransform: true,   // honour EXIF rotation
+                      kCGImageSourceThumbnailMaxPixelSize: 1024,          // 480pt view @2x
+                  ] as CFDictionary)
+            else { return nil }
+            return Box(image: NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height)))
+        }.value
+        guard let box else { return nil }
+        // Cost ≈ decoded bitmap bytes (RGBA), not the on-disk size.
+        cache.setObject(box.image, forKey: ref.sha256 as NSString, cost: Int(box.image.size.width * box.image.size.height * 4))
+        return box.image
+    }
+}
+#endif
 
 struct ReasoningBlock: View {
     let text: String
