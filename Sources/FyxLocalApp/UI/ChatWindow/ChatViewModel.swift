@@ -582,6 +582,15 @@ final class ChatViewModel {
         let tokenizer = TokenizerCache.shared.get(modelID: modelID)
         let builder = RequestPayloadBuilder(tokenizer: tokenizer)
         let instructions = composeInstructions(language: language)
+        // Whether the TARGET model accepts image input (user override →
+        // detected capability → catalog). A chat that collected images under
+        // a vision model can be switched to a text-only one; sending the
+        // image parts there is a hard 400 ("not a multi-modal model"), so
+        // assembly lowers them to text placeholders instead.
+        let acceptsImages = providerRecord.acceptsImages(
+            modelID: modelID,
+            detected: environment?.detectedModels[providerRecord.id] ?? []
+        )
         // Trigger placeholder-substitution of older tool results when the
         // projected payload is past half of the safe budget. The two most
         // recent results stay verbatim so the model can keep working with
@@ -652,7 +661,8 @@ final class ChatViewModel {
                         summary: summary,
                         keepRange: firstKeepableIndex..<currentMessageCount,
                         clearOptions: clearOptions,
-                        todayHeader: todayHeader
+                        todayHeader: todayHeader,
+                        includeImages: acceptsImages
                     ),
                     tools: toolDefinitions
                 )
@@ -692,7 +702,8 @@ final class ChatViewModel {
             summary: summary,
             keepRange: keepLowerBound..<currentMessageCount,
             clearOptions: clearOptions,
-            todayHeader: todayHeader
+            todayHeader: todayHeader,
+            includeImages: acceptsImages
         )
         // Re-project with the now-current shape and cache for the footer.
         let finalProjection = builder.project(

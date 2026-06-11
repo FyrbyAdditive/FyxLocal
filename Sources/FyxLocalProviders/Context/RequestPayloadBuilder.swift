@@ -33,13 +33,19 @@ public struct RequestPayloadBuilder: Sendable {
     /// - Parameter keepRange: indices into `conversation.messages` of the
     ///   messages to include verbatim. When `summary` is nil, all messages
     ///   are kept.
+    /// - Parameter includeImages: whether the target model accepts image
+    ///   input. When false, history images are lowered to a small text
+    ///   placeholder instead of an image block — sending image parts to a
+    ///   text-only model is a hard 400 ("not a multi-modal model") on most
+    ///   servers, which used to brick a chat after switching models.
     public func assemble(
         conversation: Conversation,
         draftUserText: String,
         summary: String? = nil,
         keepRange: Range<Int>? = nil,
         clearOptions: ClearOptions? = nil,
-        todayHeader: String? = nil
+        todayHeader: String? = nil,
+        includeImages: Bool = true
     ) -> [InputItem] {
         var input: [InputItem] = []
 
@@ -60,7 +66,7 @@ public struct RequestPayloadBuilder: Sendable {
 
         for index in indicesToInclude {
             let message = conversation.messages[index]
-            input.append(contentsOf: messageItems(for: message))
+            input.append(contentsOf: messageItems(for: message, includeImages: includeImages))
         }
 
         let trimmed = draftUserText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -110,7 +116,9 @@ public struct RequestPayloadBuilder: Sendable {
     /// Lower a single chat message into one or more InputItems. Critically,
     /// this includes tool calls and tool results — the previous behaviour
     /// stripped them, so the model lost its own tool history across turns.
-    public func messageItems(for message: Message) -> [InputItem] {
+    /// `includeImages: false` swaps history images for a text placeholder
+    /// (see `assemble`'s doc comment).
+    public func messageItems(for message: Message, includeImages: Bool = true) -> [InputItem] {
         var items: [InputItem] = []
         var textRuns: [InputContent] = []
 
@@ -156,7 +164,12 @@ public struct RequestPayloadBuilder: Sendable {
                 items.append(.functionCallOutput(callID: rec.callID, outputJSON: rec.outputJSON))
 
             case .image(let ref):
-                if let data = item.imageData {
+                if !includeImages {
+                    // The target model rejects image input outright (400), so
+                    // an image from earlier in the chat becomes a marker the
+                    // model can at least acknowledge.
+                    textRuns.append(.inputText("[An image was attached here, but the current model does not accept image input.]"))
+                } else if let data = item.imageData {
                     textRuns.append(.inputImageData(base64: data.base64EncodedString(), mimeType: ref.mimeType))
                 }
 

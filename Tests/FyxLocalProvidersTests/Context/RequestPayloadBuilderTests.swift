@@ -80,6 +80,69 @@ struct RequestPayloadBuilderTests {
         #expect(text == "Answer is 42")
     }
 
+    @Test func imagesLowerToPlaceholderForNonVisionModels() {
+        // Switching a chat with image history to a text-only model must not
+        // send image parts (hard 400: "is not a multi-modal model").
+        let convo = makeConversation(messages: [
+            Message(role: .user, contentItems: [
+                .text("what is in this picture?"),
+                .image(data: Data([0xFF, 0xD8, 0xFF]), mimeType: "image/jpeg"),
+            ]),
+            Message(role: .assistant, contentItems: [.text("A cat.")]),
+        ])
+        let items = builder.assemble(conversation: convo, draftUserText: "", includeImages: false)
+
+        var sawImagePart = false
+        var sawPlaceholder = false
+        for item in items {
+            guard case .message(_, let content) = item else { continue }
+            for part in content {
+                if case .inputImageData = part { sawImagePart = true }
+                if case .inputImage = part { sawImagePart = true }
+                if case .inputText(let t) = part, t.contains("does not accept image input") { sawPlaceholder = true }
+            }
+        }
+        #expect(!sawImagePart)
+        #expect(sawPlaceholder)
+    }
+
+    @Test func imagesPassThroughForVisionModels() {
+        let convo = makeConversation(messages: [
+            Message(role: .user, contentItems: [
+                .image(data: Data([0xFF, 0xD8, 0xFF]), mimeType: "image/jpeg"),
+            ]),
+        ])
+        // Default (includeImages: true) keeps the image part.
+        let items = builder.assemble(conversation: convo, draftUserText: "")
+        var sawImagePart = false
+        for item in items {
+            guard case .message(_, let content) = item else { continue }
+            for part in content {
+                if case .inputImageData = part { sawImagePart = true }
+            }
+        }
+        #expect(sawImagePart)
+    }
+
+    @Test func imageOnlyMessageStillAppearsAsPlaceholder() {
+        // An image-only user message must not vanish from history when the
+        // target model is text-only — the turn structure stays intact.
+        let convo = makeConversation(messages: [
+            Message(role: .user, contentItems: [
+                .image(data: Data([0x89, 0x50, 0x4E, 0x47]), mimeType: "image/png"),
+            ]),
+            Message(role: .assistant, contentItems: [.text("Nice image.")]),
+        ])
+        let items = builder.assemble(conversation: convo, draftUserText: "", includeImages: false)
+        guard case .message(let role, let content) = items.first,
+              case .inputText(let t) = content.first else {
+            Issue.record("expected placeholder user message, got \(items)"); return
+        }
+        #expect(role == .user)
+        #expect(t.contains("image"))
+        #expect(items.count == 2)
+    }
+
     @Test func summaryPrefacesKeptHistory() {
         let convo = makeConversation(messages: [
             Message(role: .user, contentItems: [.text("old 1")]),
