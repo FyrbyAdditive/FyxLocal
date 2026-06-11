@@ -116,6 +116,69 @@ struct OpenAIChatCompletionsRequestEncoderTests {
         #expect(!String(data: try encoder.encode(req, stream: true), encoding: .utf8)!.contains("secret"))
     }
 
+    @Test func toolMessageImmediatelyFollowsItsAssistantCall() throws {
+        // The lowered shape for an assistant turn with interleaved text:
+        // message(text), functionCall, message(text), functionCallOutput.
+        // The encoder must NOT leave the plain assistant text between the
+        // tool_calls assistant and the tool message (that's the #2 400).
+        let req = ChatRequest(
+            model: "m",
+            input: [
+                .message(role: .user, content: [.inputText("q")]),
+                .message(role: .assistant, content: [.outputText("Let me search.")]),
+                .functionCall(callID: "call_1", name: "web_search", argumentsJSON: "{}"),
+                .message(role: .assistant, content: [.outputText("Searching…")]),  // interleaved
+                .functionCallOutput(callID: "call_1", outputJSON: "[results]"),
+            ]
+        )
+        let json = try object(try encoder.encode(req, stream: true))
+        let messages = try #require(json["messages"] as? [[String: Any]])
+        // Find the tool message; the message right before it must be an
+        // assistant carrying tool_calls that include call_1.
+        let toolIdx = try #require(messages.firstIndex { ($0["role"] as? String) == "tool" })
+        #expect(toolIdx > 0)
+        let prev = messages[toolIdx - 1]
+        #expect(prev["role"] as? String == "assistant")
+        let calls = try #require(prev["tool_calls"] as? [[String: Any]])
+        #expect(calls.contains { ($0["id"] as? String) == "call_1" })
+    }
+
+    @Test func orphanToolOutputIsDropped() throws {
+        // A tool result with no matching preceding call (corrupt history) must
+        // be dropped, not emitted as a 400-causing orphan tool message.
+        let req = ChatRequest(
+            model: "m",
+            input: [
+                .message(role: .user, content: [.inputText("hi")]),
+                .functionCallOutput(callID: "ghost", outputJSON: "[stale]"),
+                .message(role: .assistant, content: [.outputText("ok")]),
+            ]
+        )
+        let json = try object(try encoder.encode(req, stream: true))
+        let messages = try #require(json["messages"] as? [[String: Any]])
+        #expect(!messages.contains { ($0["role"] as? String) == "tool" })
+    }
+
+    @Test func parallelToolOutputsBothAnchorToTheirCalls() throws {
+        // call_a, call_b (one assistant message), then out_a, out_b. The second
+        // output's preceding message is the FIRST tool message, so the guard
+        // must scan back past tool messages to the assistant tool_calls.
+        let req = ChatRequest(
+            model: "m",
+            input: [
+                .functionCall(callID: "a", name: "s", argumentsJSON: "{}"),
+                .functionCall(callID: "b", name: "s", argumentsJSON: "{}"),
+                .functionCallOutput(callID: "a", outputJSON: "[a]"),
+                .functionCallOutput(callID: "b", outputJSON: "[b]"),
+            ]
+        )
+        let json = try object(try encoder.encode(req, stream: true))
+        let messages = try #require(json["messages"] as? [[String: Any]])
+        let toolMsgs = messages.filter { ($0["role"] as? String) == "tool" }
+        #expect(toolMsgs.count == 2)  // neither dropped
+        #expect(Set(toolMsgs.compactMap { $0["tool_call_id"] as? String }) == ["a", "b"])
+    }
+
     @Test func samplingParams() throws {
         let req = ChatRequest(
             model: "m",

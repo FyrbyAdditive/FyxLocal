@@ -64,6 +64,97 @@ struct RequestPayloadBuilderTests {
         #expect(kinds.contains("functionCallOutput"))
     }
 
+    @Test func interleavedTextDoesNotSplitToolCallFromResult() {
+        // Real-world shape (MiniMax/Claude): the assistant emits commentary
+        // text BETWEEN a tool call and its result within one turn. The lowered
+        // items must keep the call immediately followed by its result — no
+        // message item between them — or OpenAI Chat Completions 400s with
+        // "Message has tool role, but there was no previous assistant message
+        // with a tool call".
+        let convo = makeConversation(messages: [
+            Message(role: .user, contentItems: [.text("q")]),
+            Message(role: .assistant, contentItems: [
+                .text("Let me search."),
+                .toolCall(ToolCallRecord(id: "call_1", name: "web_search", argumentsJSON: "{}", status: .succeeded)),
+                .text("Searching now…"),                                    // interleaved!
+                .toolResult(ToolResultRecord(callID: "call_1", outputJSON: "[results]")),
+                .text("Here is the answer."),
+            ]),
+        ])
+        let items = builder.assemble(conversation: convo, draftUserText: "")
+        // Find the functionCall and its functionCallOutput; assert nothing
+        // sits between them.
+        guard let callIdx = items.firstIndex(where: { if case .functionCall = $0 { return true }; return false }),
+              let outIdx = items.firstIndex(where: { if case .functionCallOutput = $0 { return true }; return false }) else {
+            Issue.record("missing call/output"); return
+        }
+        #expect(outIdx == callIdx + 1)  // result immediately follows the call
+    }
+
+    @Test func parallelCallsThenResultsStayGrouped() {
+        // Two calls, then two results in one turn (Anthropic parallel tools).
+        // All calls precede all results, contiguously.
+        let convo = makeConversation(messages: [
+            Message(role: .assistant, contentItems: [
+                .text("Looking these up."),
+                .toolCall(ToolCallRecord(id: "a", name: "web_search", argumentsJSON: "{}")),
+                .toolCall(ToolCallRecord(id: "b", name: "web_search", argumentsJSON: "{}")),
+                .toolResult(ToolResultRecord(callID: "a", outputJSON: "[a]")),
+                .toolResult(ToolResultRecord(callID: "b", outputJSON: "[b]")),
+                .text("Done."),
+            ]),
+        ])
+        let items = builder.assemble(conversation: convo, draftUserText: "")
+        let kinds = items.map { item -> String in
+            switch item {
+            case .message: return "msg"
+            case .functionCall: return "call"
+            case .functionCallOutput: return "out"
+            case .reasoning: return "reasoning"
+            }
+        }
+        // Expect: msg(leading text), call, call, out, out, msg(trailing text).
+        #expect(kinds == ["msg", "call", "call", "out", "out", "msg"])
+    }
+
+    @Test func multipleToolRoundsInOneMessageCollapseToOneValidGroup() {
+        // A single assistant message can hold TWO tool rounds (call/result,
+        // text, call/result — real shape from a multi-step web-search turn).
+        // They deliberately collapse into one contiguous group — all calls,
+        // then all results, interleaved text merged after — which is wire-
+        // valid on every provider (one tool_calls assistant + N tool messages)
+        // at the cost of mild ordering distortion. Pinned here so the
+        // trade-off stays deliberate.
+        let convo = makeConversation(messages: [
+            Message(role: .assistant, contentItems: [
+                .text("Round one."),
+                .toolCall(ToolCallRecord(id: "a", name: "web_search", argumentsJSON: "{}")),
+                .toolResult(ToolResultRecord(callID: "a", outputJSON: "[a]")),
+                .text("Round two."),
+                .toolCall(ToolCallRecord(id: "b", name: "web_fetch", argumentsJSON: "{}")),
+                .toolResult(ToolResultRecord(callID: "b", outputJSON: "[b]")),
+                .text("Answer."),
+            ]),
+        ])
+        let items = builder.assemble(conversation: convo, draftUserText: "")
+        let kinds = items.map { item -> String in
+            switch item {
+            case .message: return "msg"
+            case .functionCall: return "call"
+            case .functionCallOutput: return "out"
+            case .reasoning: return "reasoning"
+            }
+        }
+        #expect(kinds == ["msg", "call", "call", "out", "out", "msg"])
+        // Call/result pairing survives the regrouping.
+        guard case .functionCall("a", _, _) = items[1],
+              case .functionCall("b", _, _) = items[2],
+              case .functionCallOutput("a", _) = items[3],
+              case .functionCallOutput("b", _) = items[4] else {
+            Issue.record("unexpected ordering: \(items)"); return
+        }
+    }
+
     @Test func reasoningSummariesAreStrippedFromPayload() {
         let convo = makeConversation(messages: [
             Message(role: .assistant, contentItems: [

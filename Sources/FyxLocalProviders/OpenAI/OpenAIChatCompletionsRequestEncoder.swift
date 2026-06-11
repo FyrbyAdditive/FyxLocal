@@ -91,11 +91,31 @@ public struct OpenAIChatCompletionsRequestEncoder {
                     ])
                 }
             case .functionCallOutput(let callID, let outputJSON):
-                messages.append([
+                // A `tool` message is only valid directly after the assistant
+                // message whose `tool_calls` declared this id, ahead of any
+                // other message (OpenAI: "Message has tool role, but there was
+                // no previous assistant message with a tool call"). A model can
+                // interleave plain text between a call and its result in one
+                // turn; replaying that verbatim would split them. So PLACE the
+                // tool message right after its owning assistant call (and any
+                // sibling tool messages already placed there) rather than just
+                // appending — this preserves the result even when the input
+                // ordering is split. An output with no matching call anywhere
+                // is dropped (a stale/corrupt result can't anchor).
+                let toolMsg: [String: Any] = [
                     "role": "tool",
                     "tool_call_id": callID,
                     "content": outputJSON,
-                ])
+                ]
+                guard let ownerIdx = messages.lastIndex(where: { m in
+                    (m["role"] as? String) == "assistant"
+                        && ((m["tool_calls"] as? [[String: Any]])?.contains { ($0["id"] as? String) == callID } ?? false)
+                }) else { continue }
+                // Insert after the owner and any tool messages already sitting
+                // directly after it.
+                var insertAt = ownerIdx + 1
+                while insertAt < messages.count, (messages[insertAt]["role"] as? String) == "tool" { insertAt += 1 }
+                messages.insert(toolMsg, at: insertAt)
             case .reasoning:
                 // Encrypted-reasoning passthrough is a Responses concept; drop it.
                 continue

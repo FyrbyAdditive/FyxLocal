@@ -118,9 +118,40 @@ public struct RequestPayloadBuilder: Sendable {
     /// stripped them, so the model lost its own tool history across turns.
     /// `includeImages: false` swaps history images for a text placeholder
     /// (see `assemble`'s doc comment).
+    ///
+    /// Ordering matters for the wire format: every provider requires a tool
+    /// call to be immediately followed by its result, with no message in
+    /// between. A model can emit assistant text *between* a `tool_use` and its
+    /// `tool_result` within one turn (e.g. "Let me search… [searches] …here's
+    /// what I found"). Replaying that verbatim puts an assistant text message
+    /// between the call and the result, which OpenAI Chat Completions rejects
+    /// with "Message has tool role, but there was no previous assistant
+    /// message with a tool call". So we emit ALL tool calls + results of the
+    /// message as one contiguous group, with the surrounding plain text
+    /// flushed before (leading) and after (trailing) the group.
     public func messageItems(for message: Message, includeImages: Bool = true) -> [InputItem] {
         var items: [InputItem] = []
         var textRuns: [InputContent] = []
+        var toolCalls: [InputItem] = []
+        var toolResults: [InputItem] = []
+
+        // Emit any buffered text as a message of the source role.
+        func flushText() {
+            guard !textRuns.isEmpty else { return }
+            items.append(.message(role: message.role, content: textRuns))
+            textRuns.removeAll(keepingCapacity: true)
+        }
+        // Emit the accumulated call/result group contiguously: all calls, then
+        // all results. Any text that arrived *amid* the group has been buffered
+        // into `textRuns`; it's deferred to after the group so it can't split a
+        // call from its result.
+        func flushToolGroup() {
+            guard !toolCalls.isEmpty || !toolResults.isEmpty else { return }
+            items.append(contentsOf: toolCalls)
+            items.append(contentsOf: toolResults)
+            toolCalls.removeAll(keepingCapacity: true)
+            toolResults.removeAll(keepingCapacity: true)
+        }
 
         for item in message.contentItems {
             switch item {
@@ -144,24 +175,18 @@ public struct RequestPayloadBuilder: Sendable {
                 textRuns.append(.redactedThinking(data: data))
 
             case .toolCall(let rec):
-                // Flush any accumulated text first so message ordering stays
-                // right (text → toolCall → … → text rather than re-ordering).
-                if !textRuns.isEmpty {
-                    items.append(.message(role: message.role, content: textRuns))
-                    textRuns.removeAll(keepingCapacity: true)
-                }
-                items.append(.functionCall(
+                // Leading text (before any call in this group) flushes first so
+                // ordering stays text → tool group → text. Text that arrives
+                // mid-group stays buffered and is emitted after the group.
+                if toolCalls.isEmpty && toolResults.isEmpty { flushText() }
+                toolCalls.append(.functionCall(
                     callID: rec.id,
                     name: rec.name,
                     argumentsJSON: rec.argumentsJSON.isEmpty ? "{}" : rec.argumentsJSON
                 ))
 
             case .toolResult(let rec):
-                if !textRuns.isEmpty {
-                    items.append(.message(role: message.role, content: textRuns))
-                    textRuns.removeAll(keepingCapacity: true)
-                }
-                items.append(.functionCallOutput(callID: rec.callID, outputJSON: rec.outputJSON))
+                toolResults.append(.functionCallOutput(callID: rec.callID, outputJSON: rec.outputJSON))
 
             case .image(let ref):
                 if !includeImages {
@@ -180,9 +205,11 @@ public struct RequestPayloadBuilder: Sendable {
             }
         }
 
-        if !textRuns.isEmpty {
-            items.append(.message(role: message.role, content: textRuns))
-        }
+        // Order on flush: the tool group (calls+results) comes before any
+        // trailing text, mirroring the wire shape where the assistant's
+        // post-tool commentary follows the results.
+        flushToolGroup()
+        flushText()
 
         // A message with no surviving content shouldn't appear at all.
         return items
