@@ -40,6 +40,12 @@ public actor StdioMCPTransport: MCPTransport {
         var seen = Set<String>()
         env["PATH"] = (toolPaths + existing).filter { seen.insert($0).inserted }.joined(separator: ":")
         for (k, v) in environment { env[k] = v }
+        // Never propagate dylib-injection vectors to child processes. The app
+        // itself may legitimately run with relaxed library validation (MLX
+        // Metal JIT, relocatable Python), but an MCP server inheriting
+        // DYLD_INSERT_LIBRARIES & co. would execute arbitrary injected code.
+        // Stripped last so user-supplied overrides can't reintroduce them.
+        env = Self.strippingDynamicLinkerVariables(from: env)
 
         // Resolve the command: an absolute/relative path is used as-is; a bare
         // name (e.g. "npx") is looked up against the child PATH. Then verify it
@@ -55,7 +61,16 @@ public actor StdioMCPTransport: MCPTransport {
         process.arguments = arguments
         process.environment = env
         if let wd = workingDirectory {
-            process.currentDirectoryURL = URL(fileURLWithPath: wd)
+            // Canonicalize (resolves symlinks + relative components) and
+            // require an existing directory, so a bad config string fails
+            // with a clear error here instead of a confusing child crash.
+            let canonical = URL(fileURLWithPath: wd).resolvingSymlinksInPath()
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: canonical.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue else {
+                throw MCPTransportError.ioError("MCP working directory does not exist or is not a directory: \(wd)")
+            }
+            process.currentDirectoryURL = canonical
         }
         let stdin = Pipe()
         let stdout = Pipe()
@@ -87,6 +102,14 @@ public actor StdioMCPTransport: MCPTransport {
             if fm.isExecutableFile(atPath: String(candidate)) { return String(candidate) }
         }
         return nil
+    }
+
+    /// Drop every dynamic-linker injection variable (`DYLD_*` on macOS plus
+    /// `LD_*` for portability) from a child environment. These allow arbitrary
+    /// code execution inside the launched MCP server; nothing legitimate
+    /// requires forwarding them.
+    static func strippingDynamicLinkerVariables(from env: [String: String]) -> [String: String] {
+        env.filter { !($0.key.hasPrefix("DYLD_") || $0.key.hasPrefix("LD_")) }
     }
 
     /// Best-effort read of any bytes the child wrote to stderr (e.g.

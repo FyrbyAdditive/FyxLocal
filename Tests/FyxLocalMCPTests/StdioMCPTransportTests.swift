@@ -57,4 +57,45 @@ struct StdioMCPTransportTests {
         try await t.start()
         await t.close()
     }
+
+    /// Dynamic-linker injection variables must never reach a child MCP server —
+    /// not from the inherited environment NOR from user-supplied overrides.
+    @Test func dynamicLinkerVariablesAreStripped() {
+        let dirty: [String: String] = [
+            "PATH": "/usr/bin",
+            "HOME": "/Users/x",
+            "DYLD_INSERT_LIBRARIES": "/tmp/evil.dylib",
+            "DYLD_LIBRARY_PATH": "/tmp",
+            "LD_PRELOAD": "/tmp/evil.so",
+            "MY_SERVER_TOKEN": "ok",
+        ]
+        let clean = StdioMCPTransport.strippingDynamicLinkerVariables(from: dirty)
+        #expect(clean["DYLD_INSERT_LIBRARIES"] == nil)
+        #expect(clean["DYLD_LIBRARY_PATH"] == nil)
+        #expect(clean["LD_PRELOAD"] == nil)
+        // Benign variables survive.
+        #expect(clean["PATH"] == "/usr/bin")
+        #expect(clean["HOME"] == "/Users/x")
+        #expect(clean["MY_SERVER_TOKEN"] == "ok")
+    }
+
+    /// A working directory that doesn't exist (or isn't a directory) fails
+    /// start() with a clear error instead of a confusing child-side crash.
+    @Test func nonexistentWorkingDirectoryThrows() async {
+        let t = StdioMCPTransport(
+            command: "/bin/cat",
+            workingDirectory: "/nonexistent/definitely/missing/dir"
+        )
+        await #expect(throws: MCPTransportError.self) {
+            try await t.start()
+        }
+    }
+
+    /// A valid working directory (including via symlink, e.g. /tmp →
+    /// /private/tmp) canonicalizes and launches cleanly.
+    @Test func symlinkedWorkingDirectoryCanonicalizesAndLaunches() async throws {
+        let t = StdioMCPTransport(command: "/bin/cat", workingDirectory: "/tmp")
+        try await t.start()
+        await t.close()
+    }
 }
