@@ -22,6 +22,10 @@ public struct ConversationSummarizer: Sendable {
     /// Throws `SummarizerError` after one auto-retry on the second failure.
     public func summarize(messages: ArraySlice<Message>) async throws -> String {
         let transcript = transcript(from: messages)
+        // No explicit temperature: the newest Anthropic models 400 on the
+        // parameter ("`temperature` is deprecated for this model"), which
+        // would break auto-compaction mid-conversation. Server default is
+        // fine for a summary. Same fix as ConversationTitler.
         let request = ChatRequest(
             model: modelID,
             input: [
@@ -29,7 +33,6 @@ public struct ConversationSummarizer: Sendable {
                 .message(role: .user, content: [.inputText(transcript)]),
             ],
             previousResponseID: nil,
-            temperature: 0.2,
             tools: [],
             toolChoice: .none,
             store: false

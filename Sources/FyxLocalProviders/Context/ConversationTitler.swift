@@ -26,6 +26,10 @@ public struct ConversationTitler: Sendable {
     }
 
     public func title(forFirstUser user: String, firstAssistant: String) async throws -> String {
+        // No explicit temperature: the newest Anthropic models reject the
+        // parameter outright ("`temperature` is deprecated for this model",
+        // HTTP 400), which silently killed auto-titling against
+        // api.anthropic.com. The server default is fine for a title.
         let request = ChatRequest(
             model: modelID,
             input: [
@@ -33,7 +37,6 @@ public struct ConversationTitler: Sendable {
                 .message(role: .user, content: [.inputText(transcript(user: user, assistant: firstAssistant))]),
             ],
             previousResponseID: nil,
-            temperature: 0.3,
             tools: [],
             toolChoice: .none,
             store: false
