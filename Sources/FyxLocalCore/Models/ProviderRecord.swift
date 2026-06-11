@@ -33,6 +33,28 @@ public enum LLMAPIKind: String, Sendable, Hashable, Codable, CaseIterable {
         case .anthropicMessages: return "https://api.anthropic.com/v1"
         }
     }
+
+    // MARK: - Sampling-parameter applicability
+    //
+    // Which sampling knobs this wire protocol actually sends. The Settings
+    // sampling card hides the rest so we never expose a control that silently
+    // does nothing (the request encoders already drop inapplicable params).
+    // `temperature` / `top_p` / `max_tokens` are universal and always shown;
+    // these cover only the ones that vary by API.
+
+    /// `stop` / `stop_sequences`. The OpenAI Responses API has no equivalent.
+    public var supportsStopSequences: Bool {
+        switch self {
+        case .openAIChatCompletions, .anthropicMessages: return true
+        case .openAIResponses: return false
+        }
+    }
+
+    /// `frequency_penalty` / `presence_penalty` / `seed` — OpenAI Chat
+    /// Completions only.
+    public var supportsPenaltiesAndSeed: Bool {
+        self == .openAIChatCompletions
+    }
 }
 
 public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {

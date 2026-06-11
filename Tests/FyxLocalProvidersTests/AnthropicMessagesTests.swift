@@ -435,6 +435,17 @@ struct ProviderRecordAPIKindTests {
         #expect(s.seed == nil)
     }
 
+    @Test func samplingApplicabilityMatchesWireSupport() {
+        // Penalties + seed: OpenAI Chat Completions only.
+        #expect(LLMAPIKind.openAIChatCompletions.supportsPenaltiesAndSeed)
+        #expect(!LLMAPIKind.openAIResponses.supportsPenaltiesAndSeed)
+        #expect(!LLMAPIKind.anthropicMessages.supportsPenaltiesAndSeed)
+        // Stop sequences: everything except OpenAI Responses.
+        #expect(LLMAPIKind.openAIChatCompletions.supportsStopSequences)
+        #expect(LLMAPIKind.anthropicMessages.supportsStopSequences)
+        #expect(!LLMAPIKind.openAIResponses.supportsStopSequences)
+    }
+
     @Test func apiKindDefaultsAndHelpers() {
         #expect(LLMAPIKind.anthropicMessages.defaultBaseURL == "https://api.anthropic.com/v1")
         #expect(LLMAPIKind.openAIResponses.defaultBaseURL == "https://")

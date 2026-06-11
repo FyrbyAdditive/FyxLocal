@@ -271,14 +271,17 @@ private struct ProviderCard: View {
 
                 Divider().padding(.vertical, 4)
 
-                SamplingSection(sampling: Binding(
-                    get: { record.sampling },
-                    set: {
-                        var updated = record
-                        updated.sampling = $0
-                        record = updated
-                    }
-                ))
+                SamplingSection(
+                    sampling: Binding(
+                        get: { record.sampling },
+                        set: {
+                            var updated = record
+                            updated.sampling = $0
+                            record = updated
+                        }
+                    ),
+                    apiKind: record.apiKind
+                )
 
                 Divider().padding(.vertical, 4)
 
@@ -681,6 +684,9 @@ private struct ToolToggleRow: View {
 
 private struct SamplingSection: View {
     @Binding var sampling: ProviderSamplingDefaults
+    /// The provider's wire protocol — gates which knobs are shown, so we never
+    /// expose a control the request encoder would silently drop.
+    let apiKind: LLMAPIKind
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -712,24 +718,31 @@ private struct SamplingSection: View {
                 value: Binding(get: { sampling.maxOutputTokens }, set: { sampling.maxOutputTokens = $0 }),
                 defaultValue: 2048
             )
-            OptionalNumericRow(
-                label: "Frequency penalty",
-                placeholder: "server default · OpenAI Chat Completions only",
-                value: Binding(get: { sampling.frequencyPenalty }, set: { sampling.frequencyPenalty = $0 }),
-                range: -2.0...2.0,
-                step: 0.05,
-                format: "%.2f"
-            )
-            OptionalNumericRow(
-                label: "Presence penalty",
-                placeholder: "server default · OpenAI Chat Completions only",
-                value: Binding(get: { sampling.presencePenalty }, set: { sampling.presencePenalty = $0 }),
-                range: -2.0...2.0,
-                step: 0.05,
-                format: "%.2f"
-            )
-            SeedRow(value: Binding(get: { sampling.seed }, set: { sampling.seed = $0 }))
-            StopSequencesRow(value: Binding(get: { sampling.stopSequences }, set: { sampling.stopSequences = $0 }))
+            // Penalties + seed are OpenAI Chat Completions-only on the wire;
+            // hidden elsewhere so they aren't dead controls.
+            if apiKind.supportsPenaltiesAndSeed {
+                OptionalNumericRow(
+                    label: "Frequency penalty",
+                    placeholder: "server default",
+                    value: Binding(get: { sampling.frequencyPenalty }, set: { sampling.frequencyPenalty = $0 }),
+                    range: -2.0...2.0,
+                    step: 0.05,
+                    format: "%.2f"
+                )
+                OptionalNumericRow(
+                    label: "Presence penalty",
+                    placeholder: "server default",
+                    value: Binding(get: { sampling.presencePenalty }, set: { sampling.presencePenalty = $0 }),
+                    range: -2.0...2.0,
+                    step: 0.05,
+                    format: "%.2f"
+                )
+                SeedRow(value: Binding(get: { sampling.seed }, set: { sampling.seed = $0 }))
+            }
+            // Stop sequences: every API except OpenAI Responses.
+            if apiKind.supportsStopSequences {
+                StopSequencesRow(value: Binding(get: { sampling.stopSequences }, set: { sampling.stopSequences = $0 }))
+            }
 
             Stepper(value: Binding(
                 get: { sampling.maxToolIterations },
