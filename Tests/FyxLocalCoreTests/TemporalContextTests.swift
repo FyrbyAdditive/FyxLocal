@@ -131,6 +131,20 @@ struct TemporalContextTests {
         #expect(header.contains("Europe/Copenhagen")) // zone still named
     }
 
+    @Test func dayHeaderNorwegianUsesBokmalWordingAndZone() {
+        let ctx = TemporalContext(
+            date: Self.referenceDate,
+            locale: Locale(identifier: "nb_NO"),
+            timeZone: TimeZone(identifier: "Europe/Oslo")!,
+            language: .norwegian
+        )
+        let header = ctx.renderDayHeader()
+        #expect(header.hasPrefix("[I dag er "))
+        #expect(header.hasSuffix("]"))
+        #expect(header.contains("tidssone"))      // Norwegian spelling (vs Danish "tidszone")
+        #expect(header.contains("Europe/Oslo"))   // zone still named
+    }
+
     @Test func dayHeaderStableAcrossSubdayDriftSameDay() {
         // 2026-05-29T08:00:00Z → +6h is 14:00 same day. Asserts the
         // cache-friendliness property we depend on.

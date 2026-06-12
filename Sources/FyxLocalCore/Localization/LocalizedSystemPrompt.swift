@@ -10,6 +10,7 @@ public enum PromptLanguage: String, Sendable, Hashable, CaseIterable, Codable {
     case englishGB = "en-GB"   // UK English (British spelling)
     case swedish   = "sv"
     case danish    = "da"
+    case norwegian = "nb"      // Bokmål (Apple's standard code for Norwegian UI)
 
     public static func resolve(from locale: Locale = .current) -> PromptLanguage {
         let code = locale.language.languageCode?.identifier ?? "en"
@@ -17,6 +18,12 @@ public enum PromptLanguage: String, Sendable, Hashable, CaseIterable, Codable {
         // (en-US, en-AU, bare en, …) → the en/base case.
         if code == "en" {
             return locale.region?.identifier == "GB" ? .englishGB : .english
+        }
+        // Norwegian's codes all land on Bokmål: nb (Bokmål), no (macro
+        // language), nn (Nynorsk — no separate localisation; Bokmål is
+        // readable to Nynorsk users and is the de-facto app standard).
+        if code == "no" || code == "nn" {
+            return .norwegian
         }
         return PromptLanguage(rawValue: code) ?? .english
     }
@@ -155,6 +162,20 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
                 (`cat SKILL.md`), og kør derefter de medfølgende scripts som \
                 instruktionerne foreskriver. Kald kun en færdighed, når dens \
                 beskrivelse er tydeligt relevant.
+                """
+            case .norwegian:
+                return """
+                Følgende ferdigheter («skills») er tilgjengelige for deg. En \
+                ferdighet er en mappe med instruksjoner og skript du kan bruke \
+                når beskrivelsen passer oppgaven:
+
+                \(bullets)
+
+                Bruk en ferdighet ved å kalle verktøyet `run_code` med \
+                ferdighetens navn. Begynn med å lese instruksjonene \
+                (`cat SKILL.md`), og kjør deretter de medfølgende skriptene \
+                slik instruksjonene sier. Kall kun en ferdighet når \
+                beskrivelsen er tydelig relevant.
                 """
             }
         }

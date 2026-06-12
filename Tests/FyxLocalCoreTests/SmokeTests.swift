@@ -50,6 +50,10 @@ struct CoreSmokeTests {
         ("sv", PromptLanguage.swedish),
         ("sv_SE", PromptLanguage.swedish),    // region ignored for non-English
         ("da_DK", PromptLanguage.danish),
+        ("nb", PromptLanguage.norwegian),     // Bokmål
+        ("nb_NO", PromptLanguage.norwegian),
+        ("no", PromptLanguage.norwegian),     // macro code → Bokmål
+        ("nn", PromptLanguage.norwegian),     // Nynorsk → Bokmål (no separate l10n)
         ("de", PromptLanguage.english),       // unsupported → base fallback
     ])
     func resolvesPromptLanguageFromLocale(code: String, expected: PromptLanguage) {
