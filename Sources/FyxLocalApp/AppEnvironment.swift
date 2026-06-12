@@ -628,15 +628,11 @@ final class AppEnvironment {
         pendingReminderWrite = nil
     }
 
+    /// Providers seeded on genuine first launch. Empty: a fresh user adds
+    /// their own provider in Settings (the empty state guides them there).
+    /// Must NOT ship any internal/dev endpoint.
     static func defaultProviders() -> [ProviderRecord] {
-        [
-            ProviderRecord(
-                id: ProviderID(rawValue: "fyrby-magi"),
-                displayName: "Fyrby Magi (dev)",
-                baseURL: URL(string: "https://magi.fyrby.internal:8000/v1")!,
-                defaultModel: nil
-            )
-        ]
+        []
     }
 
     // MARK: - Agents
