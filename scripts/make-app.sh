@@ -129,6 +129,7 @@ cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
         <string>en-GB</string>
         <string>sv</string>
         <string>da</string>
+        <string>nb</string>
     </array>
     <key>CFBundleName</key>
     <string>FyxLocal</string>
