@@ -29,6 +29,13 @@ struct FyxLocalApp: App {
             RootView(environment: environment)
                 .frame(minWidth: 960, minHeight: 600)
         }
+        // First-launch size. Without this the window opens at the MINIMUM
+        // frame on a fresh machine (no autosaved frame yet), which is cramped
+        // once the sidebar + default-open inspector take their share. Applies
+        // only when no saved frame exists; macOS clamps it to the visible
+        // screen on smaller displays, and later launches restore whatever
+        // size the user chose.
+        .defaultSize(width: 1340, height: 860)
         .windowStyle(.titleBar)
         .commands {
             CommandGroup(replacing: .newItem) {
