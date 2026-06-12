@@ -10,6 +10,8 @@ struct ComposerView: View {
     @FocusState private var focused: Bool
     @State private var showingImporter = false
     @State private var attachError: String?
+    /// Increments per send so the send arrow gets a single symbol bounce.
+    @State private var sendBounce = 0
 
     var body: some View {
         VStack(spacing: 6) {
@@ -43,53 +45,67 @@ struct ComposerView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
             }
-            if !viewModel.draftAttachments.isEmpty {
-                attachmentChips
-            }
-            HStack(alignment: .bottom, spacing: 8) {
-                // Attach button: images (when the model accepts them) + text files.
-                Button {
-                    attachError = nil
-                    showingImporter = true
-                } label: {
-                    Image(systemName: "paperclip")
-                        .font(.system(size: 16, weight: .medium))
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.plain)
-                .help("Attach an image or text file")
 
-                // TextField(axis: .vertical) starts at one line and grows up
-                // to lineLimit before scrolling, unlike TextEditor which is
-                // multi-line from the start. Bare Return submits; Shift+Return
-                // inserts a literal newline.
-                TextField("Message", text: $viewModel.draftText, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...8)
-                    .focused($focused)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignTokens.composerCornerRadius))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignTokens.composerCornerRadius)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    )
-                    .onSubmit(submitIfReady)
-
-                Button(action: submitIfReady) {
-                    Image(systemName: viewModel.isStreaming ? "stop.fill" : "arrow.up")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(DesignTokens.accent.gradient, in: Circle())
+            // The floating field: one glass card holding chips + input +
+            // accessory row. Detached from the window edge (inset, with a
+            // lift shadow) — the chrome-free area around it is what makes the
+            // composer read as floating over the chat.
+            VStack(spacing: 6) {
+                if !viewModel.draftAttachments.isEmpty {
+                    attachmentChips
                 }
-                .buttonStyle(.plain)
-                .keyboardShortcut(.return, modifiers: [.command])
-                .disabled(!viewModel.isStreaming && !viewModel.canSend)
+                HStack(alignment: .bottom, spacing: 8) {
+                    // Attach button: images (when the model accepts them) + text files.
+                    Button {
+                        attachError = nil
+                        showingImporter = true
+                    } label: {
+                        Image(systemName: "paperclip")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                    .help("Attach an image or text file")
+
+                    // TextField(axis: .vertical) starts at one line and grows up
+                    // to lineLimit before scrolling, unlike TextEditor which is
+                    // multi-line from the start. Bare Return submits; Shift+Return
+                    // inserts a literal newline.
+                    TextField("Message", text: $viewModel.draftText, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .lineLimit(1...8)
+                        .focused($focused)
+                        .padding(.vertical, 5)
+                        .onSubmit(submitIfReady)
+
+                    Button(action: submitIfReady) {
+                        Image(systemName: viewModel.isStreaming ? "stop.fill" : "arrow.up")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .symbolEffect(.bounce, value: sendBounce)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                sendEnabled
+                                    ? AnyShapeStyle(DesignTokens.accentGradient)
+                                    : AnyShapeStyle(DesignTokens.strongFill),
+                                in: Circle()
+                            )
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                    .keyboardShortcut(.return, modifiers: [.command])
+                    .disabled(!sendEnabled)
+                }
+                composerToolbar
             }
-            composerToolbar
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .glassChrome(in: RoundedRectangle(cornerRadius: 22), emphasized: focused)
+            .animation(Motion.quick, value: focused)
         }
-        .padding(DesignTokens.panelPadding)
+        .padding(.horizontal, DesignTokens.panelPadding)
+        .padding(.top, 4)
+        .padding(.bottom, 12)
         .onAppear { focused = true }
         .fileImporter(
             isPresented: $showingImporter,
@@ -128,7 +144,8 @@ struct ComposerView: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.regularMaterial, in: Capsule())
+                    .background(DesignTokens.quietFill, in: Capsule())
+                    .hairline(in: Capsule())
                 }
             }
             .padding(.horizontal, 4)
@@ -181,6 +198,11 @@ struct ComposerView: View {
         .padding(.horizontal, 2)
     }
 
+    /// Send is enabled while streaming (acts as Stop) or when there's a draft.
+    private var sendEnabled: Bool {
+        viewModel.isStreaming || viewModel.canSend
+    }
+
     private func submitIfReady() {
         if viewModel.isStreaming {
             viewModel.cancel()
@@ -188,6 +210,7 @@ struct ComposerView: View {
         }
         guard viewModel.canSend else { return }
         attachError = nil
+        sendBounce += 1
         viewModel.send()
     }
 }
@@ -222,11 +245,9 @@ private struct ReasoningMenu: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
-                Capsule().fill(current == nil ? Color.gray.opacity(0.08) : Color.accentColor.opacity(0.15))
+                Capsule().fill(current == nil ? DesignTokens.quietFill : Color.accentColor.opacity(0.15))
             )
-            .overlay(
-                Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-            )
+            .hairline(in: Capsule())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)

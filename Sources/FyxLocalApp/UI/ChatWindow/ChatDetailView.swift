@@ -38,10 +38,10 @@ struct ChatDetailView: View {
                     // this VStack — a Spacer-bearing sibling next to the
                     // `maxHeight: .infinity` transcript disrupted the height
                     // negotiation and pushed the toolbar/composer off-screen.
-                    Divider()
+                    // (No divider: the composer is a floating glass card, so
+                    // the seam between transcript and composer is whitespace.)
                     if let notice = viewModel.modelNotice {
                         ModelNoticeBanner(text: notice) { viewModel.modelNotice = nil }
-                        Divider()
                     }
                     ComposerView(viewModel: viewModel)
                 }
@@ -229,6 +229,8 @@ private struct ModelNoticeBanner: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
-        .background(.quaternary.opacity(0.5))
+        .glassChrome(in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        .padding(.horizontal, DesignTokens.panelPadding)
+        .padding(.top, 4)
     }
 }

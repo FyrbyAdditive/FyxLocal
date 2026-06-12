@@ -288,7 +288,7 @@ private struct ParsedCodeBlockView: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.10))
+                    .background(DesignTokens.strongFill)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(trimmed)
@@ -298,11 +298,9 @@ private struct ParsedCodeBlockView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .background(Color.gray.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-        )
+        .background(DesignTokens.quietFill, in: RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .hairline(in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -311,8 +309,9 @@ private struct ParsedBlockQuoteView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Rectangle()
-                .fill(Color.accentColor.opacity(0.4))
+            // Gradient accent rule — quietly echoes the app's duotone.
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(DesignTokens.accentGradient.opacity(0.55))
                 .frame(width: 3)
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(children.enumerated()), id: \.offset) { _, child in
@@ -340,7 +339,7 @@ private struct ParsedTableView: View {
                 }
                 .padding(.vertical, 4)
                 .padding(.horizontal, 8)
-                .background(Color.gray.opacity(0.12))
+                .background(DesignTokens.strongFill)
             }
             ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -351,13 +350,11 @@ private struct ParsedTableView: View {
                 }
                 .padding(.vertical, 4)
                 .padding(.horizontal, 8)
-                .background(rowIndex.isMultiple(of: 2) ? Color.clear : Color.gray.opacity(0.05))
+                .background(rowIndex.isMultiple(of: 2) ? Color.clear : DesignTokens.quietFill.opacity(0.5))
             }
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .hairline(in: RoundedRectangle(cornerRadius: 6))
     }
 }
 

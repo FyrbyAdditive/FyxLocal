@@ -77,9 +77,96 @@ struct MessageView: View {
                 return nil
             }
         )
-        HStack(alignment: .top, spacing: 12) {
-            roleBadge
-                .frame(width: 32, height: 32)
+        Group {
+            if message.role == .user {
+                userRow(resultsByCallID: resultsByCallID, pairedCallIDs: pairedCallIDs)
+            } else {
+                standardRow(
+                    isActivelyThinking: isActivelyThinking,
+                    resultsByCallID: resultsByCallID,
+                    pairedCallIDs: pairedCallIDs
+                )
+            }
+        }
+        .padding(.vertical, 6)
+        // Hover action bar. Fades + drifts in on hover; the same actions are
+        // also on the right-click context menu (trackpad-friendly). For user
+        // rows the bubble hugs the trailing edge, so the bar sits leading —
+        // opposite the content instead of on top of it.
+        .overlay(alignment: message.role == .user ? .topLeading : .topTrailing) {
+            if hasAnyAction {
+                MessageActionsBar(message: message, actions: actions)
+                    .padding(message.role == .user ? .leading : .trailing, 4)
+                    .opacity(isHovering ? 1 : 0)
+                    .offset(y: isHovering ? 0 : 4)
+                    .animation(Motion.quick, value: isHovering)
+                    // Don't steal hover/clicks when hidden.
+                    .allowsHitTesting(isHovering)
+            }
+        }
+        // Make the WHOLE row rect a hover target — not just the (possibly
+        // short, single-line) text. Without this, .onHover only fires over
+        // opaque content, so a one-word message left the area under the
+        // top-trailing action bar non-hoverable and the icons unreachable.
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+        .contextMenu {
+            if hasAnyAction {
+                MessageActionsMenu(message: message, actions: actions)
+            }
+        }
+    }
+
+    /// User messages: a right-aligned soft bubble. The alignment IS the role
+    /// marker — no badge, which keeps the transcript quieter than before.
+    @ViewBuilder
+    private func userRow(
+        resultsByCallID: [String: ToolResultRecord],
+        pairedCallIDs: Set<String>
+    ) -> some View {
+        HStack(alignment: .top, spacing: 0) {
+            Spacer(minLength: 56)
+            VStack(alignment: .trailing, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(message.contentItems.enumerated()), id: \.offset) { _, item in
+                        contentView(
+                            for: item,
+                            isActivelyThinking: false,
+                            resultsByCallID: resultsByCallID,
+                            pairedCallIDs: pairedCallIDs
+                        )
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    DesignTokens.userBubbleFill,
+                    in: RoundedRectangle(cornerRadius: DesignTokens.userBubbleRadius)
+                )
+                if let failureError, let onRetry {
+                    FailureRetryBanner(message: failureError, onRetry: onRetry)
+                }
+                if !metricsLine.isEmpty {
+                    Text(metricsLine)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    /// Assistant / system / tool rows: full-width content with a slim leading
+    /// marker — the assistant's is just a gradient sparkle, no box.
+    @ViewBuilder
+    private func standardRow(
+        isActivelyThinking: Bool,
+        resultsByCallID: [String: ToolResultRecord],
+        pairedCallIDs: Set<String>
+    ) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            roleMarker
+                .frame(width: 24, alignment: .center)
+                .padding(.top, 2)
             VStack(alignment: .leading, spacing: 8) {
                 if isActivelyThinking {
                     ThinkingPill()
@@ -102,30 +189,6 @@ struct MessageView: View {
                 }
             }
             Spacer(minLength: 0)
-        }
-        .padding(.vertical, 6)
-        // Hover action bar, top-trailing. Fades in on hover; the same actions
-        // are also on the right-click context menu (trackpad-friendly).
-        .overlay(alignment: .topTrailing) {
-            if hasAnyAction {
-                MessageActionsBar(message: message, actions: actions)
-                    .padding(.trailing, 4)
-                    .opacity(isHovering ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.12), value: isHovering)
-                    // Don't steal hover/clicks when hidden.
-                    .allowsHitTesting(isHovering)
-            }
-        }
-        // Make the WHOLE row rect a hover target — not just the (possibly
-        // short, single-line) text. Without this, .onHover only fires over
-        // opaque content, so a one-word message left the area under the
-        // top-trailing action bar non-hoverable and the icons unreachable.
-        .contentShape(Rectangle())
-        .onHover { isHovering = $0 }
-        .contextMenu {
-            if hasAnyAction {
-                MessageActionsMenu(message: message, actions: actions)
-            }
         }
     }
 
@@ -161,19 +224,31 @@ struct MessageView: View {
         return parts.joined(separator: " · ")
     }
 
-    private var roleBadge: some View {
-        let symbol: String
-        let bg: Color
+    /// Leading marker for non-user rows. The assistant gets a bare gradient
+    /// sparkle (no box — the lightest possible mark); system/tool keep a
+    /// compact duotone badge since they're rare and benefit from the label.
+    @ViewBuilder
+    private var roleMarker: some View {
         switch message.role {
-        case .system: symbol = "gearshape.fill"; bg = .gray
-        case .user: symbol = "person.fill"; bg = .blue
-        case .assistant: symbol = "sparkle"; bg = .purple
-        case .tool: symbol = "wrench.and.screwdriver.fill"; bg = .green
+        case .assistant:
+            Image(systemName: "sparkle")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(DesignTokens.sparkleGradient)
+        case .system:
+            compactBadge(symbol: "gearshape.fill", base: .gray)
+        case .tool:
+            compactBadge(symbol: "wrench.and.screwdriver.fill", base: .green)
+        case .user:
+            EmptyView() // user rows use the bubble layout, no marker
         }
-        return Image(systemName: symbol)
+    }
+
+    private func compactBadge(symbol: String, base: Color) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.white)
-            .padding(7)
-            .background(bg.gradient, in: RoundedRectangle(cornerRadius: 8))
+            .padding(6)
+            .background(DesignTokens.badgeGradient(base), in: RoundedRectangle(cornerRadius: 7))
     }
 
     @ViewBuilder
@@ -358,8 +433,9 @@ struct ReasoningBlock: View {
                 .foregroundStyle(.secondary)
         }
         .padding(8)
-        .background(DesignTokens.secondaryFill, in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
-        .animation(.default, value: effectiveExpanded)
+        .background(DesignTokens.quietFill, in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        .hairline(in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        .animation(Motion.spring, value: effectiveExpanded)
     }
 }
 
@@ -369,8 +445,10 @@ struct ReasoningBlock: View {
 struct ThinkingPill: View {
     var body: some View {
         HStack(spacing: 6) {
-            ProgressView()
-                .controlSize(.small)
+            Image(systemName: "sparkle")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(DesignTokens.sparkleGradient)
+                .symbolEffect(.variableColor.iterative, options: .repeating)
             // Reuses the existing "Thinking" key. Xcode normalises trailing
             // punctuation when generating string-catalog symbols, so we
             // can't carry both "Thinking" and "Thinking…" — append the
@@ -382,7 +460,10 @@ struct ThinkingPill: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(DesignTokens.secondaryFill, in: Capsule())
+        .background(DesignTokens.quietFill, in: Capsule())
+        .shimmer(active: true)          // pill only exists while reasoning
+        .clipShape(Capsule())
+        .hairline(in: Capsule())
         .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 }
@@ -499,9 +580,11 @@ struct ToolCallResultBlock: View {
         }
         .padding(10)
         .background(
-            (effectiveStatus == .failed ? DesignTokens.errorFill : DesignTokens.secondaryFill),
+            (effectiveStatus == .failed ? DesignTokens.errorFill : DesignTokens.quietFill),
             in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius)
         )
+        .hairline(in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
+        .animation(Motion.spring, value: expanded)
     }
 
     @ViewBuilder
@@ -655,18 +738,14 @@ private struct MessageActionsBar: View {
                         .font(.system(size: 11, weight: .medium))
                         .frame(width: 22, height: 22)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableButtonStyle())
                 .foregroundStyle(item.isDestructive ? Color.red : Color.secondary)
                 .disabled(!item.isEnabled)
                 .help(item.title)
             }
         }
         .padding(2)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
-        .overlay(
-            RoundedRectangle(cornerRadius: DesignTokens.smallRadius)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-        )
+        .glassChrome(in: RoundedRectangle(cornerRadius: DesignTokens.smallRadius))
     }
 }
 

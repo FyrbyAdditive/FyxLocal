@@ -267,9 +267,9 @@ private struct StreamingHeightObserver: ViewModifier {
 private struct EmptyChatView: View {
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 36, weight: .light))
-                .foregroundStyle(.secondary)
+            Image(systemName: "sparkle")
+                .font(.system(size: 32, weight: .light))
+                .foregroundStyle(DesignTokens.sparkleGradient)
             Text("Start a conversation")
                 .font(.title3.weight(.semibold))
             Text("Type below to begin.")
@@ -278,6 +278,6 @@ private struct EmptyChatView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(28)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignTokens.cornerRadius))
+        .glassChrome(in: RoundedRectangle(cornerRadius: DesignTokens.cornerRadius))
     }
 }

@@ -243,7 +243,7 @@ struct SidebarView: View {
                 .padding(.horizontal, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(isSelected ? Color.accentColor.opacity(0.85) : Color.clear)
+                        .fill(isSelected ? AnyShapeStyle(DesignTokens.accentGradient) : AnyShapeStyle(Color.clear))
                 )
                 .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
                 .contentShape(.rect)
@@ -615,16 +615,10 @@ private struct DeleteDialogModifiers: ViewModifier {
 }
 
 private extension Color {
-    /// The chat list's rendered sidebar background colour, matched directly so
-    /// the pinned footer is the same surface. The SwiftUI sidebar `List` blends
-    /// its material *behind the window* (against the desktop), so a standalone
-    /// material layer comes out a different (lighter) grey — we match the
-    /// measured colour instead, adapting to light/dark.
-    static let sidebarListBackground = Color(nsColor: NSColor(name: nil) { appearance in
-        let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        return isDark
-            ? NSColor(srgbRed: 22/255, green: 24/255, blue: 26/255, alpha: 1)
-            : NSColor(srgbRed: 246/255, green: 246/255, blue: 247/255, alpha: 1)
-    })
+    /// The chat list's rendered sidebar background colour, matched so the
+    /// pinned footer reads as the same surface. Values live in DesignTokens
+    /// (slightly deeper/cooler than the originals, in step with the
+    /// cool-slate neutrals).
+    static let sidebarListBackground = DesignTokens.sidebarBackground
 }
 

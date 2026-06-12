@@ -31,7 +31,10 @@ struct TokenMeter: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Capsule().fill(fillColor))
-            .overlay(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 0.5))
+            .hairline(in: Capsule())
+            // Tier changes (gray → orange → red, compacting blue) glide
+            // instead of snapping.
+            .animation(Motion.quick, value: tier)
         }
         .buttonStyle(.plain)
         .help(helpText)
@@ -71,12 +74,23 @@ struct TokenMeter: View {
         return "\(projection.totalTokens.formatted()) tokens used of \(budget.safeInputBudget.formatted()) safe input budget (\(pct)%). Window: \(budget.effectiveWindow.formatted()), reserve: \(budget.outputReserve.formatted()). Click for details."
     }
 
+    /// Discrete usage tier — the animation value, so colour glides only when
+    /// the tier actually changes (not on every token-count tick).
+    private var tier: Int {
+        if isCompacting { return 3 }
+        switch ratio {
+        case 0.8...: return 2
+        case 0.6...: return 1
+        default: return 0
+        }
+    }
+
     private var fillColor: Color {
         if isCompacting { return Color.blue.opacity(0.15) }
         switch ratio {
         case 0.8...: return Color.red.opacity(0.18)
         case 0.6...: return Color.orange.opacity(0.18)
-        default: return Color.gray.opacity(0.08)
+        default: return DesignTokens.quietFill
         }
     }
 
