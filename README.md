@@ -36,11 +36,12 @@ _Please note that some of these tools have optional write access (disabled by de
 
 The following provider types are supported, which are included as they work with certain models via vLLM:
 
+* Anthropic Messages API (via Platform API, not a claude.ai account)
+* Ollama API
 * OpenAI Responses API
 * OpenAI Completions API
-* Anthropic Messages API (via Platform API, not a claude.ai account)
 
-Currently FyxLocal has English, Swedish and Danish localisations and is open to submissions for more.
+Currently FyxLocal has UK & US English, Swedish, Norwegian and Danish localisations and is open to submissions for more.
 
 -------
 <p></p>
