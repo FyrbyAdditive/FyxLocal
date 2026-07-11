@@ -130,13 +130,14 @@ cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
         <string>sv</string>
         <string>da</string>
         <string>nb</string>
+        <string>es</string>
     </array>
     <key>CFBundleName</key>
     <string>FyxLocal</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.6.4</string>
+    <string>0.6.5</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
@@ -150,7 +151,7 @@ cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
         </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>0.6.4</string>
+    <string>0.6.5</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.productivity</string>
     <key>LSMinimumSystemVersion</key>
