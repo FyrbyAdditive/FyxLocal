@@ -50,10 +50,8 @@ public struct WebFetchTool: Tool {
 
     public func invoke(arguments: String) async throws -> ToolOutput {
         struct Args: Decodable { let url: String }
-        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalised = trimmed.isEmpty ? "{}" : trimmed
-        guard let data = normalised.data(using: .utf8),
-              let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
+        // Lenient parse for consistency across tools.
+        guard let parsed = ToolArguments.decode(Args.self, from: arguments) else {
             let message = #"{"error":"Could not parse arguments. Expected {\"url\": string}. Got: \#(arguments.escapedForJSONInline())"}"#
             return ToolOutput(outputJSON: message, isError: true, display: .markdown)
         }

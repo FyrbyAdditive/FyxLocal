@@ -73,10 +73,8 @@ public struct RAGSearchTool: Tool {
             let collection: String?
             let top_k: Int?
         }
-        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalised = trimmed.isEmpty ? "{}" : trimmed
-        guard let data = normalised.data(using: .utf8),
-              let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
+        // Lenient parse: tolerate stringified numbers (top_k).
+        guard let parsed = ToolArguments.decode(Args.self, from: arguments) else {
             let body = #"{"error":"Could not parse arguments. Expected {\"query\": string, \"collection\"?: string}."}"#
             return ToolOutput(outputJSON: body, isError: true, display: .markdown)
         }

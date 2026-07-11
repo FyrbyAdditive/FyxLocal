@@ -31,10 +31,8 @@ public struct ContactsSearchTool: Tool {
 
     public func invoke(arguments: String) async throws -> ToolOutput {
         struct Args: Decodable { let query: String?; let limit: Int? }
-        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalised = trimmed.isEmpty ? "{}" : trimmed
-        guard let data = normalised.data(using: .utf8),
-              let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
+        // Lenient parse: tolerate stringified numbers (limit).
+        guard let parsed = ToolArguments.decode(Args.self, from: arguments) else {
             let message = #"{"error":"Could not parse arguments. Expected {\"query\"?: string, \"limit\"?: integer}. Got: \#(arguments.escapedForJSONInline())"}"#
             return ToolOutput(outputJSON: message, isError: true, display: .markdown)
         }

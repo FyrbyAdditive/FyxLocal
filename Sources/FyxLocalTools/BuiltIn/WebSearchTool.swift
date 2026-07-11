@@ -29,10 +29,9 @@ public struct WebSearchTool: Tool {
             let query: String
             let max_results: Int?
         }
-        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalised = trimmed.isEmpty ? "{}" : trimmed
-        guard let data = normalised.data(using: .utf8),
-              let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
+        // Lenient parse: tolerate models that stringify numbers
+        // (e.g. Nemotron sends "max_results":"5").
+        guard let parsed = ToolArguments.decode(Args.self, from: arguments) else {
             let message = #"{"error":"Could not parse arguments. Expected JSON of the form {\"query\": string, \"max_results\"?: integer}. Got: \#(arguments.escapedForJSONInline())"}"#
             return ToolOutput(outputJSON: message, isError: true, display: .markdown)
         }

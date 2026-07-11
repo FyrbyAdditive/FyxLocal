@@ -34,14 +34,25 @@ public struct MakeChartTool: Tool {
     public func invoke(arguments: String) async throws -> ToolOutput {
         let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalised = trimmed.isEmpty ? "{}" : trimmed
-        guard let data = normalised.data(using: .utf8) else {
+        // Lenient parse: tolerate models that stringify the numeric point
+        // values (e.g. "y":"42"). Coerce scalars, then re-serialize for the
+        // strict ChartSpec validator. Falls back to the raw bytes if coercion
+        // can't produce valid JSON.
+        let coercedData: Data
+        if let obj = try? JSONSerialization.jsonObject(with: Data(normalised.utf8), options: [.fragmentsAllowed]),
+           let re = try? JSONSerialization.data(withJSONObject: ToolArguments.coerce(obj), options: [.fragmentsAllowed]) {
+            coercedData = re
+        } else {
+            coercedData = Data(normalised.utf8)
+        }
+        guard !coercedData.isEmpty else {
             return errorOutput("Arguments not valid UTF-8.")
         }
         do {
             // Validate by parsing through our spec model. On success we
             // re-emit canonical JSON so the UI sees the same bytes the
             // tests assert, regardless of the model's key order.
-            let spec = try ChartSpec(jsonData: data)
+            let spec = try ChartSpec(jsonData: coercedData)
             let canonical = try spec.canonicalJSONData()
             let outputJSON = String(data: canonical, encoding: .utf8) ?? normalised
             return ToolOutput(outputJSON: outputJSON, isError: false, display: .chart)

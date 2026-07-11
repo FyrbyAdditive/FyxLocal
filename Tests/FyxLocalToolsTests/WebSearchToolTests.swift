@@ -33,6 +33,20 @@ struct WebSearchToolTests {
         #expect(output.outputJSON.contains("Could not parse arguments"))
     }
 
+    @Test func stringifiedMaxResultsIsAccepted() async throws {
+        // Regression: Nemotron sends max_results as a STRING ("5"). Strict
+        // decoding used to reject it with "Could not parse arguments";
+        // lenient parsing now coerces it.
+        let stub = StubSearch(results: [
+            WebSearchResult(title: "T", url: URL(string: "https://x.test/")!, snippet: "s"),
+        ])
+        let tool = WebSearchTool(provider: stub)
+        let output = try await tool.invoke(arguments: #"{"query":"today's news","max_results":"5"}"#)
+        #expect(output.isError == false)
+        #expect(await stub.lastQuery == "today's news")
+        #expect(await stub.lastLimit == 5)   // "5" coerced to 5, not rejected
+    }
+
     @Test func emptyQueryReturnsErrorOutput() async throws {
         let tool = WebSearchTool(provider: StubSearch(results: []))
         let output = try await tool.invoke(arguments: #"{"query":"   "}"#)

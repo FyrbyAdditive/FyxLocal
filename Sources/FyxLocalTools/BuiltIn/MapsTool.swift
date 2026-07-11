@@ -47,10 +47,8 @@ public struct MapsTool: Tool {
     }
 
     public func invoke(arguments: String) async throws -> ToolOutput {
-        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalised = trimmed.isEmpty ? "{}" : trimmed
-        guard let data = normalised.data(using: .utf8),
-              let parsed = try? JSONDecoder().decode(Args.self, from: data) else {
+        // Lenient parse: tolerate stringified numbers (lat/lon/limit).
+        guard let parsed = ToolArguments.decode(Args.self, from: arguments) else {
             return errorOutput("Could not parse arguments. Got: \(arguments.escapedForJSONInline())")
         }
 

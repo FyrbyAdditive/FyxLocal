@@ -532,31 +532,31 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Søg på det offentlige web efter aktuel information. Returnerer titel/url/uddrag for de bedste resultater. Brug det, når svaret kan have ændret sig siden modellens træningsgrænse, eller når der ønskes en kilde."
+            "value": "Søg på nettet. Argumenter: query (streng), max_results (heltal 1–20, standard 5 — et rent tal, ikke en streng). Returnerer titel/url/uddrag for de bedste resultater. Brug det, når svaret kan være nyere end din træning, eller når der ønskes en kilde."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search the public web for current information. Returns title/url/snippet for the top matches. Use when the answer may have changed since the model's training cutoff or when a citation is wanted."
+            "value": "Search the web. Args: query (string), max_results (integer 1–20, default 5 — a bare number, not a string). Returns title/url/snippet for the top matches. Use when the answer may be newer than your training, or a citation is wanted."
           }
         },
         "en-GB": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search the public web for current information. Returns title/url/snippet for the top matches. Use when the answer may have changed since the model's training cutoff or when a citation is wanted."
+            "value": "Search the web. Args: query (string), max_results (integer 1–20, default 5 — a bare number, not a string). Returns title/url/snippet for the top matches. Use when the answer may be newer than your training, or a citation is wanted."
           }
         },
         "nb": {
           "stringUnit": {
             "state": "translated",
-            "value": "Søk på det åpne nettet etter oppdatert informasjon. Returnerer tittel/url/utdrag for de beste treffene. Bruk når svaret kan ha endret seg etter modellens treningsgrense, eller når en kildehenvisning er ønsket."
+            "value": "Søk på nettet. Argumenter: query (streng), max_results (heltall 1–20, standard 5 — et rent tall, ikke en streng). Returnerer tittel/url/utdrag for de beste treffene. Bruk når svaret kan være nyere enn treningen din, eller når en kildehenvisning er ønsket."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sök på det publika webben efter aktuell information. Returnerar titel/url/utdrag för de bästa träffarna. Använd när svaret kan ha ändrats sedan modellens träningsstopp eller när en källa önskas."
+            "value": "Sök på webben. Argument: query (sträng), max_results (heltal 1–20, standard 5 — ett rent tal, inte en sträng). Returnerar titel/url/utdrag för de bästa träffarna. Använd när svaret kan vara nyare än din träning, eller när en källa önskas."
           }
         }
       }
