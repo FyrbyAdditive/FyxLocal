@@ -20,10 +20,14 @@ public struct MCPTool: Sendable, Hashable {
     public var description: String
     /// Raw JSON schema (object form).
     public var inputSchema: JSONValue
-    public init(name: String, description: String, inputSchema: JSONValue) {
+    /// Declared `execution.taskSupport` (MCP 2025-11-25 tasks). Absent or
+    /// unrecognised in `tools/list` maps to `.forbidden` (plain calls).
+    public var taskSupport: MCPTaskSupport
+    public init(name: String, description: String, inputSchema: JSONValue, taskSupport: MCPTaskSupport = .forbidden) {
         self.name = name
         self.description = description
         self.inputSchema = inputSchema
+        self.taskSupport = taskSupport
     }
 }
 
@@ -47,6 +51,27 @@ public enum MCPClientError: Error, Sendable, Equatable {
     case rpcError(code: Int, message: String)
     case unexpectedResult
     case transportClosed
+    case taskDeadlineExceeded(taskId: String)
+}
+
+extension MCPClientError: LocalizedError {
+    /// Without this, `error.localizedDescription` at the tool-runner's
+    /// catch-all collapses to "The operation couldn't be completed…" and the
+    /// server's actual message never reaches the user.
+    public var errorDescription: String? {
+        switch self {
+        case .notInitialized:
+            return "MCP client is not initialised"
+        case .rpcError(let code, let message):
+            return "MCP error \(code): \(message)"
+        case .unexpectedResult:
+            return "MCP server returned an unexpected result"
+        case .transportClosed:
+            return "MCP transport closed"
+        case .taskDeadlineExceeded(let taskId):
+            return "MCP task '\(taskId)' did not complete before the client-side deadline"
+        }
+    }
 }
 
 public actor MCPClient {
@@ -57,10 +82,47 @@ public actor MCPClient {
     private let transport: any MCPTransport
     private var nextID: Int = 0
     private var pending: [JSONRPCID: CheckedContinuation<JSONRPCResponse, Error>] = [:]
+    /// IDs whose call was cancelled before the continuation registered
+    /// (cancellation raced ahead of `withCheckedThrowingContinuation`). The
+    /// registration path consumes these. A response-then-cancel race can
+    /// strand an entry; IDs are never reused, so a stale entry is a few
+    /// bytes of noise, not a correctness hazard.
+    private var cancelledIDs: Set<JSONRPCID> = []
     private var receiveTask: Task<Void, Never>?
     private var notificationContinuation: AsyncStream<JSONRPCNotification>.Continuation?
     private var notificationStream: AsyncStream<JSONRPCNotification>?
     public private(set) var serverInfo: MCPServerInfo?
+    public private(set) var serverCapabilities: MCPServerCapabilities = .none
+
+    /// `tools/list` cache of each tool's declared taskSupport, so `callTool`
+    /// can pick the task path without a signature change for callers.
+    private var toolTaskSupport: [String: MCPTaskSupport] = [:]
+
+    /// Per in-flight task: status handler plus last-emitted state for dedup
+    /// (poll results and `notifications/tasks/status` funnel through the
+    /// same gate).
+    private struct ActiveTaskContext {
+        var handler: MCPTaskStatusHandler?
+        var lastStatus: MCPTaskState?
+        var lastMessage: String?
+    }
+    private var activeTasks: [String: ActiveTaskContext] = [:]
+
+    private var elicitationHandler: MCPElicitationHandler?
+    /// Serializes concurrent elicitation requests (one at a time, FIFO).
+    private var elicitationChain: Task<Void, Never>?
+    private var queuedElicitations: Int = 0
+
+    private enum TaskDefaults {
+        /// ttl requested on task-augmented calls; comfortably above the app
+        /// layer's 10-minute task-tool timeout so results outlive the caller.
+        static let requestedTTLMS = 1_200_000
+        static let defaultPollIntervalMS = 500
+        /// Floor guards against a hostile `pollInterval: 0` hot loop.
+        static let minPollIntervalMS = 100
+        static let maxPollIntervalMS = 10_000
+        static let maxQueuedElicitations = 8
+    }
 
     public init(
         transport: any MCPTransport,
@@ -92,10 +154,18 @@ public actor MCPClient {
         notificationContinuation?.finish()
         for (_, cont) in pending { cont.resume(throwing: MCPClientError.transportClosed) }
         pending.removeAll()
+        cancelledIDs.removeAll()
     }
 
     public func notifications() -> AsyncStream<JSONRPCNotification> {
         notificationStream ?? AsyncStream { _ in }
+    }
+
+    /// Install the app's form-mode elicitation handler. Must be called
+    /// before `start()`: the `elicitation` client capability is only
+    /// declared in the `initialize` handshake when a handler is present.
+    public func setElicitationHandler(_ handler: @escaping MCPElicitationHandler) {
+        elicitationHandler = handler
     }
 
     public func listTools() async throws -> [MCPTool] {
@@ -111,34 +181,199 @@ public actor MCPClient {
         let maxNameLen = 256
         let maxDescLen = 8_192
         var output: [MCPTool] = []
+        var taskSupportCache: [String: MCPTaskSupport] = [:]
         for tool in tools.prefix(maxTools) {
             guard let name = tool["name"]?.stringValue, !name.isEmpty else { continue }
             let description = tool["description"]?.stringValue ?? ""
             let schema = tool["inputSchema"] ?? .object([:])
+            let taskSupport = tool["execution"]?["taskSupport"]?.stringValue
+                .flatMap { MCPTaskSupport(rawValue: $0) } ?? .forbidden
+            let boundedName = String(name.prefix(maxNameLen))
+            taskSupportCache[boundedName] = taskSupport
             output.append(MCPTool(
-                name: String(name.prefix(maxNameLen)),
+                name: boundedName,
                 description: String(description.prefix(maxDescLen)),
-                inputSchema: schema
+                inputSchema: schema,
+                taskSupport: taskSupport
             ))
         }
+        toolTaskSupport = taskSupportCache
         return output
     }
 
-    public func callTool(name: String, arguments: JSONValue) async throws -> MCPToolCallResult {
+    public func callTool(
+        name: String,
+        arguments: JSONValue,
+        onTaskStatus: MCPTaskStatusHandler? = nil
+    ) async throws -> MCPToolCallResult {
+        let useTaskPath = serverCapabilities.supportsTaskAugmentedToolCalls
+            && toolTaskSupport[name] == .required
+        guard useTaskPath else {
+            // Plain call. A task-required tool on a server without the tasks
+            // capability lands here too; the server's error (e.g. "requires
+            // task augmentation") surfaces verbatim via LocalizedError.
+            let params: JSONValue = .object([
+                "name": .string(name),
+                "arguments": arguments,
+            ])
+            let response = try await call(method: "tools/call", params: params)
+            switch response.result {
+            case .success(let value):
+                return decodeCallResult(value)
+            case .failure(let e):
+                throw MCPClientError.rpcError(code: e.code, message: e.message)
+            }
+        }
+        return try await runTaskAugmentedCall(name: name, arguments: arguments, onTaskStatus: onTaskStatus)
+    }
+
+    // MARK: - Task-augmented calls (MCP 2025-11-25 tasks)
+
+    private func runTaskAugmentedCall(
+        name: String,
+        arguments: JSONValue,
+        onTaskStatus: MCPTaskStatusHandler?
+    ) async throws -> MCPToolCallResult {
         let params: JSONValue = .object([
             "name": .string(name),
             "arguments": arguments,
+            "task": .object(["ttl": .int(TaskDefaults.requestedTTLMS)]),
         ])
         let response = try await call(method: "tools/call", params: params)
+        guard case .success(let value) = response.result else {
+            if case .failure(let e) = response.result { throw MCPClientError.rpcError(code: e.code, message: e.message) }
+            throw MCPClientError.unexpectedResult
+        }
+        guard let taskValue = value["task"] else { throw MCPClientError.unexpectedResult }
+        var snapshot = try MCPTaskSnapshot.parse(taskValue)
+        let taskId = snapshot.taskId
+
+        activeTasks[taskId] = ActiveTaskContext(handler: onTaskStatus)
+        defer { activeTasks[taskId] = nil }
+
+        do {
+            let deadline = ContinuousClock.now.advanced(by: .milliseconds(TaskDefaults.requestedTTLMS))
+            await emitTaskUpdate(snapshot)
+            var retriedResultFetch = false
+            while true {
+                snapshot = try await pollUntilActionable(taskId: taskId, from: snapshot, deadline: deadline)
+                do {
+                    // Terminal, or input_required — in the latter case this
+                    // blocks server-side while elicitation/create arrives via
+                    // the receive loop, and keeps blocking until terminal.
+                    return try await fetchTaskResult(taskId: taskId)
+                } catch let error where !retriedResultFetch
+                    && !(error is MCPClientError) && !(error is CancellationError) {
+                    // Transport-level hiccup (e.g. HTTP idle timeout while
+                    // tasks/result blocked). If the task is still retrievable,
+                    // resume polling and retry once; otherwise surface the
+                    // tasks/get error.
+                    retriedResultFetch = true
+                    snapshot = try await taskSnapshot(taskId: taskId)
+                    await emitTaskUpdate(snapshot)
+                }
+            }
+        } catch is CancellationError {
+            // Caller abandoned the call (tool timeout / user stop): tell the
+            // server to stop work, best-effort, if it supports cancellation.
+            if serverCapabilities.supportsTaskCancel {
+                sendBestEffortCancel(taskId: taskId)
+            }
+            throw CancellationError()
+        }
+    }
+
+    /// Polls `tasks/get` until the task is terminal or needs input,
+    /// emitting deduped status updates along the way.
+    private func pollUntilActionable(
+        taskId: String,
+        from initial: MCPTaskSnapshot,
+        deadline: ContinuousClock.Instant
+    ) async throws -> MCPTaskSnapshot {
+        var snapshot = initial
+        while !snapshot.status.isTerminal && snapshot.status != .inputRequired {
+            let interval = min(
+                max(snapshot.pollIntervalMS ?? TaskDefaults.defaultPollIntervalMS, TaskDefaults.minPollIntervalMS),
+                TaskDefaults.maxPollIntervalMS
+            )
+            try await Task.sleep(for: .milliseconds(interval))
+            guard ContinuousClock.now < deadline else {
+                throw MCPClientError.taskDeadlineExceeded(taskId: taskId)
+            }
+            snapshot = try await taskSnapshot(taskId: taskId)
+            await emitTaskUpdate(snapshot)
+        }
+        return snapshot
+    }
+
+    private func taskSnapshot(taskId: String) async throws -> MCPTaskSnapshot {
+        let response = try await call(method: "tasks/get", params: .object(["taskId": .string(taskId)]))
+        guard case .success(let value) = response.result else {
+            if case .failure(let e) = response.result { throw MCPClientError.rpcError(code: e.code, message: e.message) }
+            throw MCPClientError.unexpectedResult
+        }
+        var snapshot = try MCPTaskSnapshot.parse(value)
+        // The server must echo our taskId; pin it so a confused server can't
+        // detach the dedup gate mid-call.
+        snapshot.taskId = taskId
+        return snapshot
+    }
+
+    private func fetchTaskResult(taskId: String) async throws -> MCPToolCallResult {
+        // Per spec, tasks/get|result|cancel requests must NOT carry the
+        // related-task _meta (taskId in params is the source of truth) —
+        // the reference TS SDK routes a request bearing that _meta into the
+        // task's message queue and never answers it. Only the RESPONSE
+        // carries the metadata, and the server adds it.
+        let params: JSONValue = .object(["taskId": .string(taskId)])
+        let response = try await call(method: "tasks/result", params: params)
         switch response.result {
         case .success(let value):
-            let contentArray = value["content"]?.arrayValue ?? []
-            let isError = value["isError"].flatMap { if case .bool(let b) = $0 { return b } else { return nil } } ?? false
-            let content = contentArray.compactMap { decodeContent($0) }
-            return MCPToolCallResult(content: content, isError: isError)
+            // A `failed` task whose underlying tool result had isError:true
+            // comes back here as a normal result — returned, not thrown.
+            return decodeCallResult(value)
         case .failure(let e):
             throw MCPClientError.rpcError(code: e.code, message: e.message)
         }
+    }
+
+    /// Dedup gate for status updates. Stored state is advanced BEFORE the
+    /// handler is awaited so an interleaved emission (actor reentrancy across
+    /// the await) can't deliver duplicates; residual reordering is cosmetic.
+    private func emitTaskUpdate(_ snapshot: MCPTaskSnapshot) async {
+        guard var context = activeTasks[snapshot.taskId] else { return }
+        guard context.lastStatus != snapshot.status || context.lastMessage != snapshot.statusMessage else { return }
+        context.lastStatus = snapshot.status
+        context.lastMessage = snapshot.statusMessage
+        activeTasks[snapshot.taskId] = context
+        if let handler = context.handler {
+            await handler(MCPTaskStatusUpdate(
+                taskId: snapshot.taskId,
+                status: snapshot.status,
+                statusMessage: snapshot.statusMessage
+            ))
+        }
+    }
+
+    private func sendBestEffortCancel(taskId: String) {
+        // Unstructured so it survives the caller's cancellation; errors are
+        // irrelevant (the task may already be terminal or the server gone).
+        Task { [weak self] in
+            _ = try? await self?.call(method: "tasks/cancel", params: .object(["taskId": .string(taskId)]))
+        }
+    }
+
+    private func relatedTaskMeta(_ taskId: String) -> JSONValue {
+        .object(["io.modelcontextprotocol/related-task": .object(["taskId": .string(taskId)])])
+    }
+
+    // MARK: - Result decoding
+
+    private func decodeCallResult(_ value: JSONValue) -> MCPToolCallResult {
+        let contentArray = value["content"]?.arrayValue ?? []
+        let isError = value["isError"]?.boolValue ?? false
+        let content = contentArray.compactMap { decodeContent($0) }
+        return MCPToolCallResult(content: content, isError: isError)
     }
 
     private func decodeContent(_ value: JSONValue) -> MCPContent? {
@@ -159,10 +394,19 @@ public actor MCPClient {
         return nil
     }
 
+    // MARK: - Handshake
+
     private func initializeHandshake() async throws {
+        // Only declare the elicitation capability when the app installed a
+        // handler (setElicitationHandler must precede start()). No client
+        // `tasks` capability: that would advertise accepting task-augmented
+        // server→client requests, which we don't.
+        let capabilities: JSONValue = elicitationHandler != nil
+            ? .object(["elicitation": .object(["form": .object([:])])])
+            : .object([:])
         let params: JSONValue = .object([
             "protocolVersion": .string(protocolVersion),
-            "capabilities": .object([:]),
+            "capabilities": capabilities,
             "clientInfo": .object([
                 "name": .string(clientName),
                 "version": .string(clientVersion),
@@ -180,24 +424,47 @@ public actor MCPClient {
         let version = info?["version"]?.stringValue ?? "?"
         let proto = value["protocolVersion"]?.stringValue ?? protocolVersion
         self.serverInfo = MCPServerInfo(name: name, version: version, protocolVersion: proto)
+        self.serverCapabilities = MCPServerCapabilities(raw: value["capabilities"] ?? .object([:]))
 
         try await transport.send(.notification(.init(method: "notifications/initialized")))
     }
+
+    // MARK: - JSON-RPC plumbing
 
     private func call(method: String, params: JSONValue?) async throws -> JSONRPCResponse {
         nextID += 1
         let id = JSONRPCID.int(nextID)
         let frame = JSONRPCFrame.request(.init(id: id, method: method, params: params))
-        return try await withCheckedThrowingContinuation { cont in
-            pending[id] = cont
-            Task {
-                do { try await transport.send(frame) }
-                catch {
-                    if let removed = pending.removeValue(forKey: id) {
-                        removed.resume(throwing: error)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<JSONRPCResponse, Error>) in
+                // Runs actor-isolated (inherited via #isolation). Cancellation
+                // may have raced ahead of registration — consume the marker.
+                if Task.isCancelled || cancelledIDs.remove(id) != nil {
+                    cont.resume(throwing: CancellationError())
+                    return
+                }
+                pending[id] = cont
+                Task {
+                    do { try await transport.send(frame) }
+                    catch {
+                        if let removed = pending.removeValue(forKey: id) {
+                            removed.resume(throwing: error)
+                        }
                     }
                 }
             }
+        } onCancel: {
+            Task { await self.cancelPending(id: id) }
+        }
+    }
+
+    /// Every resume path funnels through `pending.removeValue` on the actor,
+    /// so exactly one site wins — no double resume.
+    private func cancelPending(id: JSONRPCID) {
+        if let cont = pending.removeValue(forKey: id) {
+            cont.resume(throwing: CancellationError())
+        } else {
+            cancelledIDs.insert(id)
         }
     }
 
@@ -206,13 +473,21 @@ public actor MCPClient {
             for try await frame in transport.incoming() {
                 switch frame {
                 case .response(let response):
+                    cancelledIDs.remove(response.id)
                     if let cont = pending.removeValue(forKey: response.id) {
                         cont.resume(returning: response)
                     }
                 case .notification(let n):
+                    if n.method == "notifications/tasks/status",
+                       let params = n.params,
+                       let snapshot = try? MCPTaskSnapshot.parse(params) {
+                        // Accelerates UI updates only; polling remains the
+                        // source of truth for control flow.
+                        Task { await self.emitTaskUpdate(snapshot) }
+                    }
                     notificationContinuation?.yield(n)
-                case .request:
-                    break
+                case .request(let req):
+                    handleServerRequest(req)
                 }
             }
         } catch {
@@ -226,5 +501,73 @@ public actor MCPClient {
         for (_, cont) in pending { cont.resume(throwing: MCPClientError.transportClosed) }
         pending.removeAll()
         notificationContinuation?.finish()
+    }
+
+    // MARK: - Server→client requests
+
+    /// Dispatches without ever blocking the receive loop. Before tasks and
+    /// elicitation existed we dropped these frames on the floor, which per
+    /// spec hangs a server awaiting any reply — now everything gets one.
+    private func handleServerRequest(_ req: JSONRPCRequest) {
+        switch req.method {
+        case "elicitation/create":
+            guard queuedElicitations < TaskDefaults.maxQueuedElicitations else {
+                respondAsync(id: req.id, result: .failure(JSONRPCError(
+                    code: -32603, message: "too many concurrent elicitation requests"
+                )))
+                return
+            }
+            queuedElicitations += 1
+            let previous = elicitationChain
+            elicitationChain = Task { [weak self] in
+                await previous?.value
+                await self?.processElicitation(req)
+            }
+        default:
+            respondAsync(id: req.id, result: .failure(.methodNotFound))
+        }
+    }
+
+    private func processElicitation(_ req: JSONRPCRequest) async {
+        defer { queuedElicitations -= 1 }
+        guard let handler = elicitationHandler else {
+            await respond(id: req.id, result: .failure(.methodNotFound))
+            return
+        }
+        if let mode = req.params?["mode"]?.stringValue, mode != "form" {
+            // We only declare the `form` capability; per spec undeclared
+            // modes get Invalid params.
+            await respond(id: req.id, result: .failure(JSONRPCError(
+                code: -32602, message: "unsupported elicitation mode '\(String(mode.prefix(64)))'"
+            )))
+            return
+        }
+        switch MCPElicitationParser.parse(params: req.params) {
+        case .failure(let error):
+            await respond(id: req.id, result: .failure(error))
+        case .success(let request):
+            let result = await handler(request)
+            var payload: [String: JSONValue] = ["action": .string(result.action.rawValue)]
+            if result.action == .accept, let content = result.content, case .object = content {
+                payload["content"] = content
+            }
+            if let taskId = request.relatedTaskId {
+                // Task-related messages must echo the related-task _meta.
+                payload["_meta"] = relatedTaskMeta(taskId)
+            }
+            await respond(id: req.id, result: .success(.object(payload)))
+        }
+    }
+
+    private func respondAsync(id: JSONRPCID, result: Result<JSONValue, JSONRPCError>) {
+        Task { [weak self] in
+            await self?.respond(id: id, result: result)
+        }
+    }
+
+    private func respond(id: JSONRPCID, result: Result<JSONValue, JSONRPCError>) async {
+        // Best-effort: the transport may have closed while the user pondered
+        // an elicitation form; the server tolerates a missing reply then.
+        try? await transport.send(.response(JSONRPCResponse(id: id, result: result)))
     }
 }

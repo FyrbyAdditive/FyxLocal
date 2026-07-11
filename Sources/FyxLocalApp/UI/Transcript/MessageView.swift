@@ -554,9 +554,17 @@ struct ToolCallResultBlock: View {
                     if !isWidget, call != nil { Divider() }
                     resultSection(result)
                 } else if call?.status == .running {
-                    Label("Awaiting result\u{2026}", systemImage: "ellipsis")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if let progress = call?.progressMessage, !progress.isEmpty {
+                        // Live task status from the server — verbatim, never
+                        // a localisation key.
+                        Label { Text(verbatim: progress) } icon: { Image(systemName: "ellipsis") }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Label("Awaiting result\u{2026}", systemImage: "ellipsis")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(.top, 4)
@@ -575,8 +583,19 @@ struct ToolCallResultBlock: View {
                         .truncationMode(.middle)
                 }
                 Spacer(minLength: 0)
+                if effectiveStatus == .running, let progress = call?.progressMessage, !progress.isEmpty {
+                    // Live status line from a long-running (task-augmented)
+                    // tool — server text, rendered verbatim.
+                    Text(verbatim: progress)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .transition(.opacity)
+                }
                 statusBadge(for: effectiveStatus)
             }
+            .animation(Motion.quick, value: call?.progressMessage)
         }
         .padding(10)
         .background(

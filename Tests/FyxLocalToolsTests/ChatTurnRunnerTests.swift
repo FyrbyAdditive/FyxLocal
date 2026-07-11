@@ -76,6 +76,46 @@ struct ChatTurnRunnerTests {
         #expect(sawToolResult)
     }
 
+    @Test func toolProgressEventsAppearBetweenReadyAndResult() async throws {
+        let provider = MockLLMProvider(script: [
+            .responseStarted(id: "r1"),
+            .toolCallStarted(itemID: "f1", callID: "call_1", name: "progressy"),
+            .toolCallCompleted(itemID: "f1", callID: "call_1", name: "progressy", arguments: "{}"),
+            .completed,
+        ])
+        await provider.queueScript([
+            .responseStarted(id: "r2"),
+            .textDelta(itemID: "i1", delta: "Done"),
+            .completed,
+        ])
+
+        let registry = ToolRegistry()
+        await registry.register(ProgressEchoTool(name: "progressy", messages: ["step 1", nil]))
+
+        let runner = ChatTurnRunner(provider: provider, registry: registry)
+        let initial = ChatRequest(model: "m", input: [.message(role: .user, content: [.inputText("hi")])])
+        var events: [ChatTurnEvent] = []
+        for try await event in runner.run(initial: initial) {
+            events.append(event)
+        }
+
+        let readyIndex = events.firstIndex { if case .toolCallReady = $0 { return true } else { return false } }
+        let resultIndex = events.firstIndex { if case .toolResult = $0 { return true } else { return false } }
+        let progress: [(String, String?)] = events.compactMap {
+            if case .toolCallProgress(let callID, let message) = $0 { return (callID, message) } else { return nil }
+        }
+        let firstProgressIndex = events.firstIndex { if case .toolCallProgress = $0 { return true } else { return false } }
+
+        #expect(progress.map(\.0) == ["call_1", "call_1"])
+        #expect(progress.map(\.1) == ["step 1", nil])
+        if let readyIndex, let resultIndex, let firstProgressIndex {
+            #expect(readyIndex < firstProgressIndex)
+            #expect(firstProgressIndex < resultIndex)
+        } else {
+            Issue.record("missing ready/progress/result events: \(events)")
+        }
+    }
+
     @Test func signedThinkingReplaysAheadOfToolCallsOnSecondTurn() async throws {
         // Anthropic extended thinking + tools: the signed thinking block from
         // the first turn must be replayed in the follow-up request, as an

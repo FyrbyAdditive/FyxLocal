@@ -79,6 +79,19 @@ extension JSONValue {
         }
     }
 
+    public var boolValue: Bool? {
+        if case .bool(let b) = self { return b }
+        return nil
+    }
+
+    public var doubleValue: Double? {
+        switch self {
+        case .double(let d): return d
+        case .int(let i): return Double(i)
+        default: return nil
+        }
+    }
+
     public var arrayValue: [JSONValue]? {
         if case .array(let a) = self { return a }
         return nil

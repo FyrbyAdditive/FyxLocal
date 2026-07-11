@@ -133,6 +133,10 @@ final class AppEnvironment {
     /// Constructed once in `init`, idempotent `ensureLoaded` walks the
     /// `mcpServers` list on first chat send.
     let mcpRegistry: MCPRegistry
+    /// Queue + presentation state for MCP form-mode elicitation prompts
+    /// (servers asking the user questions mid-tool-call). RootView presents
+    /// a sheet bound to `current`.
+    let elicitationCoordinator = MCPElicitationCoordinator()
     /// OAuth coordinator surfaced on AppEnvironment so the Settings UI
     /// can drive sign-in / sign-out for HTTP MCP servers without
     /// reaching into the registry.
@@ -284,7 +288,8 @@ final class AppEnvironment {
         self.mcpRegistry = MCPRegistry(
             toolRegistry: self.toolRegistry,
             oauthCoordinator: oauth,
-            secretStore: self.secretStore
+            secretStore: self.secretStore,
+            elicitationCoordinator: self.elicitationCoordinator
         )
         // Resolve the active provider id if it's stale (deleted) or missing.
         if let active = self.activeProviderID, !self.providerRecords.contains(where: { $0.id == active }) {

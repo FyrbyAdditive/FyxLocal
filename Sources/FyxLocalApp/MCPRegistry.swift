@@ -54,14 +54,21 @@ final class MCPRegistry {
     /// paths can omit it.
     private let secretStore: (any SecretStore)?
 
+    /// Routes MCP form-mode elicitation requests to the UI. Optional so
+    /// test paths can construct a registry without one (clients then don't
+    /// declare the elicitation capability at all).
+    private let elicitationCoordinator: MCPElicitationCoordinator?
+
     init(
         toolRegistry: ToolRegistry,
         oauthCoordinator: OAuthCoordinator? = nil,
-        secretStore: (any SecretStore)? = nil
+        secretStore: (any SecretStore)? = nil,
+        elicitationCoordinator: MCPElicitationCoordinator? = nil
     ) {
         self.toolRegistry = toolRegistry
         self.oauthCoordinator = oauthCoordinator
         self.secretStore = secretStore
+        self.elicitationCoordinator = elicitationCoordinator
     }
 
     /// Mark a server's card as failed with a reason. Used by the
@@ -158,6 +165,21 @@ final class MCPRegistry {
         }
 
         let client = MCPClient(transport: transport)
+        // Install before start(): the elicitation capability is only
+        // declared in the initialize handshake when a handler is present.
+        // The display name is captured at connect time; Settings edits go
+        // through reconnect(_:), which reinstalls with the new name.
+        if let coordinator = elicitationCoordinator {
+            let serverID = record.id
+            let displayName = record.displayName
+            await client.setElicitationHandler { request in
+                await coordinator.elicit(
+                    serverID: serverID,
+                    serverDisplayName: displayName,
+                    request: request
+                )
+            }
+        }
         do {
             try await client.start()
             let tools = try await client.listTools()
@@ -219,6 +241,10 @@ final class MCPRegistry {
             status[id] = .disconnected
             return
         }
+        // Resolve any pending elicitation sheet for this server with
+        // .cancel BEFORE shutting the client down, so the cancel response
+        // can still be delivered over the transport.
+        elicitationCoordinator?.cancelAll(forServer: id)
         for name in entry.adapterNames {
             await toolRegistry.unregister(name: name)
         }
@@ -255,12 +281,9 @@ final class MCPRegistry {
 
     private static func describe(_ error: Error) -> String {
         if let mcp = error as? MCPClientError {
-            switch mcp {
-            case .notInitialized: return "Not initialised"
-            case .rpcError(let code, let message): return "RPC error \(code): \(message)"
-            case .unexpectedResult: return "Unexpected result"
-            case .transportClosed: return "Transport closed"
-            }
+            // MCPClientError is LocalizedError; its descriptions carry the
+            // server's message verbatim for rpcError.
+            return mcp.localizedDescription
         }
         return "\(error)"
     }

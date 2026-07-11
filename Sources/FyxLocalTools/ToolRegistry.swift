@@ -36,10 +36,12 @@ public actor ToolRegistry {
     }
 
     /// Runs all invocations in parallel, returning their outputs in the same
-    /// order they were submitted.
+    /// order they were submitted. `onProgress` receives live status lines
+    /// from tools that support them, tagged with the invocation's callID.
     public func runInvocations(
         _ invocations: [ToolInvocation],
-        perToolTimeout: Duration = .seconds(60)
+        perToolTimeout: Duration = .seconds(60),
+        onProgress: (@Sendable (_ callID: String, _ message: String?) -> Void)? = nil
     ) async -> [(ToolInvocation, ToolOutput)] {
         await withTaskGroup(of: (Int, ToolInvocation, ToolOutput).self) { group in
             for (index, invocation) in invocations.enumerated() {
@@ -47,7 +49,17 @@ public actor ToolRegistry {
                 group.addTask {
                     let output: ToolOutput
                     if let tool {
-                        output = await Self.runOne(tool: tool, invocation: invocation, timeout: perToolTimeout)
+                        let callID = invocation.callID
+                        var perToolProgress: ToolProgressHandler?
+                        if let onProgress {
+                            perToolProgress = { message in onProgress(callID, message) }
+                        }
+                        output = await Self.runOne(
+                            tool: tool,
+                            invocation: invocation,
+                            timeout: tool.preferredTimeout ?? perToolTimeout,
+                            onProgress: perToolProgress
+                        )
                     } else {
                         let payload = #"{"error":"unknown tool '\#(invocation.name.escapedForJSONInline())'"}"#
                         output = ToolOutput(outputJSON: payload, isError: true)
@@ -66,11 +78,17 @@ public actor ToolRegistry {
     private static func runOne(
         tool: any Tool,
         invocation: ToolInvocation,
-        timeout: Duration
+        timeout: Duration,
+        onProgress: ToolProgressHandler?
     ) async -> ToolOutput {
         do {
             return try await withThrowingTaskGroup(of: ToolOutput.self) { group in
-                group.addTask { try await tool.invoke(arguments: invocation.arguments) }
+                group.addTask {
+                    if let progressTool = tool as? any ProgressReportingTool, let onProgress {
+                        return try await progressTool.invoke(arguments: invocation.arguments, onProgress: onProgress)
+                    }
+                    return try await tool.invoke(arguments: invocation.arguments)
+                }
                 group.addTask {
                     try await Task.sleep(for: timeout)
                     throw ToolInvocationError.timedOut

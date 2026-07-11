@@ -9,7 +9,7 @@ import FyxLocalTools
 /// Wraps a single MCP-discovered tool so it can be registered in our
 /// shared `ToolRegistry` alongside built-in tools. The exposed name is
 /// namespaced as `mcp__<server>__<tool>` to avoid collisions.
-public struct MCPToolAdapter: Tool {
+public struct MCPToolAdapter: ProgressReportingTool {
     public let name: String
     public let serverName: String
     public let mcpTool: MCPTool
@@ -22,6 +22,13 @@ public struct MCPToolAdapter: Tool {
         self.client = client
     }
 
+    /// Task-augmented calls exist for long-running work; give them ten
+    /// minutes instead of the registry's default. Only `.required` tools
+    /// take the task path (see MCPClient.callTool).
+    public var preferredTimeout: Duration? {
+        mcpTool.taskSupport == .required ? .seconds(600) : nil
+    }
+
     public func definition(for language: PromptLanguage) -> ToolDefinition {
         let raw = (try? JSONSerialization.data(withJSONObject: mcpTool.inputSchema.toAny(), options: [.sortedKeys]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
@@ -32,9 +39,21 @@ public struct MCPToolAdapter: Tool {
         )
     }
 
-    public func invoke(arguments: String) async throws -> ToolOutput {
+    public func invoke(arguments: String, onProgress: @escaping ToolProgressHandler) async throws -> ToolOutput {
         let args = parseArguments(arguments)
-        let result = try await client.callTool(name: mcpTool.name, arguments: args)
+        let result = try await client.callTool(
+            name: mcpTool.name,
+            arguments: args,
+            onTaskStatus: { update in
+                switch update.status {
+                case .working, .inputRequired:
+                    onProgress(update.statusMessage)
+                case .completed, .failed, .cancelled:
+                    // Terminal: the ToolOutput follows immediately.
+                    break
+                }
+            }
+        )
         let outputJSON = serializeResult(result)
         let display = inferDisplay(from: result)
         return ToolOutput(outputJSON: outputJSON, isError: result.isError, display: display)

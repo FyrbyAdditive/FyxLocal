@@ -63,6 +63,22 @@ struct RootView: View {
                 }
             }
         }
+        // MCP form-mode elicitation: a server asked the user a question
+        // mid-tool-call. Item-driven so each queued prompt gets its own
+        // sheet identity; dismissing (Esc / close) resolves as cancel — the
+        // spec requires an explicit cancel path.
+        .sheet(item: Binding(
+            get: { environment.elicitationCoordinator.current },
+            set: { newValue in
+                if newValue == nil {
+                    environment.elicitationCoordinator.resolveCurrent(with: .cancel)
+                }
+            }
+        )) { prompt in
+            MCPElicitationSheet(prompt: prompt) { result in
+                environment.elicitationCoordinator.resolveCurrent(with: result)
+            }
+        }
     }
 }
 

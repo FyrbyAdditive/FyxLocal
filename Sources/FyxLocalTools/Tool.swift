@@ -29,10 +29,35 @@ public struct ToolOutput: Sendable, Hashable {
     }
 }
 
+/// Live status line for a running tool ("Analyzing content…"). nil means
+/// alive-but-no-detail; the UI substitutes a localized "Working…".
+public typealias ToolProgressHandler = @Sendable (String?) -> Void
+
 public protocol Tool: Sendable {
     var name: String { get }
+    /// Per-tool override of the registry's default invocation timeout.
+    /// nil = use the caller's default. Long-running MCP task-augmented
+    /// tools raise this; everything else leaves it alone.
+    var preferredTimeout: Duration? { get }
     func definition(for language: PromptLanguage) -> ToolDefinition
     func invoke(arguments: String) async throws -> ToolOutput
+}
+
+public extension Tool {
+    var preferredTimeout: Duration? { nil }
+}
+
+/// Tools that can stream live status while running (e.g. MCP task-augmented
+/// calls). The registry prefers this entry point when a progress callback is
+/// available; conformers get the plain `invoke` for free.
+public protocol ProgressReportingTool: Tool {
+    func invoke(arguments: String, onProgress: @escaping ToolProgressHandler) async throws -> ToolOutput
+}
+
+public extension ProgressReportingTool {
+    func invoke(arguments: String) async throws -> ToolOutput {
+        try await invoke(arguments: arguments, onProgress: { _ in })
+    }
 }
 
 public extension Tool {

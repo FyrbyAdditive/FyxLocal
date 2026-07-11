@@ -21,6 +21,9 @@ public enum ChatTurnEvent: Sendable, Hashable {
     case toolCallStarted(callID: String, name: String)
     case toolCallArgumentsDelta(callID: String, delta: String)
     case toolCallReady(callID: String, name: String, arguments: String)
+    /// Live status line from a running tool (MCP task statusMessage). nil
+    /// means "still working, no detail" — the UI shows a generic label.
+    case toolCallProgress(callID: String, message: String?)
     case toolResult(callID: String, output: ToolOutput)
     case usage(UsageInfo)
     case completed
@@ -158,7 +161,13 @@ public struct ChatTurnRunner: Sendable {
                 )
             }
 
-            let results = await registry.runInvocations(invocations, perToolTimeout: perToolTimeout)
+            let results = await registry.runInvocations(
+                invocations,
+                perToolTimeout: perToolTimeout,
+                onProgress: { callID, message in
+                    emit(.toolCallProgress(callID: callID, message: message))
+                }
+            )
             for (invocation, output) in results {
                 emit(.toolResult(callID: invocation.callID, output: output))
             }

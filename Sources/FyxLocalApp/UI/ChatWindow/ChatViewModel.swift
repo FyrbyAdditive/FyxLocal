@@ -898,6 +898,14 @@ final class ChatViewModel {
             } else {
                 message.contentItems.append(.toolCall(ToolCallRecord(id: callID, name: name, argumentsJSON: arguments, status: .running)))
             }
+        case .toolCallProgress(let callID, let text):
+            if let i = message.contentItems.lastIndex(where: { item in
+                if case .toolCall(let rec) = item { return rec.id == callID }
+                return false
+            }), case .toolCall(var rec) = message.contentItems[i], rec.status == .running {
+                rec.progressMessage = text ?? String(localized: "Working…", bundle: .module)
+                message.contentItems[i] = .toolCall(rec)
+            }
         case .toolResult(let callID, let output):
             if let i = message.contentItems.lastIndex(where: { item in
                 if case .toolCall(let rec) = item { return rec.id == callID }

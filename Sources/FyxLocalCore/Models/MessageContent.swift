@@ -146,12 +146,22 @@ public struct ToolCallRecord: Codable, Sendable, Hashable {
     public let name: String
     public let argumentsJSON: String
     public var status: ToolStatus
+    /// Transient live-status line for a `.running` call ("Analyzing
+    /// content…"). Deliberately excluded from CodingKeys: it is never
+    /// persisted, so state.json keeps its exact prior shape and stale
+    /// progress text can't survive a relaunch.
+    public var progressMessage: String?
 
-    public init(id: String, name: String, argumentsJSON: String, status: ToolStatus = .pending) {
+    private enum CodingKeys: String, CodingKey {
+        case id, name, argumentsJSON, status
+    }
+
+    public init(id: String, name: String, argumentsJSON: String, status: ToolStatus = .pending, progressMessage: String? = nil) {
         self.id = id
         self.name = name
         self.argumentsJSON = argumentsJSON
         self.status = status
+        self.progressMessage = progressMessage
     }
 }
 
