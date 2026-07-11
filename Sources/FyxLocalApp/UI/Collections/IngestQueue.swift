@@ -23,6 +23,7 @@ final class IngestQueue {
             case running
             case succeeded
             case failed(String)
+            case cancelled
         }
     }
 
@@ -63,7 +64,7 @@ final class IngestQueue {
         workTask = nil
         isProcessing = false
         for i in entries.indices where entries[i].status == .running || entries[i].status == .pending {
-            entries[i].status = .failed("cancelled")
+            entries[i].status = .cancelled
         }
     }
 
@@ -72,7 +73,7 @@ final class IngestQueue {
     func cancel(collectionID: CollectionID) {
         for i in entries.indices where entries[i].collectionID == collectionID
             && (entries[i].status == .pending || entries[i].status == .running) {
-            entries[i].status = .failed("cancelled")
+            entries[i].status = .cancelled
         }
         // If there's no work left at all anywhere, also kill the worker
         // so its loop exits and `isProcessing` flips off.
@@ -86,18 +87,18 @@ final class IngestQueue {
     func clearCompleted() {
         entries.removeAll { entry in
             switch entry.status {
-            case .succeeded, .failed: return true
+            case .succeeded, .failed, .cancelled: return true
             default: return false
             }
         }
     }
 
-    /// Drop completed/failed entries for one collection only.
+    /// Drop completed/failed/cancelled entries for one collection only.
     func clearCompleted(collectionID: CollectionID) {
         entries.removeAll { entry in
             guard entry.collectionID == collectionID else { return false }
             switch entry.status {
-            case .succeeded, .failed: return true
+            case .succeeded, .failed, .cancelled: return true
             default: return false
             }
         }
@@ -124,8 +125,9 @@ final class IngestQueue {
                 if Task.isCancelled { break }
                 self.entries[nextIndex].status = .running
                 let entry = self.entries[nextIndex]
+                let outcome: Entry.Status
                 do {
-                    let data = try Data(contentsOf: entry.url)
+                    let data = try await Self.readData(at: entry.url)
                     _ = try await self.store.ingest(
                         data: data,
                         filename: entry.filename,
@@ -133,14 +135,28 @@ final class IngestQueue {
                         ingestor: self.ingestor,
                         chunker: Chunker()
                     )
-                    self.entries[nextIndex].status = .succeeded
+                    outcome = .succeeded
                 } catch {
-                    self.entries[nextIndex].status = .failed(Self.describe(error))
+                    outcome = .failed(Self.describe(error))
+                }
+                // `entries` may have been mutated during the awaits (clear,
+                // cancel, collection delete), so `nextIndex` can be stale —
+                // re-find by id, and don't overwrite a status someone else
+                // set (e.g. cancelled mid-flight).
+                if let idx = self.entries.firstIndex(where: { $0.id == entry.id }),
+                   self.entries[idx].status == .running {
+                    self.entries[idx].status = outcome
                 }
             }
             self.workTask = nil
             self.isProcessing = false
         }
+    }
+
+    /// Reads file bytes off the main actor so the worker loop never stalls
+    /// UI frames on disk I/O (each file can be up to 16 MB).
+    private static func readData(at url: URL) async throws -> Data {
+        try await Task.detached { try Data(contentsOf: url) }.value
     }
 
     static func describe(_ error: Error) -> String {
@@ -150,6 +166,51 @@ final class IngestQueue {
             }
         }
         return error.localizedDescription
+    }
+}
+
+/// Pure roll-up of one collection's queue entries, recomputed from a single
+/// snapshot of `entries` on each render. The single-snapshot rule is what
+/// guarantees `done <= total` even while the user drops more files mid-run —
+/// never keep separately-incremented counters in view state. Lives at file
+/// scope (not nested in the queue) so the counting logic is unit-testable
+/// without SwiftUI.
+@MainActor
+struct IngestSummary {
+    var total = 0
+    var succeeded = 0
+    var failed = 0
+    var cancelled = 0
+    /// Pending + running.
+    var remaining = 0
+    /// The running entry's filename, else the first pending one.
+    var currentFilename: String?
+    /// `.failed` entries only (cancellations aren't failures), queue order.
+    var failures: [IngestQueue.Entry] = []
+
+    var done: Int { total - remaining }
+    var isActive: Bool { remaining > 0 }
+    var isEmpty: Bool { total == 0 }
+
+    init(entries: [IngestQueue.Entry], collectionID: CollectionID) {
+        for entry in entries where entry.collectionID == collectionID {
+            total += 1
+            switch entry.status {
+            case .pending:
+                remaining += 1
+                if currentFilename == nil { currentFilename = entry.filename }
+            case .running:
+                remaining += 1
+                currentFilename = entry.filename
+            case .succeeded:
+                succeeded += 1
+            case .failed:
+                failed += 1
+                failures.append(entry)
+            case .cancelled:
+                cancelled += 1
+            }
+        }
     }
 }
 

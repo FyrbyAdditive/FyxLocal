@@ -25,6 +25,10 @@ struct CollectionsView: View {
     @State private var renamingCollectionID: CollectionID?
     @State private var collectionRenameDraft: String = ""
     @FocusState private var collectionRenameFocus: CollectionID?
+    /// Coalesces documents-pane reloads during a bulk import: at most one
+    /// reload per second while files complete, plus one final authoritative
+    /// reload when the queue goes idle for the selected collection.
+    @State private var documentsReloadTask: Task<Void, Never>?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -158,21 +162,57 @@ struct CollectionsView: View {
             selectedDocumentID = nil
             Task { await loadDocuments() }
         }
-        // Reload the documents pane whenever an ingest completes for the
-        // current collection — the queue updates reactively but `documents`
-        // is local @State that needs a fresh fetch from the store.
+        // Reload the documents pane as ingests complete for the current
+        // collection — the queue updates reactively but `documents` is local
+        // @State that needs a fresh fetch from the store. Throttled: a bulk
+        // import of hundreds of files would otherwise re-fetch every row
+        // once per completed file (O(n²) decodes + a List re-diff each).
         .onChange(of: succeededIngestCount) { _, _ in
+            scheduleThrottledDocumentsReload()
+        }
+        .onChange(of: selectedCollectionIngestActive) { _, active in
+            guard !active else { return }
+            // Queue went idle (finished or cancelled) for this collection —
+            // drop any pending throttle tick and do one authoritative reload
+            // so the list is never left stale.
+            documentsReloadTask?.cancel()
+            documentsReloadTask = nil
             Task { await loadDocuments() }
         }
     }
 
     /// Live count of succeeded ingest entries for the selected collection.
-    /// Drives a documents-pane refresh whenever it ticks up.
+    /// Drives a (throttled) documents-pane refresh whenever it ticks up.
     private var succeededIngestCount: Int {
         guard let collectionID = selectedCollectionID,
               let queue = environment.ingestQueue else { return 0 }
         return queue.entries.reduce(0) { acc, entry in
             (entry.collectionID == collectionID && entry.status == .succeeded) ? acc + 1 : acc
+        }
+    }
+
+    /// True while the selected collection has pending/running ingest work.
+    /// Per-collection rather than the queue-global `isProcessing` so the
+    /// idle transition also fires after a per-collection Cancel.
+    private var selectedCollectionIngestActive: Bool {
+        guard let collectionID = selectedCollectionID,
+              let queue = environment.ingestQueue else { return false }
+        return queue.entries.contains {
+            $0.collectionID == collectionID && ($0.status == .pending || $0.status == .running)
+        }
+    }
+
+    /// Leading-edge throttle: if no tick is in flight, schedule a reload one
+    /// second out; ticks arriving meanwhile (including during a slow
+    /// `loadDocuments()`) are swallowed. Anything missed is covered by the
+    /// final reload on the idle transition above.
+    private func scheduleThrottledDocumentsReload() {
+        guard documentsReloadTask == nil else { return }
+        documentsReloadTask = Task {
+            defer { documentsReloadTask = nil }
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            await loadDocuments()
         }
     }
 
@@ -530,44 +570,74 @@ private struct IngestDropTarget: View {
 private struct IngestProgressView: View {
     @Bindable var environment: AppEnvironment
     let collectionID: CollectionID
+    /// Failure rows whose full error message is expanded. Ids, not indices —
+    /// the failures list shifts as later files fail or entries are cleared.
+    @State private var expandedFailureIDs: Set<UUID> = []
 
     var body: some View {
-        // Only show entries for the currently-selected collection. A single
-        // shared IngestQueue serves all collections so progress survives
-        // pane switches, but the per-collection view should never leak
-        // entries from a different (or deleted) collection.
-        let visible = (environment.ingestQueue?.entries ?? []).filter { $0.collectionID == collectionID }
-        if !visible.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(visible) { entry in
-                    HStack(spacing: 6) {
-                        statusIcon(for: entry.status)
-                        Text(entry.filename)
-                            .font(.caption)
-                            .lineLimit(1)
-                        Spacer()
-                        if case .failed(let msg) = entry.status {
-                            Text(msg)
-                                .font(.caption2)
-                                .foregroundStyle(.red)
-                                .lineLimit(1)
+        // Only summarise entries for the currently-selected collection. A
+        // single shared IngestQueue serves all collections so progress
+        // survives pane switches, but the per-collection view should never
+        // leak entries from a different (or deleted) collection.
+        //
+        // Compact by design: a bulk drop can queue hundreds of files, and a
+        // per-file row list has no bounded height — it buries the document
+        // List and pushes its own buttons off-screen (issue #3). One summary
+        // row + a capped failures list keeps the worst case ~170 pt tall no
+        // matter how many files are queued.
+        let summary = IngestSummary(
+            entries: environment.ingestQueue?.entries ?? [],
+            collectionID: collectionID
+        )
+        if !summary.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                if summary.isActive {
+                    HStack(alignment: .center, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            ProgressView(value: Double(summary.done), total: Double(summary.total))
+                                .controlSize(.small)
+                            HStack(spacing: 6) {
+                                Text("Ingesting \(min(summary.done + 1, summary.total)) of \(summary.total)")
+                                    .font(.caption)
+                                    .monospacedDigit()
+                                if let name = summary.currentFilename {
+                                    Text(name)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                            }
                         }
-                    }
-                }
-                HStack {
-                    Spacer()
-                    let isProcessing = visible.contains { $0.status == .pending || $0.status == .running }
-                    if isProcessing {
+                        .accessibilityElement(children: .combine)
                         Button("Cancel", role: .destructive) {
                             environment.ingestQueue?.cancel(collectionID: collectionID)
                         }
                         .controlSize(.small)
-                    } else {
+                    }
+                } else {
+                    HStack(spacing: 8) {
+                        Image(systemName: summary.failed > 0
+                            ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                            .foregroundStyle(summary.failed > 0 ? .yellow : .green)
+                        finishedText(summary)
+                            .font(.caption)
+                        Spacer()
                         Button("Clear done") {
                             environment.ingestQueue?.clearCompleted(collectionID: collectionID)
                         }
                         .controlSize(.small)
                     }
+                }
+                if !summary.failures.isEmpty {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 2) {
+                            ForEach(summary.failures) { entry in
+                                failureRow(entry)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 120)
                 }
             }
             .padding(.horizontal)
@@ -575,14 +645,68 @@ private struct IngestProgressView: View {
         }
     }
 
+    /// One failure row: filename plus its error, one line when collapsed;
+    /// click toggles the full (possibly multi-line) message. The list stays
+    /// inside the capped ScrollView either way, so expanding can't push the
+    /// pane's contents off-screen.
     @ViewBuilder
-    private func statusIcon(for status: IngestQueue.Entry.Status) -> some View {
-        switch status {
-        case .pending: Image(systemName: "clock").foregroundStyle(.secondary)
-        case .running: ProgressView().controlSize(.mini)
-        case .succeeded: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-        case .failed: Image(systemName: "exclamationmark.octagon.fill").foregroundStyle(.red)
+    private func failureRow(_ entry: IngestQueue.Entry) -> some View {
+        let isExpanded = expandedFailureIDs.contains(entry.id)
+        let message: String? = {
+            if case .failed(let msg) = entry.status { return msg }
+            return nil
+        }()
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.octagon.fill")
+                    .foregroundStyle(.red)
+                Text(entry.filename)
+                    .font(.caption)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer()
+                if !isExpanded, let message {
+                    Text(message)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                        .lineLimit(1)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+            }
+            if isExpanded, let message {
+                Text(message)
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 20)
+            }
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if isExpanded {
+                expandedFailureIDs.remove(entry.id)
+            } else {
+                expandedFailureIDs.insert(entry.id)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(isExpanded ? Text("Collapse error details") : Text("Expand error details"))
+    }
+
+    /// "300 imported, 2 failed, 5 cancelled" — zero-count parts omitted.
+    private func finishedText(_ summary: IngestSummary) -> Text {
+        var parts: [Text] = []
+        if summary.succeeded > 0 { parts.append(Text("\(summary.succeeded) imported")) }
+        if summary.failed > 0 { parts.append(Text("\(summary.failed) failed")) }
+        if summary.cancelled > 0 { parts.append(Text("\(summary.cancelled) cancelled")) }
+        guard var result = parts.first else { return Text("Import complete") }
+        for part in parts.dropFirst() { result = Text("\(result), \(part)") }
+        return result
     }
 }
 
