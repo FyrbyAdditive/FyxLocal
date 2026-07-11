@@ -182,10 +182,14 @@ private func runNDJSONStream(
         try Task.checkCancellation()
         lineBuffer.append(byte)
         if byte == UInt8(ascii: "\n") {
-            if let line = String(bytes: lineBuffer, encoding: .utf8) {
-                lineBuffer.removeAll(keepingCapacity: true)
-                handle(line)
-            }
+            // Clear the completed line unconditionally: if it isn't valid UTF-8
+            // we drop that one line and resume, rather than leaving the bad
+            // bytes in the buffer to fail every subsequent decode (which would
+            // silently truncate the rest of the stream and grow the buffer
+            // without bound).
+            let line = String(bytes: lineBuffer, encoding: .utf8)
+            lineBuffer.removeAll(keepingCapacity: true)
+            if let line { handle(line) }
         }
     }
     if !lineBuffer.isEmpty, let line = String(bytes: lineBuffer, encoding: .utf8) {
@@ -251,8 +255,12 @@ private func runSSEStream(
         try Task.checkCancellation()
         lineBuffer.append(byte)
         if byte == UInt8(ascii: "\n") {
-            if let chunk = String(bytes: lineBuffer, encoding: .utf8) {
-                lineBuffer.removeAll(keepingCapacity: true)
+            // Clear the completed line unconditionally (see runNDJSONStream):
+            // a single invalid-UTF-8 line must not wedge the buffer and silently
+            // drop the rest of the stream.
+            let chunk = String(bytes: lineBuffer, encoding: .utf8)
+            lineBuffer.removeAll(keepingCapacity: true)
+            if let chunk {
                 for sse in parser.feed(chunk) where handle(sse) {
                     finishStream(); return
                 }

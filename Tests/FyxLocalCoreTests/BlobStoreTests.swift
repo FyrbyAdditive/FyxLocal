@@ -33,6 +33,22 @@ struct BlobStoreTests {
         #expect(!store.contains(drop))
     }
 
+    @Test func malformedHashIsRejectedNotTraversed() throws {
+        // Security regression: a hostile/hand-edited BlobRef whose sha256 is a
+        // path fragment must not be used as a path component (traversal).
+        let store = tempStore()
+        let evil = BlobRef(sha256: "../../../etc/hosts", mimeType: "text/plain", byteCount: 0, filename: nil)
+        #expect(!store.contains(evil))
+        #expect(throws: (any Error).self) { _ = try store.data(for: evil) }
+        // A well-formed 64-hex hash that simply isn't present reads as missing,
+        // not as an error about the name.
+        let absent = BlobRef(sha256: String(repeating: "a", count: 64), mimeType: "text/plain", byteCount: 0, filename: nil)
+        #expect(!store.contains(absent))
+        #expect(BlobStore.isValidHash(String(repeating: "a", count: 64)))
+        #expect(!BlobStore.isValidHash("../../../etc/hosts"))
+        #expect(!BlobStore.isValidHash("ABCDEF"))   // uppercase / wrong length
+    }
+
     @Test func messageContentImageEncodesAsRefNotBytes() throws {
         // New shape: encoding an image must NOT embed the raw bytes (the whole
         // point — keep state.json small). It stores a BlobRef.

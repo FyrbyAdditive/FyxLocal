@@ -132,15 +132,24 @@ private final class NavigationDelegate: NSObject, WKNavigationDelegate {
     func webView(_ webView: WKWebView,
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        if let url = navigationAction.request.url,
-           case .failure = URLSafety.validatePublicHTTP(url) {
-            self.error = PageExtractorError.navigationFailed("blocked non-public URL")
-            decisionHandler(.cancel)
-            continuation?.resume(throwing: self.error!)
-            continuation = nil
+        guard let url = navigationAction.request.url else {
+            decisionHandler(.allow)
             return
         }
-        decisionHandler(.allow)
+        // Re-resolve DNS on every redirect target, not just a literal-IP check:
+        // a public page can 30x to a hostname that *resolves* to an internal IP
+        // (or DNS-rebind between the initial check and now), which the literal
+        // check would wave through.
+        Task { @MainActor in
+            if await URLSafety.hostResolvesToPublicOnly(url) {
+                decisionHandler(.allow)
+            } else {
+                self.error = PageExtractorError.navigationFailed("blocked non-public URL")
+                decisionHandler(.cancel)
+                self.continuation?.resume(throwing: self.error!)
+                self.continuation = nil
+            }
+        }
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

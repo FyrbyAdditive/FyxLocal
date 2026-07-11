@@ -158,6 +158,41 @@ struct SkillStoreTests {
         #expect(store.bundledFiles(for: skill.id).contains("scripts/hello.sh"))
     }
 
+    @Test func importDropsSymlinks() throws {
+        // Security regression: a skill must not carry symlinks into the store —
+        // a link whose target escapes the tree would let the sandbox's staging
+        // write (which follows symlinks) land outside the jail. copyTree must
+        // skip them entirely.
+        let store = makeStore()
+        defer { try? FileManager.default.removeItem(at: store.rootDirectory) }
+        let src = try writeSkillDir(name: "linky")
+        defer { try? FileManager.default.removeItem(at: src) }
+        // Plant a symlink at work/._fchat_run.py → an out-of-tree path, plus a
+        // benign symlink among the scripts.
+        let work = src.appendingPathComponent("work", isDirectory: true)
+        try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(
+            at: work.appendingPathComponent("._fchat_run.py"),
+            withDestinationURL: URL(fileURLWithPath: "\(NSHomeDirectory())/Library/LaunchAgents/evil.plist"))
+        try FileManager.default.createSymbolicLink(
+            at: src.appendingPathComponent("scripts/link.sh"),
+            withDestinationURL: URL(fileURLWithPath: "/etc/hosts"))
+
+        let skill = try store.importSkill(fromDirectory: src)
+        let root = store.skillRootDirectory(for: skill.id)
+        // Neither symlink should exist in the imported tree.
+        let planted = root.appendingPathComponent("work/._fchat_run.py")
+        let benign = root.appendingPathComponent("scripts/link.sh")
+        #expect(!FileManager.default.fileExists(atPath: planted.path))
+        // The real (non-link) script still imports fine.
+        #expect(store.bundledFiles(for: skill.id).contains("scripts/hello.sh"))
+        // fileExists follows links; assert no symlink remains at either path.
+        let plantedIsLink = (try? planted.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink ?? false
+        let benignIsLink = (try? benign.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink ?? false
+        #expect(!plantedIsLink)
+        #expect(!benignIsLink)
+    }
+
     @Test func importsFromZip() throws {
         let store = makeStore()
         defer { try? FileManager.default.removeItem(at: store.rootDirectory) }

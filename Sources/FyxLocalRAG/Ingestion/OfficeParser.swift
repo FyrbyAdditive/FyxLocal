@@ -36,10 +36,27 @@ public struct DocxParser: DocumentParser {
         return ParsedDocument(kind: .docx, fullText: fullText, sections: sections.isEmpty ? [ParsedSection(text: "")] : sections)
     }
 
+    /// Max decompressed size of a single Office XML part. The on-disk file cap
+    /// (16 MB) doesn't bound this: a DEFLATE stream can inflate ~1000×, so a
+    /// crafted docx/pptx could expand to gigabytes and exhaust memory. 128 MB
+    /// is far beyond any real document part yet caps the blast radius.
+    static let maxPartBytes = 128 * 1024 * 1024
+
     static func extract(entry path: String, from archive: Archive) throws -> Data? {
         guard let entry = archive[path] else { return nil }
+        if entry.uncompressedSize > UInt64(maxPartBytes) {
+            throw DocumentParserError.decodeFailure(
+                "office part \(path) too large (\(entry.uncompressedSize) bytes)")
+        }
         var bytes = Data()
-        _ = try archive.extract(entry) { chunk in bytes.append(chunk) }
+        _ = try archive.extract(entry) { chunk in
+            bytes.append(chunk)
+            // Guard against a lying header: stop if the running total exceeds
+            // the cap even when uncompressedSize claimed otherwise.
+            if bytes.count > maxPartBytes {
+                throw DocumentParserError.decodeFailure("office part \(path) exceeded size cap")
+            }
+        }
         return bytes
     }
 }

@@ -38,6 +38,13 @@ public final class BlobStore: Sendable {
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
 
+    /// A blob hash must be exactly a 64-char lowercase-hex SHA-256. Validating
+    /// before using it as a path component stops a hand-edited/hostile `BlobRef`
+    /// (e.g. `sha256: "../../.ssh/id_rsa"`) from escaping the blob directory.
+    static func isValidHash(_ hash: String) -> Bool {
+        hash.count == 64 && hash.allSatisfy { ("0"..."9").contains($0) || ("a"..."f").contains($0) }
+    }
+
     private func url(forHash hash: String) -> URL {
         root.appendingPathComponent(hash, isDirectory: false)
     }
@@ -54,13 +61,18 @@ public final class BlobStore: Sendable {
         return BlobRef(sha256: hash, mimeType: mimeType, byteCount: data.count, filename: filename)
     }
 
-    /// Read the bytes for a reference. Throws if the blob is missing.
+    /// Read the bytes for a reference. Throws if the blob is missing or the
+    /// reference's hash is malformed.
     public func data(for ref: BlobRef) throws -> Data {
-        try Data(contentsOf: url(forHash: ref.sha256))
+        guard Self.isValidHash(ref.sha256) else {
+            throw CocoaError(.fileReadInvalidFileName)
+        }
+        return try Data(contentsOf: url(forHash: ref.sha256))
     }
 
     public func contains(_ ref: BlobRef) -> Bool {
-        FileManager.default.fileExists(atPath: url(forHash: ref.sha256).path)
+        guard Self.isValidHash(ref.sha256) else { return false }
+        return FileManager.default.fileExists(atPath: url(forHash: ref.sha256).path)
     }
 
     /// Delete every blob whose hash is not in `keeping`. Call after pruning

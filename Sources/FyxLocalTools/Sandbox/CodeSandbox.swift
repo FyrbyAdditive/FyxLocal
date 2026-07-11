@@ -121,10 +121,18 @@ public struct CodeSandbox: Sendable {
         // Materialise the code to a temp script inside the writable work dir so
         // the sandbox profile (which permits reads under the skill root) can
         // read it, and so we pass a file path rather than piping via stdin.
-        let scriptName = language == .bash ? "._fchat_run.sh" : "._fchat_run.py"
-        let scriptURL = workDir.appendingPathComponent(scriptName)
+        //
+        // This write runs in the UNSANDBOXED app process, so if a malicious
+        // skill could plant a symlink at the staging path the write would
+        // follow it and land outside the jail. Defeat that two ways: a random,
+        // unpredictable filename, and an O_EXCL | O_NOFOLLOW open that refuses
+        // to reuse or follow an existing entry (belt to copyTree's braces of
+        // rejecting shipped symlinks). The random name also makes concurrent
+        // runs on one skill collision-free.
+        let ext = language == .bash ? "sh" : "py"
+        let scriptURL = workDir.appendingPathComponent("._fchat_run_\(UUID().uuidString).\(ext)")
         do {
-            try code.data(using: .utf8)?.write(to: scriptURL)
+            try Self.writeStagedScript(code, to: scriptURL)
         } catch {
             throw SandboxError.launchFailed("could not stage script: \(error.localizedDescription)")
         }
@@ -217,6 +225,20 @@ public struct CodeSandbox: Sendable {
         func markFired() { fired = true }
     }
 
+    /// Write `code` to `url` without creating or following a symlink. The
+    /// staging write happens unsandboxed, so `O_EXCL | O_NOFOLLOW` (plus the
+    /// caller's random filename) is what stops a skill-planted symlink from
+    /// redirecting it outside the jail.
+    private static func writeStagedScript(_ code: String, to url: URL) throws {
+        let fd = open(url.path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        guard fd >= 0 else {
+            throw SandboxError.launchFailed("could not open staging file (errno \(errno))")
+        }
+        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+        try handle.write(contentsOf: Data(code.utf8))
+        try handle.close()
+    }
+
     // MARK: - Seatbelt profile
 
     /// Generate the per-invocation seatbelt profile.
@@ -295,6 +317,13 @@ public struct CodeSandbox: Sendable {
         (version 1)
         (allow default)
         (deny network*)
+        ; `(deny network*)` blocks sockets but not IPC-based side channels. Deny
+        ; the mach services a confined skill could abuse to exfiltrate data or
+        ; read the user's data without a socket: DNS (label-encoded exfil via
+        ; mDNSResponder) and the pasteboard (last-copied secrets).
+        (deny mach-lookup
+            (global-name "com.apple.mDNSResponder")
+            (global-name "com.apple.pasteboard.1"))
         ; Confine writes: deny everything, then re-allow only the scratch dir
         ; and the standard write-only devices an interpreter expects.
         (deny file-write*)

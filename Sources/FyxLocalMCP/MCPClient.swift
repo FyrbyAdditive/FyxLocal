@@ -219,6 +219,12 @@ public actor MCPClient {
             for (_, cont) in pending { cont.resume(throwing: error) }
             pending.removeAll()
         }
+        // The stream can also end by completing normally (server closed the
+        // connection cleanly, no throw). Drain any still-pending requests so
+        // their callers don't hang forever waiting for a reply that can't come.
+        // In the catch path `pending` was already emptied, so this is a no-op.
+        for (_, cont) in pending { cont.resume(throwing: MCPClientError.transportClosed) }
+        pending.removeAll()
         notificationContinuation?.finish()
     }
 }

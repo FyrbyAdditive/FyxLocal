@@ -259,7 +259,7 @@ public struct SkillStore: Sendable {
             try fm.removeItem(at: dest)
         }
         try fm.createDirectory(at: dest, withIntermediateDirectories: true)
-        guard let en = fm.enumerator(at: source, includingPropertiesForKeys: [.isDirectoryKey]) else { return }
+        guard let en = fm.enumerator(at: source, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { return }
         let prefix = source.path.hasSuffix("/") ? source.path : source.path + "/"
         // Canonicalize the destination root once so we can verify every target
         // resolves to a path *inside* it (zip-slip / path-traversal defense).
@@ -273,6 +273,13 @@ public struct SkillStore: Sendable {
             // `../../evil` or absolute paths. `appendingPathComponent` does NOT
             // canonicalize, so these would otherwise write outside `dest`.
             guard Self.isSafeRelativePath(rel) else { continue }
+            // Never copy symlinks. A skill has no legitimate need for them, and
+            // a link whose target escapes the tree is a read/write-redirect risk
+            // — anything that later opens the copied path (e.g. the sandbox's
+            // staging write) would follow it out of the jail.
+            if (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink == true {
+                continue
+            }
             let target = dest.appendingPathComponent(rel)
             // Belt-and-braces: verify the resolved target is contained in dest,
             // catching any traversal the textual check missed (incl. symlinks in

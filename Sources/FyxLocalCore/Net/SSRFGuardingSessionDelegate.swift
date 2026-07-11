@@ -16,14 +16,13 @@ public final class SSRFGuardingSessionDelegate: NSObject, URLSessionTaskDelegate
         _ session: URLSession,
         task: URLSessionTask,
         willPerformHTTPRedirection response: HTTPURLResponse,
-        newRequest request: URLRequest,
-        completionHandler: @escaping (URLRequest?) -> Void
-    ) {
-        guard let url = request.url, case .success = URLSafety.validatePublicHTTP(url) else {
-            completionHandler(nil)   // refuse the redirect
-            return
-        }
-        completionHandler(request)
+        newRequest request: URLRequest
+    ) async -> URLRequest? {
+        guard let url = request.url else { return nil }
+        // Resolve DNS on the redirect target rather than a literal-IP check, so
+        // a redirect to an internal-*resolving* hostname (or a DNS rebind)
+        // can't bounce this credential-bearing request to an internal host.
+        return await URLSafety.hostResolvesToPublicOnly(url) ? request : nil
     }
 
     /// Build a `URLSession` whose redirects are SSRF-guarded. The delegate is

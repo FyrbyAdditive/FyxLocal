@@ -435,7 +435,17 @@ final class AppEnvironment {
     }
 
     func addProvider(displayName: String, baseURL: URL, apiKind: LLMAPIKind = .openAIResponses) -> ProviderRecord {
-        let id = ProviderID(rawValue: slug(from: displayName.isEmpty ? baseURL.host ?? "provider" : displayName))
+        let base = slug(from: displayName.isEmpty ? baseURL.host ?? "provider" : displayName)
+        // Ensure a unique id. Two providers whose names slug identically
+        // (e.g. "OpenAI" / "Open AI") would otherwise share one Keychain entry
+        // — so the API key saved for one could be sent to the other's host.
+        var candidate = base
+        var n = 2
+        while providerRecords.contains(where: { $0.id.rawValue == candidate }) {
+            candidate = "\(base)-\(n)"
+            n += 1
+        }
+        let id = ProviderID(rawValue: candidate)
         let record = ProviderRecord(
             id: id,
             displayName: displayName.isEmpty ? id.rawValue : displayName,
