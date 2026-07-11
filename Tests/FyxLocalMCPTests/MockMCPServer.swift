@@ -66,6 +66,8 @@ actor MockMCPServer {
     private(set) var initializeParams: JSONValue?
     /// Whether the most recent tools/call for a given tool carried `task` augmentation.
     private(set) var sawTaskAugmentation: [String: Bool] = [:]
+    /// Arguments of the most recent tools/call, as received on the wire.
+    private(set) var lastToolCallArguments: JSONValue?
     private(set) var lastRequestedTTL: Int?
     private(set) var lastResultRequestMeta: JSONValue?
     private(set) var lastElicitationResponse: JSONValue?
@@ -179,6 +181,7 @@ actor MockMCPServer {
         }
         let augmented = req.params?["task"] != nil
         sawTaskAugmentation[name] = augmented
+        lastToolCallArguments = req.params?["arguments"]
 
         if augmented {
             lastRequestedTTL = req.params?["task"]?["ttl"]?.intValue

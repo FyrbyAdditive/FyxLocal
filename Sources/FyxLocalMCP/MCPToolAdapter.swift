@@ -40,7 +40,10 @@ public struct MCPToolAdapter: ProgressReportingTool {
     }
 
     public func invoke(arguments: String, onProgress: @escaping ToolProgressHandler) async throws -> ToolOutput {
-        let args = parseArguments(arguments)
+        // Local models emit near-miss scalars (`"ambiguous": 1` for a boolean
+        // field); MCP servers validate strictly. Nudge arguments toward the
+        // tool's declared schema before sending.
+        let args = MCPArgumentCoercion.normalize(parseArguments(arguments), schema: mcpTool.inputSchema)
         let result = try await client.callTool(
             name: mcpTool.name,
             arguments: args,

@@ -52,6 +52,33 @@ struct MCPToolAdapterTests {
         await server.shutdown()
     }
 
+    @Test func sloppyModelArgumentsAreCoercedToSchema() async throws {
+        let (ct, st) = await makeInMemoryTransportPair()
+        let server = MockMCPServer(transport: st, tools: [
+            MCPTool(name: "echo", description: "", inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "msg": .object(["type": .string("string")]),
+                    "loud": .object(["type": .string("boolean")]),
+                ]),
+            ]))
+        ])
+        await server.start()
+        let client = MCPClient(transport: ct)
+        try await client.start()
+
+        let tools = try await client.listTools()
+        let adapter = MCPToolAdapter(serverName: "srv", mcpTool: tools[0], client: client)
+        // The model's sloppy JSON: number for a string field, 1 for a boolean.
+        _ = try await adapter.invoke(arguments: #"{"msg":2026,"loud":1}"#)
+        let received = await server.lastToolCallArguments
+        #expect(received?["msg"] == .string("2026"))
+        #expect(received?["loud"] == .bool(true))
+
+        await client.shutdown()
+        await server.shutdown()
+    }
+
     @Test func preferredTimeoutOnlyForTaskRequiredTools() async throws {
         let (ct, st) = await makeInMemoryTransportPair()
         let server = MockMCPServer(transport: st, tools: [])
