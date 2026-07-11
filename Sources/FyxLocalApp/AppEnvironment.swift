@@ -912,9 +912,10 @@ final class AppEnvironment {
     /// every localisation, not just the current one. Kept honest by a test
     /// that walks the string catalog.
     nonisolated static let knownDefaultChatTitles: Set<String> = [
-        "New chat",   // en, en-GB
-        "Ny chatt",   // sv
-        "Ny chat",    // da, nb
+        "New chat",    // en, en-GB
+        "Ny chatt",    // sv
+        "Ny chat",     // da, nb
+        "Nuevo chat",  // es
     ]
 
     nonisolated static func isDefaultChatTitle(_ title: String) -> Bool {

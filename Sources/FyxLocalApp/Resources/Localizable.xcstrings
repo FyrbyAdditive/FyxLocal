@@ -22,6 +22,12 @@
             "value": "%@ doesn't support tool calling — web search and other tools are off for its replies in this chat."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ no admite llamadas a herramientas — la búsqueda web y otras herramientas están desactivadas para sus respuestas en este chat."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -55,6 +61,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ is too large to attach as text (over 1 MB)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ es demasiado grande para adjuntarlo como texto (más de 1 MB)."
           }
         },
         "nb": {
@@ -92,6 +104,12 @@
             "value": "%@ isn't a readable text file."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ no es un archivo de texto legible."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -122,6 +140,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ · %@"
@@ -162,6 +186,12 @@
             "value": "%@ · %@ · %lld chunks"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ · %lld fragmentos"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -195,6 +225,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld cancelled"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld cancelados"
           }
         },
         "nb": {
@@ -232,6 +268,12 @@
             "value": "%lld chats currently use this skill."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld chats usan esta habilidad actualmente."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -265,6 +307,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld chats will fall back to the Default agent."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld chats recurrirán al agente predeterminado."
           }
         },
         "nb": {
@@ -302,6 +350,12 @@
             "value": "%lld conversation(s) found. Choose which to import."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld conversación(es) encontrada(s). Elige cuáles importar."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -335,6 +389,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld failed"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld fallidos"
           }
         },
         "nb": {
@@ -372,6 +432,12 @@
             "value": "%lld imported"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld importados"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -405,6 +471,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld messages · %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mensajes · %@"
           }
         },
         "nb": {
@@ -442,6 +514,12 @@
             "value": "%lld models · %@"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld modelos · %@"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -475,6 +553,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld of %lld selected"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de %lld seleccionados"
           }
         },
         "nb": {
@@ -512,6 +596,12 @@
             "value": "API key"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clave de API"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -545,6 +635,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API token"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token de API"
           }
         },
         "nb": {
@@ -582,6 +678,12 @@
             "value": "API token (Basic, email + token)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token de API (Basic, correo electrónico + token)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -615,6 +717,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API token (Bearer)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token de API (Bearer)"
           }
         },
         "nb": {
@@ -652,6 +760,12 @@
             "value": "API type"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tipo de API"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -685,6 +799,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "About"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de"
           }
         },
         "nb": {
@@ -722,6 +842,12 @@
             "value": "About FyxLocal"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de FyxLocal"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -755,6 +881,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Active provider"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proveedor activo"
           }
         },
         "nb": {
@@ -792,6 +924,12 @@
             "value": "Add"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -825,6 +963,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add MCP server"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir servidor MCP"
           }
         },
         "nb": {
@@ -862,6 +1006,12 @@
             "value": "Add agent"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir agente"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -895,6 +1045,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add provider"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir proveedor"
           }
         },
         "nb": {
@@ -932,6 +1088,12 @@
             "value": "Add server"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir servidor"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -965,6 +1127,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add stdio MCP servers here. HTTP transport coming in a follow-up."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añade aquí servidores MCP stdio. El transporte HTTP llegará en una próxima actualización."
           }
         },
         "nb": {
@@ -1002,6 +1170,12 @@
             "value": "Agent"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agente"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1035,6 +1209,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Agent name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre del agente"
           }
         },
         "nb": {
@@ -1072,6 +1252,12 @@
             "value": "Agents"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agentes"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1105,6 +1291,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "All documents and embeddings in this collection will be removed permanently."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los documentos y embeddings de esta colección se eliminarán de forma permanente."
           }
         },
         "nb": {
@@ -1142,6 +1334,12 @@
             "value": "Allow calendar changes"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir cambios en el calendario"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1175,6 +1373,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Allow changes"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir cambios"
           }
         },
         "nb": {
@@ -1212,6 +1416,12 @@
             "value": "Allow reminder changes"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir cambios en recordatorios"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1242,6 +1452,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Apple"
@@ -1282,6 +1498,12 @@
             "value": "Applies to every chat (change in Settings → Skills)."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se aplica a todos los chats (cámbialo en Ajustes → Habilidades)."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1315,6 +1537,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apply to every chat by default"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplicar a todos los chats de forma predeterminada"
           }
         },
         "nb": {
@@ -1352,6 +1580,12 @@
             "value": "Arguments"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Argumentos"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1385,6 +1619,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Arguments (comma-separated)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Argumentos (separados por comas)"
           }
         },
         "nb": {
@@ -1422,6 +1662,12 @@
             "value": "Attach an image or text file"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjuntar una imagen o un archivo de texto"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1455,6 +1701,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Authentication"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autenticación"
           }
         },
         "nb": {
@@ -1492,6 +1744,12 @@
             "value": "Authorization server (optional)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidor de autorización (opcional)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1525,6 +1783,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Awaiting result…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando resultado…"
           }
         },
         "nb": {
@@ -1562,6 +1826,12 @@
             "value": "Base URL"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL base"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1595,6 +1865,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Best-effort deterministic sampling (OpenAI Chat Completions only)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestreo determinista en la medida de lo posible (solo OpenAI Chat Completions)."
           }
         },
         "nb": {
@@ -1632,6 +1908,12 @@
             "value": "Built-in agent — cannot be deleted or renamed."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agente integrado: no se puede eliminar ni renombrar."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1665,6 +1947,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Built-in tools"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herramientas integradas"
           }
         },
         "nb": {
@@ -1702,6 +1990,12 @@
             "value": "Built-in. Uses FyxLocal's localised default preamble."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integrado. Usa el preámbulo predeterminado localizado de FyxLocal."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1735,6 +2029,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bundled files"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivos incluidos"
           }
         },
         "nb": {
@@ -1772,6 +2072,12 @@
             "value": "Calendar"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendario"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1805,6 +2111,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancel"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
           }
         },
         "nb": {
@@ -1842,6 +2154,12 @@
             "value": "Chart spec could not be parsed"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo analizar la especificación del gráfico"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1875,6 +2193,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chat name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre del chat"
           }
         },
         "nb": {
@@ -1912,6 +2236,12 @@
             "value": "Checking…"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobando…"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -1945,6 +2275,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose files or folder…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir archivos o carpeta…"
           }
         },
         "nb": {
@@ -1982,6 +2318,12 @@
             "value": "Choose which conversations to export and the format."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige qué conversaciones exportar y el formato."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2015,6 +2357,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Clear done"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar completados"
           }
         },
         "nb": {
@@ -2052,6 +2400,12 @@
             "value": "Client ID (optional)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID de cliente (opcional)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2085,6 +2439,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Collapse error details"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contraer detalles del error"
           }
         },
         "nb": {
@@ -2122,6 +2482,12 @@
             "value": "Collection %lld of %lld"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colección %lld de %lld"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2155,6 +2521,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Collection name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre de la colección"
           }
         },
         "nb": {
@@ -2192,6 +2564,12 @@
             "value": "Collections"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colecciones"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2225,6 +2603,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Coming soon — manage your local document collections here."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próximamente — gestiona aquí tus colecciones de documentos locales."
           }
         },
         "nb": {
@@ -2262,6 +2646,12 @@
             "value": "Command"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comando"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2295,6 +2685,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Command (e.g. npx)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comando (p. ej. npx)"
           }
         },
         "nb": {
@@ -2332,6 +2728,12 @@
             "value": "Compact now"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compactar ahora"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2365,6 +2767,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compacting context…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compactando contexto…"
           }
         },
         "nb": {
@@ -2402,6 +2810,12 @@
             "value": "Confirm"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2435,6 +2849,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Confirm calendar change?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Confirmar el cambio de calendario?"
           }
         },
         "nb": {
@@ -2472,6 +2892,12 @@
             "value": "Confirm reminder change?"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Confirmar cambio de recordatorio?"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2505,6 +2931,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connecting…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectando…"
           }
         },
         "nb": {
@@ -2542,6 +2974,12 @@
             "value": "Context usage"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uso del contexto"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2575,6 +3013,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Context window"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ventana de contexto"
           }
         },
         "nb": {
@@ -2612,6 +3056,12 @@
             "value": "Continue"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2645,6 +3095,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Conversation"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversación"
           }
         },
         "nb": {
@@ -2682,6 +3138,12 @@
             "value": "Conversation summary so far: %@"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumen de la conversación hasta ahora: %@"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2715,6 +3177,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Conversations"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversaciones"
           }
         },
         "nb": {
@@ -2752,6 +3220,12 @@
             "value": "Copy"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2785,6 +3259,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't read %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo leer %@."
           }
         },
         "nb": {
@@ -2822,6 +3302,12 @@
             "value": "Create"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2855,6 +3341,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Create skill"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear habilidad"
           }
         },
         "nb": {
@@ -2892,6 +3384,12 @@
             "value": "Created"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creado"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2925,6 +3423,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Created here"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creado aquí"
           }
         },
         "nb": {
@@ -2962,6 +3466,12 @@
             "value": "Current time"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora actual"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -2995,6 +3505,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Currently %@. Click Test connection to discover models."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualmente %@. Haz clic en Probar conexión para descubrir los modelos."
           }
         },
         "nb": {
@@ -3032,6 +3548,12 @@
             "value": "Default"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Predeterminado"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3065,6 +3587,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Default agent for new chats"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agente predeterminado para los nuevos chats"
           }
         },
         "nb": {
@@ -3102,6 +3630,12 @@
             "value": "Default model"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo predeterminado"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3135,6 +3669,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar"
           }
         },
         "nb": {
@@ -3172,6 +3712,12 @@
             "value": "Delete %lld chats"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar %lld chats"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3205,6 +3751,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete %lld conversations?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar %lld conversaciones?"
           }
         },
         "nb": {
@@ -3242,6 +3794,12 @@
             "value": "Delete agent"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar agente"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3275,6 +3833,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete agent \"%@\"?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar el agente «%@»?"
           }
         },
         "nb": {
@@ -3312,6 +3876,12 @@
             "value": "Delete server"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar servidor"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3345,6 +3915,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete server \"%@\"?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar el servidor \"%@\"?"
           }
         },
         "nb": {
@@ -3382,6 +3958,12 @@
             "value": "Delete skill"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar habilidad"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3415,6 +3997,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete skill \"%@\"?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar la habilidad «%@»?"
           }
         },
         "nb": {
@@ -3452,6 +4040,12 @@
             "value": "Delete this message?"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar este mensaje?"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3485,6 +4079,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Description"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descripción"
           }
         },
         "nb": {
@@ -3522,6 +4122,12 @@
             "value": "Disabled tools are not advertised to the model and cannot be invoked."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las herramientas desactivadas no se anuncian al modelo y no se pueden invocar."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3555,6 +4161,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Disconnected"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectado"
           }
         },
         "nb": {
@@ -3592,6 +4204,12 @@
             "value": "Dismiss notice"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar aviso"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3625,6 +4243,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Display name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre para mostrar"
           }
         },
         "nb": {
@@ -3662,6 +4286,12 @@
             "value": "Document search (RAG)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Búsqueda de documentos (RAG)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3695,6 +4325,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Documents are embedded on-device. No network access required."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los documentos se procesan con embeddings en el dispositivo. No se requiere acceso a la red."
           }
         },
         "nb": {
@@ -3732,6 +4368,12 @@
             "value": "Documents available in this chat"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentos disponibles en este chat"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3765,6 +4407,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo"
           }
         },
         "nb": {
@@ -3802,6 +4450,12 @@
             "value": "Done — your document search is ready."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hecho — tu búsqueda de documentos está lista."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3835,6 +4489,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drop files above, or use the file picker."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra archivos aquí arriba o usa el selector de archivos."
           }
         },
         "nb": {
@@ -3872,6 +4532,12 @@
             "value": "Drop files or folders here"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra archivos o carpetas aquí"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3905,6 +4571,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Each enabled server's tools are advertised to every chat. Servers connect on first use this session."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las herramientas de cada servidor activado se ofrecen a todos los chats. Los servidores se conectan al usarse por primera vez en esta sesión."
           }
         },
         "nb": {
@@ -3942,6 +4614,12 @@
             "value": "Edit"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -3975,6 +4653,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Edit this message?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Editar este mensaje?"
           }
         },
         "nb": {
@@ -4012,6 +4696,12 @@
             "value": "Email"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correo electrónico"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4045,6 +4735,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Enables attaching images to messages for this model."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite adjuntar imágenes a los mensajes con este modelo."
           }
         },
         "nb": {
@@ -4082,6 +4778,12 @@
             "value": "Enter a full URL including scheme."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce una URL completa, incluido el esquema."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4115,6 +4817,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Environment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entorno"
           }
         },
         "nb": {
@@ -4152,6 +4860,12 @@
             "value": "Expand error details"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expandir detalles del error"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4185,6 +4899,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Export"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar"
           }
         },
         "nb": {
@@ -4222,6 +4942,12 @@
             "value": "Export %lld chats…"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar %lld chats…"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4255,6 +4981,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Export Chats to File…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar chats a un archivo…"
           }
         },
         "nb": {
@@ -4292,6 +5024,12 @@
             "value": "Export chats"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar chats"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4325,6 +5063,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Export conversations to Markdown, JSON, Word, or text"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar conversaciones a Markdown, JSON, Word o texto"
           }
         },
         "nb": {
@@ -4362,6 +5106,12 @@
             "value": "Fetch a URL and extract main readable text using WKWebView + Mozilla Readability."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtiene una URL y extrae el texto legible principal mediante WKWebView + Mozilla Readability."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4395,6 +5145,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Format"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formato"
           }
         },
         "nb": {
@@ -4432,6 +5188,12 @@
             "value": "Free software under the GNU GPL v3.0."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Software libre bajo la GNU GPL v3.0."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4462,6 +5224,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FyxLocal"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "FyxLocal"
@@ -4502,6 +5270,12 @@
             "value": "FyxLocal switched to a smaller, faster on-device model. Your collections are being re-indexed — your documents are untouched."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FyxLocal cambió a un modelo local más pequeño y rápido. Tus colecciones se están reindexando — tus documentos permanecen intactos."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4537,6 +5311,12 @@
             "value": "Generation stops when the model emits any of these (Chat Completions `stop` / Anthropic `stop_sequences`)."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La generación se detiene cuando el modelo emite cualquiera de estos (Chat Completions `stop` / Anthropic `stop_sequences`)."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4567,6 +5347,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "HTTP"
@@ -4607,6 +5393,12 @@
             "value": "Hard cap (tokens)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Límite máximo (tokens)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4640,6 +5432,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Headers"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encabezados"
           }
         },
         "nb": {
@@ -4677,6 +5475,12 @@
             "value": "Hybrid keyword + semantic search is always on. The reranker is bundled and runs locally — nothing leaves your Mac."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La búsqueda híbrida por palabras clave + semántica siempre está activada. El reranker está incluido y se ejecuta localmente — nada sale de tu Mac."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4707,6 +5511,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "ID"
@@ -4747,6 +5557,12 @@
             "value": "Import"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4780,6 +5596,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Import Chats from File…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar chats desde archivo…"
           }
         },
         "nb": {
@@ -4817,6 +5639,12 @@
             "value": "Import chats"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar chats"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4850,6 +5678,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Import complete"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importación completada"
           }
         },
         "nb": {
@@ -4887,6 +5721,12 @@
             "value": "Import conversations exported from ChatGPT or Claude"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar conversaciones exportadas de ChatGPT o Claude"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4920,6 +5760,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Import from %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar desde %@"
           }
         },
         "nb": {
@@ -4957,6 +5803,12 @@
             "value": "Import skill"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar habilidad"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -4990,6 +5842,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Imported"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importado"
           }
         },
         "nb": {
@@ -5027,6 +5885,12 @@
             "value": "Imported %lld conversation(s) (%lld messages) from %@."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se importaron %lld conversación(es) (%lld mensajes) de %@."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5062,6 +5926,12 @@
             "value": "Ingesting %lld of %lld"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importando %lld de %lld"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5092,6 +5962,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspector"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Inspector"
@@ -5132,6 +6008,12 @@
             "value": "Instructions"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instrucciones"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5165,6 +6047,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Its tools will no longer be available to any chat until you re-add it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sus herramientas dejarán de estar disponibles para cualquier chat hasta que lo vuelvas a añadir."
           }
         },
         "nb": {
@@ -5202,6 +6090,12 @@
             "value": "JSON (re-importable)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JSON (reimportable)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5235,6 +6129,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keep recent messages verbatim"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conservar los mensajes recientes literalmente"
           }
         },
         "nb": {
@@ -5272,6 +6172,12 @@
             "value": "Lets the model PROPOSE adding, editing, deleting, or completing reminders. Every change is shown for you to confirm before it happens. Requires the Reminders tool above."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo PROPONGA añadir, editar, eliminar o completar recordatorios. Cada cambio se muestra para que lo confirmes antes de que ocurra. Requiere la herramienta Recordatorios de arriba."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5305,6 +6211,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lets the model PROPOSE adding, editing, or deleting calendar events. Every change is shown for you to confirm before it happens. Requires the Calendar tool above."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo PROPONGA añadir, editar o eliminar eventos del calendario. Cada cambio se muestra para que lo confirmes antes de aplicarse. Requiere la herramienta Calendario de arriba."
           }
         },
         "nb": {
@@ -5342,6 +6254,12 @@
             "value": "Lets the model fetch the precise current time on demand. Off by default — the date is already in every message; enable this only when sub-day precision matters."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo obtenga la hora actual exacta bajo demanda. Desactivado de forma predeterminada — la fecha ya está en cada mensaje; actívalo solo cuando importe una precisión inferior a un día."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5375,6 +6293,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lets the model look up your macOS Contacts (read-only — it never changes them). Off by default; enabling it asks macOS for Contacts permission."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo consulte tus contactos de macOS (solo lectura — nunca los modifica). Desactivado de forma predeterminada; al activarlo, se solicita a macOS permiso para acceder a Contactos."
           }
         },
         "nb": {
@@ -5412,6 +6336,12 @@
             "value": "Lets the model read your Calendar (e.g. “what's on this week?”). Off by default; enabling it asks macOS for Calendar permission."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo lea tu Calendario (p. ej., “¿qué hay esta semana?”). Desactivado de forma predeterminada; al activarlo, macOS solicita permiso para el Calendario."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5445,6 +6375,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lets the model read your Reminders (e.g. “what's on my list?”). Off by default; enabling it asks macOS for Reminders permission."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo lea tus Recordatorios (p. ej., «¿qué hay en mi lista?»). Desactivado de forma predeterminada; al activarlo, macOS solicitará permiso para acceder a Recordatorios."
           }
         },
         "nb": {
@@ -5482,6 +6418,12 @@
             "value": "Lets the model render a bar, line, or pie chart inline in the chat. Off by default; enable when you want visual data displays."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo muestre un gráfico de barras, de líneas o circular integrado en el chat. Desactivado de forma predeterminada; actívalo cuando quieras visualizaciones de datos."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5515,6 +6457,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lets the model search Apple Maps, get directions, and show results on an interactive map (read-only). Enabling asks for Location only so “near me” works; other searches don't need it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que el modelo busque en Apple Maps, obtenga indicaciones y muestre resultados en un mapa interactivo (solo lectura). Al activarlo, solo se solicita la ubicación para que funcione «cerca de mí»; las demás búsquedas no la necesitan."
           }
         },
         "nb": {
@@ -5552,6 +6500,12 @@
             "value": "Licence"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencia"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5587,6 +6541,12 @@
             "value": "Loading model…"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando modelo…"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5617,6 +6577,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "MCP"
@@ -5657,6 +6623,12 @@
             "value": "MCP servers"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidores MCP"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5690,6 +6662,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Make chart"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear gráfico"
           }
         },
         "nb": {
@@ -5727,6 +6705,12 @@
             "value": "Maps"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapas"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5757,6 +6741,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Markdown"
@@ -5797,6 +6787,12 @@
             "value": "Max output tokens"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máximo de tokens de salida"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5830,6 +6826,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Max tool iterations"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máximo de iteraciones de herramientas"
           }
         },
         "nb": {
@@ -5867,6 +6869,12 @@
             "value": "Maximum idle time between data packets before a request fails. Resets on each byte received, so long active replies are fine — this only catches a stalled connection. Raise it if a slow backend times out mid-reply."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiempo máximo de inactividad entre paquetes de datos antes de que falle una solicitud. Se reinicia con cada byte recibido, por lo que las respuestas largas y activas no suponen ningún problema; esto solo detecta una conexión estancada. Auméntalo si un backend lento agota el tiempo de espera a mitad de la respuesta."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5900,6 +6908,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Message"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensaje"
           }
         },
         "nb": {
@@ -5937,6 +6951,12 @@
             "value": "Messages"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensajes"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -5970,6 +6990,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Model"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo"
           }
         },
         "nb": {
@@ -6007,6 +7033,12 @@
             "value": "Model Context Protocol servers"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidores de Model Context Protocol"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6040,6 +7072,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre"
           }
         },
         "nb": {
@@ -6077,6 +7115,12 @@
             "value": "Native macOS LLM chat client."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cliente de chat LLM nativo para macOS."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6110,6 +7154,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Network"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Red"
           }
         },
         "nb": {
@@ -6147,6 +7197,12 @@
             "value": "New chat"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo chat"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6180,6 +7236,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "New chats use this provider and its default model. Each chat keeps its own setting; per-chat overrides live in the Inspector."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los chats nuevos usan este proveedor y su modelo predeterminado. Cada chat conserva su propia configuración; las anulaciones por chat se encuentran en el Inspector."
           }
         },
         "nb": {
@@ -6217,6 +7279,12 @@
             "value": "New collection"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva colección"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6250,6 +7318,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next send projection"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proyección del próximo envío"
           }
         },
         "nb": {
@@ -6287,6 +7361,12 @@
             "value": "No MCP servers yet"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay servidores MCP"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6320,6 +7400,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "No budget detected. Pick a provider and a default model in Settings."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se detectó ningún presupuesto. Elige un proveedor y un modelo predeterminado en Ajustes."
           }
         },
         "nb": {
@@ -6357,6 +7443,12 @@
             "value": "No chunks for this document"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay fragmentos para este documento"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6390,6 +7482,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "No collections yet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay colecciones"
           }
         },
         "nb": {
@@ -6427,6 +7525,12 @@
             "value": "No collections yet. Create one in the Collections pane."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay colecciones. Crea una en el panel de Colecciones."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6460,6 +7564,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "No default model set for provider %@. Open Settings → Providers and pick one."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay un modelo predeterminado configurado para el proveedor %@. Abre Ajustes → Proveedores y elige uno."
           }
         },
         "nb": {
@@ -6497,6 +7607,12 @@
             "value": "No documents in %@"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay documentos en %@"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6530,6 +7646,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "No matches"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin coincidencias"
           }
         },
         "nb": {
@@ -6567,6 +7689,12 @@
             "value": "No provider configured. Open Settings → Providers."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ningún proveedor configurado. Abre Ajustes → Proveedores."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6600,6 +7728,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "No skills yet. Add one in Settings → Skills."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay habilidades. Añade una en Ajustes → Habilidades."
           }
         },
         "nb": {
@@ -6637,6 +7771,12 @@
             "value": "No skills yet. Import a third-party skill package, or create one."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay habilidades. Importa un paquete de habilidades de terceros o crea una."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6670,6 +7810,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "None"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguno"
           }
         },
         "nb": {
@@ -6707,6 +7853,12 @@
             "value": "Not checked"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin comprobar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6740,6 +7892,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "OK"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceptar"
           }
         },
         "nb": {
@@ -6777,6 +7935,12 @@
             "value": "Older messages are summarized away when the projected request would leave less than the reserve free for the reply."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes más antiguos se resumen cuando la solicitud prevista dejaría menos espacio libre que la reserva destinada a la respuesta."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6810,6 +7974,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir"
           }
         },
         "nb": {
@@ -6847,6 +8017,12 @@
             "value": "Open-source licences"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencias de código abierto"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6880,6 +8056,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Override"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anular"
           }
         },
         "nb": {
@@ -6917,6 +8099,12 @@
             "value": "PDF, .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, .md, .txt, código fuente. Las carpetas se recorren de forma recursiva; los archivos ocultos y los tipos no admitidos se omiten."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -6950,6 +8138,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Parallel tool calls"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llamadas a herramientas en paralelo"
           }
         },
         "nb": {
@@ -6987,6 +8181,12 @@
             "value": "Paste key — stored in Keychain"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega la clave — se almacena en el Llavero"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7020,6 +8220,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pick a model in the inspector, then type below."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige un modelo en el inspector y luego escribe abajo."
           }
         },
         "nb": {
@@ -7057,6 +8263,12 @@
             "value": "Plain text"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto sin formato"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7090,6 +8302,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Propose adding, editing, deleting, or completing reminders — you confirm each change."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proponer añadir, editar, eliminar o completar recordatorios: tú confirmas cada cambio."
           }
         },
         "nb": {
@@ -7127,6 +8345,12 @@
             "value": "Propose adding, editing, or deleting events — you confirm each change."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proponer añadir, editar o eliminar eventos — tú confirmas cada cambio."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7160,6 +8384,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Provider"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proveedor"
           }
         },
         "nb": {
@@ -7197,6 +8427,12 @@
             "value": "Providers"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proveedores"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7230,6 +8466,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Re-authenticate"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a autenticar"
           }
         },
         "nb": {
@@ -7267,6 +8509,12 @@
             "value": "Re-indexing didn't finish"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La reindexación no terminó"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7300,6 +8548,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ready · %lld tools"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo · %lld herramientas"
           }
         },
         "nb": {
@@ -7337,6 +8591,12 @@
             "value": "Reasoning"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Razonamiento"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7370,6 +8630,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reasoning effort for this chat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nivel de razonamiento para este chat"
           }
         },
         "nb": {
@@ -7407,6 +8673,12 @@
             "value": "Regenerate"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenerar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7440,6 +8712,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Regenerate this reply?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Regenerar esta respuesta?"
           }
         },
         "nb": {
@@ -7477,6 +8755,12 @@
             "value": "Reminders"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recordatorios"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7510,6 +8794,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove provider"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar proveedor"
           }
         },
         "nb": {
@@ -7547,6 +8837,12 @@
             "value": "Remove saved token"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar el token guardado"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7580,6 +8876,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rename…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renombrar…"
           }
         },
         "nb": {
@@ -7617,6 +8919,12 @@
             "value": "Request timeout (seconds)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiempo de espera de la solicitud (segundos)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7650,6 +8958,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rerank search results"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reordenar resultados de búsqueda"
           }
         },
         "nb": {
@@ -7687,6 +9001,12 @@
             "value": "Reserve for reply (tokens)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reservar para la respuesta (tokens)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7720,6 +9040,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Restore FyxLocal's localised default preamble."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar el preámbulo predeterminado localizado de FyxLocal."
           }
         },
         "nb": {
@@ -7757,6 +9083,12 @@
             "value": "Retry"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7790,6 +9122,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Revert to built-in"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revertir al integrado"
           }
         },
         "nb": {
@@ -7827,6 +9165,12 @@
             "value": "Runs an on-device model to re-order document-search results by relevance after keyword+vector retrieval. More relevant results; uses a little more memory and time per search."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ejecuta un modelo en el dispositivo para reordenar por relevancia los resultados de la búsqueda de documentos tras la recuperación por palabras clave y vectores. Resultados más relevantes; usa un poco más de memoria y tiempo por búsqueda."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7860,6 +9204,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sampling"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestreo"
           }
         },
         "nb": {
@@ -7897,6 +9247,12 @@
             "value": "Sampling defaults"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valores predeterminados de muestreo"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -7930,6 +9286,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar"
           }
         },
         "nb": {
@@ -7967,6 +9329,12 @@
             "value": "Save failed: %@"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error al guardar: %@"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8000,6 +9368,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save key to Keychain"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar la clave en el Llavero"
           }
         },
         "nb": {
@@ -8037,6 +9411,12 @@
             "value": "Saved to Keychain."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardado en el Llavero."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8070,6 +9450,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scopes (optional)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ámbitos (opcional)"
           }
         },
         "nb": {
@@ -8107,6 +9493,12 @@
             "value": "Search Contacts"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar en Contactos"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8140,6 +9532,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search chats"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar chats"
           }
         },
         "nb": {
@@ -8177,6 +9575,12 @@
             "value": "Search the public web via DuckDuckGo. No API key required."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca en la web pública a través de DuckDuckGo. No se requiere clave de API."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8210,6 +9614,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search titles"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar títulos"
           }
         },
         "nb": {
@@ -8247,6 +9657,12 @@
             "value": "Seed"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semilla"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8280,6 +9696,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Select a document"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona un documento"
           }
         },
         "nb": {
@@ -8317,6 +9739,12 @@
             "value": "Select all"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleccionar todo"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8350,6 +9778,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Select none"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No seleccionar ninguno"
           }
         },
         "nb": {
@@ -8387,6 +9821,12 @@
             "value": "Select or create a collection"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona o crea una colección"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8420,6 +9860,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Select or start a conversation"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona o inicia una conversación"
           }
         },
         "nb": {
@@ -8457,6 +9903,12 @@
             "value": "Server max unknown — defaults to a safe 8,192 until you Test connection."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máximo del servidor desconocido — se usa un valor seguro predeterminado de 8192 hasta que pruebes la conexión."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8490,6 +9942,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Settings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes"
           }
         },
         "nb": {
@@ -8527,6 +9985,12 @@
             "value": "Showing FyxLocal's built-in preamble. Edit to override."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrando el preámbulo integrado de FyxLocal. Edítalo para reemplazarlo."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8560,6 +10024,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sign in"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión"
           }
         },
         "nb": {
@@ -8597,6 +10067,12 @@
             "value": "Sign out"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar sesión"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8630,6 +10106,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skills"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habilidades"
           }
         },
         "nb": {
@@ -8667,6 +10149,12 @@
             "value": "Skills are folders of instructions and scripts the model can use. Imported skills run in a sandbox with no network access. Enable a skill per-chat in the Inspector, or mark it as applying to every chat below."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las habilidades son carpetas de instrucciones y scripts que el modelo puede usar. Las habilidades importadas se ejecutan en un sandbox sin acceso a la red. Activa una habilidad por chat en el Inspector, o márcala abajo para que se aplique a todos los chats."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8700,6 +10188,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skills available in this chat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habilidades disponibles en este chat"
           }
         },
         "nb": {
@@ -8737,6 +10231,12 @@
             "value": "Source"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origen"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8770,6 +10270,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Source code"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código fuente"
           }
         },
         "nb": {
@@ -8807,6 +10313,12 @@
             "value": "Start a conversation"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia una conversación"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8840,6 +10352,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stdio (subprocess)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stdio (subproceso)"
           }
         },
         "nb": {
@@ -8877,6 +10395,12 @@
             "value": "Stop sequences"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secuencias de parada"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8910,6 +10434,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "System prompt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt del sistema"
           }
         },
         "nb": {
@@ -8947,6 +10477,12 @@
             "value": "Temperature"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperatura"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -8980,6 +10516,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Test connection / fetch models"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probar conexión / obtener modelos"
           }
         },
         "nb": {
@@ -9017,6 +10559,12 @@
             "value": "Test connection / refresh tools"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probar conexión / actualizar herramientas"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9050,6 +10598,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "The assistant proposed this change. It will only happen if you confirm."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El asistente propuso este cambio. Solo se aplicará si lo confirmas."
           }
         },
         "nb": {
@@ -9087,6 +10641,12 @@
             "value": "These conversations will be removed permanently. This cannot be undone."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estas conversaciones se eliminarán de forma permanente. Esta acción no se puede deshacer."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9120,6 +10680,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thinking"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pensando"
           }
         },
         "nb": {
@@ -9157,6 +10723,12 @@
             "value": "This agent isn't used by any chat."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún chat usa este agente."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9190,6 +10762,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "This conversation will be removed permanently. This cannot be undone."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta conversación se eliminará de forma permanente. Esta acción no se puede deshacer."
           }
         },
         "nb": {
@@ -9227,6 +10805,12 @@
             "value": "This model accepts images"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este modelo acepta imágenes"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9260,6 +10844,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "This model doesn't accept images. Enable image input for it in Settings → Providers."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este modelo no acepta imágenes. Activa la entrada de imágenes para él en Ajustes → Proveedores."
           }
         },
         "nb": {
@@ -9297,6 +10887,12 @@
             "value": "This picks the agent any newly-created chat starts with. Individual chats can override in the Inspector."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto elige el agente con el que empieza cada chat recién creado. Cada chat puede anularlo en el Inspector."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9330,6 +10926,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "This removes %lld later message(s) from the conversation."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto elimina %lld mensaje(s) posterior(es) de la conversación."
           }
         },
         "nb": {
@@ -9367,6 +10969,12 @@
             "value": "This skill isn't enabled in any chat."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta habilidad no está activada en ningún chat."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9400,6 +11008,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Title"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título"
           }
         },
         "nb": {
@@ -9437,6 +11051,12 @@
             "value": "Tool result"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resultado de la herramienta"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9470,6 +11090,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tool result (error)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resultado de la herramienta (error)"
           }
         },
         "nb": {
@@ -9507,6 +11133,12 @@
             "value": "Tools"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herramientas"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9540,6 +11172,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Transport"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transporte"
           }
         },
         "nb": {
@@ -9577,6 +11215,12 @@
             "value": "Type below to begin."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe abajo para empezar."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9607,6 +11251,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "URL"
@@ -9647,6 +11297,12 @@
             "value": "URL (e.g. https://host/mcp)"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL (p. ej., https://host/mcp)"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9680,6 +11336,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Untitled agent"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agente sin título"
           }
         },
         "nb": {
@@ -9717,6 +11379,12 @@
             "value": "Untitled server"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidor sin título"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9750,6 +11418,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Updated"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizado"
           }
         },
         "nb": {
@@ -9787,6 +11461,12 @@
             "value": "Upgrading document search"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizando la búsqueda de documentos"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9820,6 +11500,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Use OAuth"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar OAuth"
           }
         },
         "nb": {
@@ -9857,6 +11543,12 @@
             "value": "Used for every chat that talks to this provider."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se usa en todos los chats que se comunican con este proveedor."
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9890,6 +11582,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Using server max: %@ tokens."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usando el máximo del servidor: %@ tokens."
           }
         },
         "nb": {
@@ -9927,6 +11625,12 @@
             "value": "Utilities"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilidades"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -9960,6 +11664,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Version"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión"
           }
         },
         "nb": {
@@ -9997,6 +11707,12 @@
             "value": "Version %@"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión %@"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10027,6 +11743,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Web"
@@ -10067,6 +11789,12 @@
             "value": "Web fetch"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtención web"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10100,6 +11828,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Web fetch uses WKWebView + Mozilla Readability for clean extraction."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La obtención web usa WKWebView + Mozilla Readability para una extracción limpia."
           }
         },
         "nb": {
@@ -10137,6 +11871,12 @@
             "value": "Web search"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Búsqueda web"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10170,6 +11910,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Web search uses DuckDuckGo with no API key."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La búsqueda web usa DuckDuckGo sin clave de API."
           }
         },
         "nb": {
@@ -10207,6 +11953,12 @@
             "value": "When the model should use this skill"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuándo debe usar el modelo esta habilidad"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10237,6 +11989,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Word"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Word"
@@ -10277,6 +12035,12 @@
             "value": "Working directory"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directorio de trabajo"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10310,6 +12074,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your message is %@ tokens — larger than this provider's %@-token window. Save it as a RAG document instead (coming soon)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu mensaje tiene %@ tokens, más que la ventana de %@ tokens de este proveedor. Guárdalo como documento RAG (próximamente)."
           }
         },
         "nb": {
@@ -10347,6 +12117,12 @@
             "value": "auto-discover from MCP server"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "detectar automáticamente desde el servidor MCP"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10380,6 +12156,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "blank to auto-register"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en blanco para registrar automáticamente"
           }
         },
         "nb": {
@@ -10417,6 +12199,12 @@
             "value": "budget"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "presupuesto"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10450,6 +12238,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "comma-separated"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "separados por comas"
           }
         },
         "nb": {
@@ -10487,6 +12281,12 @@
             "value": "comma-separated · e.g. END,<|stop|>"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "separados por comas · p. ej., END,<|stop|>"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10520,6 +12320,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "lowercase-with-hyphens"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "minúsculas-con-guiones"
           }
         },
         "nb": {
@@ -10557,6 +12363,12 @@
             "value": "Dismiss"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10590,6 +12402,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Some changes were made during this update:"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se realizaron algunos cambios durante esta actualización:"
           }
         },
         "nb": {
@@ -10627,6 +12445,12 @@
             "value": "FyxLocal was updated"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FyxLocal se ha actualizado"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10660,6 +12484,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Calendar, Reminders, Contacts and Maps were disabled because this update changed the app's identity, and macOS requires you to grant permission again. Re-enable them in Settings → Tools when you want them, and approve the macOS prompt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se desactivaron Calendario, Recordatorios, Contactos y Mapas porque esta actualización cambió la identidad de la app, y macOS requiere que vuelvas a concederles permiso. Vuelve a activarlos en Ajustes → Herramientas cuando los necesites y acepta la solicitud de macOS."
           }
         },
         "nb": {
@@ -10697,6 +12527,12 @@
             "value": "Apple tools were turned off"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se desactivaron las herramientas de Apple"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10730,6 +12566,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Because this update changed the app's identity, macOS will ask again for permission to find devices on your local network the next time FyxLocal connects to a locally-hosted model or MCP server. Click Allow when prompted."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como esta actualización cambió la identidad de la app, macOS volverá a solicitar permiso para encontrar dispositivos en tu red local la próxima vez que FyxLocal se conecte a un modelo alojado localmente o a un servidor MCP. Haz clic en Permitir cuando se te solicite."
           }
         },
         "nb": {
@@ -10767,6 +12609,12 @@
             "value": "Local network access needs re-approving"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El acceso a la red local necesita volver a aprobarse"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10802,6 +12650,12 @@
             "value": "optional"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "opcional"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10832,6 +12686,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "p.%lld"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "p.%lld"
@@ -10872,6 +12732,12 @@
             "value": "paste token"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pegar token"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10905,6 +12771,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "server default"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "predeterminado del servidor"
           }
         },
         "nb": {
@@ -10942,6 +12814,12 @@
             "value": "server max: %@"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "máx. del servidor: %@"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -10977,6 +12855,12 @@
             "value": "space-separated"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "separado por espacios"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -11007,6 +12891,12 @@
           }
         },
         "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "top_p"
+          }
+        },
+        "es": {
           "stringUnit": {
             "state": "translated",
             "value": "top_p"
@@ -11047,6 +12937,12 @@
             "value": "you@example.com"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "you@example.com"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -11082,6 +12978,12 @@
             "value": "— pick a default —"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— elige un valor predeterminado —"
+          }
+        },
         "nb": {
           "stringUnit": {
             "state": "translated",
@@ -11115,6 +13017,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "•••••••• (saved in Keychain)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "•••••••• (guardado en el Llavero)"
           }
         },
         "nb": {

@@ -30,6 +30,15 @@ struct LocalizedSystemPromptTests {
         #expect(!prompt.contains("svenska"))
     }
 
+    @Test func spanishAnchorPhrasePresent() {
+        let prompt = LocalizedSystemPrompt(language: .spanish).render()
+        #expect(prompt.contains("FyxLocal"))
+        // The Spanish base preamble instructs the model to reply in Spanish
+        // ("Responde en español…") — a stable marker it isn't an English fallback.
+        #expect(prompt.contains("español"))
+        #expect(!prompt.contains("svenska"))
+    }
+
     @Test func skillsSectionAppearsWhenSkillsPresent() {
         let prompt = LocalizedSystemPrompt(
             language: .english,

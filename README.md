@@ -41,7 +41,7 @@ The following provider types are supported, which are included as they work with
 * OpenAI Responses API
 * OpenAI Completions API
 
-Currently FyxLocal has UK & US English, Swedish, Norwegian and Danish localisations and is open to submissions for more.
+Currently FyxLocal has UK & US English, Swedish, Norwegian, Danish and Spanish localisations and is open to submissions for more.
 
 -------
 <p></p>

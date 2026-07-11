@@ -15,7 +15,7 @@ import Foundation
 struct LocalizationCoverageTests {
     /// Languages the app ships UI for. Every catalog key must localize all of
     /// these in `translated` state.
-    private let requiredLanguages = ["en", "en-GB", "sv", "da", "nb"]
+    private let requiredLanguages = ["en", "en-GB", "sv", "da", "nb", "es"]
 
     @Test func everyKeyHasAllLocalizations() throws {
         let url = catalogURL()

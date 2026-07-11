@@ -56,11 +56,19 @@ public struct RunCodeTool: Tool {
     }
 
     public func definition(for language: PromptLanguage) -> ToolDefinition {
-        let pythonNote = sandbox.isAvailable(.python)
-            ? ""
-            : (language == .swedish
-                ? " (python är inte tillgängligt i den här miljön — använd bash.)"
-                : " (python is not available in this environment — use bash.)")
+        let pythonNote: String
+        if sandbox.isAvailable(.python) {
+            pythonNote = ""
+        } else {
+            switch language {
+            case .swedish:
+                pythonNote = " (python är inte tillgängligt i den här miljön — använd bash.)"
+            case .spanish:
+                pythonNote = " (python no está disponible en este entorno; usa bash.)"
+            default:
+                pythonNote = " (python is not available in this environment — use bash.)"
+            }
+        }
         let skillNames = resolved().names
         let skillList = skillNames.isEmpty ? "—" : skillNames.joined(separator: ", ")
         let description: String
@@ -112,6 +120,18 @@ public struct RunCodeTool: Tool {
             "python"\(pythonNote). Sandkassen har ingen nettverkstilgang og kan \
             bare skrive til sitt eget arbeidsområde. Returnerer stdout, stderr \
             og avslutningskoden.
+            """
+        case .spanish:
+            description = """
+            Ejecuta código en un entorno aislado (sandbox) acotado a una de tus \
+            habilidades («skills») activadas, para leer sus archivos y ejecutar \
+            los scripts que incluye. Asigna a `skill` el nombre de la habilidad \
+            (una de: \(skillList)); el directorio de trabajo es la carpeta de \
+            esa habilidad, así que puedes hacer `cat SKILL.md`, listar archivos \
+            y ejecutar los ayudantes incluidos (p. ej. `python scripts/foo.py`). \
+            Asigna a `language` el valor "bash" o "python"\(pythonNote). El \
+            sandbox no tiene acceso a la red y solo puede escribir en su propio \
+            espacio temporal. Devuelve stdout, stderr y el código de salida.
             """
         }
         let schema = JSONSchema(raw: #"""

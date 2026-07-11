@@ -11,6 +11,7 @@ public enum PromptLanguage: String, Sendable, Hashable, CaseIterable, Codable {
     case swedish   = "sv"
     case danish    = "da"
     case norwegian = "nb"      // Bokmål (Apple's standard code for Norwegian UI)
+    case spanish   = "es"      // covers every Spanish locale (es-ES, es-MX, es-419…)
 
     public static func resolve(from locale: Locale = .current) -> PromptLanguage {
         let code = locale.language.languageCode?.identifier ?? "en"
@@ -176,6 +177,20 @@ public struct LocalizedSystemPrompt: Sendable, Hashable {
                 (`cat SKILL.md`), og kjør deretter de medfølgende skriptene \
                 slik instruksjonene sier. Kall kun en ferdighet når \
                 beskrivelsen er tydelig relevant.
+                """
+            case .spanish:
+                return """
+                Tienes disponibles las siguientes habilidades («skills»). Una \
+                habilidad es una carpeta de instrucciones y scripts que puedes \
+                usar cuando su descripción coincide con la tarea:
+
+                \(bullets)
+
+                Para usar una habilidad, llama a la herramienta `run_code` con \
+                el nombre de esa habilidad. Empieza leyendo sus instrucciones \
+                (`cat SKILL.md`) y luego ejecuta los scripts incluidos según \
+                indiquen las instrucciones. Invoca una habilidad solo cuando su \
+                descripción sea claramente relevante.
                 """
             }
         }
