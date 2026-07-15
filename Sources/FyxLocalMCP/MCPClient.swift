@@ -52,6 +52,7 @@ public enum MCPClientError: Error, Sendable, Equatable {
     case unexpectedResult
     case transportClosed
     case taskDeadlineExceeded(taskId: String)
+    case resourceTooLarge(uri: String)
 }
 
 extension MCPClientError: LocalizedError {
@@ -70,6 +71,8 @@ extension MCPClientError: LocalizedError {
             return "MCP transport closed"
         case .taskDeadlineExceeded(let taskId):
             return "MCP task '\(taskId)' did not complete before the client-side deadline"
+        case .resourceTooLarge(let uri):
+            return "MCP resource '\(uri)' exceeds the size limit"
         }
     }
 }
@@ -196,6 +199,105 @@ public actor MCPClient {
         }
         toolTaskSupport = taskSupportCache
         return output
+    }
+
+    // MARK: - Resources & prompts
+
+    /// Lists the server's resources (paginated). Field lengths and item
+    /// count are bounded — the server is untrusted.
+    public func listResources() async throws -> [MCPResource] {
+        let maxResources = 1000
+        var output: [MCPResource] = []
+        try await paginatedList(method: "resources/list", itemsKey: "resources", itemCap: maxResources) { item in
+            guard let uri = item["uri"]?.stringValue, !uri.isEmpty, uri.count <= 2048 else { return }
+            output.append(MCPResource(
+                uri: uri,
+                name: String((item["name"]?.stringValue ?? uri).prefix(256)),
+                title: item["title"]?.stringValue.map { String($0.prefix(256)) },
+                description: item["description"]?.stringValue.map { String($0.prefix(8_192)) },
+                mimeType: item["mimeType"]?.stringValue.map { String($0.prefix(256)) },
+                size: item["size"]?.intValue
+            ))
+        }
+        return output
+    }
+
+    /// Reads one resource. Content sizes are bounded (text ≈4 MB, blob
+    /// base64 ≈24 MB → ~16 MB decoded); anything larger throws
+    /// `.resourceTooLarge` rather than ballooning memory.
+    public func readResource(uri: String) async throws -> [MCPResourceContents] {
+        let maxEntries = 32
+        let maxTextChars = 4_000_000
+        let maxBlobChars = 24_000_000
+        let response = try await call(method: "resources/read", params: .object(["uri": .string(uri)]))
+        guard case .success(let value) = response.result else {
+            if case .failure(let e) = response.result { throw MCPClientError.rpcError(code: e.code, message: e.message) }
+            throw MCPClientError.unexpectedResult
+        }
+        guard let contents = value["contents"]?.arrayValue else { throw MCPClientError.unexpectedResult }
+        var output: [MCPResourceContents] = []
+        for entry in contents.prefix(maxEntries) {
+            let entryURI = entry["uri"]?.stringValue ?? uri
+            let mimeType = entry["mimeType"]?.stringValue
+            if let text = entry["text"]?.stringValue {
+                guard text.count <= maxTextChars else { throw MCPClientError.resourceTooLarge(uri: entryURI) }
+                output.append(.text(uri: entryURI, mimeType: mimeType, text: text))
+            } else if let blob = entry["blob"]?.stringValue {
+                guard blob.count <= maxBlobChars else { throw MCPClientError.resourceTooLarge(uri: entryURI) }
+                output.append(.blob(uri: entryURI, mimeType: mimeType, base64: blob))
+            }
+        }
+        return output
+    }
+
+    /// Lists the server's prompt templates (paginated, bounded).
+    public func listPrompts() async throws -> [MCPPrompt] {
+        let maxPrompts = 500
+        let maxArguments = 64
+        var output: [MCPPrompt] = []
+        try await paginatedList(method: "prompts/list", itemsKey: "prompts", itemCap: maxPrompts) { item in
+            guard let name = item["name"]?.stringValue, !name.isEmpty else { return }
+            let arguments = (item["arguments"]?.arrayValue ?? []).prefix(maxArguments).compactMap { argument -> MCPPromptArgument? in
+                guard let argumentName = argument["name"]?.stringValue, !argumentName.isEmpty else { return nil }
+                return MCPPromptArgument(
+                    name: String(argumentName.prefix(256)),
+                    title: argument["title"]?.stringValue.map { String($0.prefix(256)) },
+                    description: argument["description"]?.stringValue.map { String($0.prefix(2_048)) },
+                    required: argument["required"]?.boolValue ?? false
+                )
+            }
+            output.append(MCPPrompt(
+                name: String(name.prefix(256)),
+                title: item["title"]?.stringValue.map { String($0.prefix(256)) },
+                description: item["description"]?.stringValue.map { String($0.prefix(8_192)) },
+                arguments: Array(arguments)
+            ))
+        }
+        return output
+    }
+
+    /// Materializes a prompt template with the given arguments.
+    public func getPrompt(name: String, arguments: [String: String]) async throws -> MCPPromptResult {
+        let maxMessages = 64
+        var params: [String: JSONValue] = ["name": .string(name)]
+        if !arguments.isEmpty {
+            params["arguments"] = .object(arguments.mapValues { .string($0) })
+        }
+        let response = try await call(method: "prompts/get", params: .object(params))
+        guard case .success(let value) = response.result else {
+            if case .failure(let e) = response.result { throw MCPClientError.rpcError(code: e.code, message: e.message) }
+            throw MCPClientError.unexpectedResult
+        }
+        let messages = (value["messages"]?.arrayValue ?? []).prefix(maxMessages).compactMap { message -> MCPPromptMessage? in
+            guard let role = message["role"]?.stringValue,
+                  let contentValue = message["content"],
+                  let content = decodeContent(contentValue) else { return nil }
+            return MCPPromptMessage(role: role, content: content)
+        }
+        return MCPPromptResult(
+            description: value["description"]?.stringValue,
+            messages: Array(messages)
+        )
     }
 
     /// Drives a cursor-paginated list method (`tools/list`, `resources/list`,

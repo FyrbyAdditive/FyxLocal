@@ -59,6 +59,8 @@ struct InspectorView: View {
             CollectionsAttachSection(viewModel: viewModel, environment: environment)
 
             SkillsAttachSection(viewModel: viewModel, environment: environment)
+
+            MCPSection(viewModel: viewModel, environment: environment)
         }
         .formStyle(.grouped)
     }

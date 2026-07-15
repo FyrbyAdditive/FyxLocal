@@ -16,6 +16,15 @@ public struct MCPServerCapabilities: Sendable, Hashable {
     public let supportsTaskCancel: Bool
     /// `capabilities.tasks.list` declared.
     public let supportsTaskList: Bool
+    /// `capabilities.resources` declared. (`resources.subscribe` is
+    /// deliberately not parsed — subscriptions are out of scope.)
+    public let supportsResources: Bool
+    /// `capabilities.resources.listChanged == true`.
+    public let resourcesListChanged: Bool
+    /// `capabilities.prompts` declared.
+    public let supportsPrompts: Bool
+    /// `capabilities.prompts.listChanged == true`.
+    public let promptsListChanged: Bool
 
     public init(raw: JSONValue) {
         self.raw = raw
@@ -25,6 +34,10 @@ public struct MCPServerCapabilities: Sendable, Hashable {
         self.supportsTaskAugmentedToolCalls = tasks?["requests"]?["tools"]?["call"] != nil
         self.supportsTaskCancel = tasks?["cancel"] != nil
         self.supportsTaskList = tasks?["list"] != nil
+        self.supportsResources = raw["resources"] != nil
+        self.resourcesListChanged = raw["resources"]?["listChanged"]?.boolValue == true
+        self.supportsPrompts = raw["prompts"] != nil
+        self.promptsListChanged = raw["prompts"]?["listChanged"]?.boolValue == true
     }
 
     public static let none = MCPServerCapabilities(raw: .object([:]))

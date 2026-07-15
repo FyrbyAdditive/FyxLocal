@@ -55,6 +55,12 @@ actor MockMCPServer {
     private let tools: [MCPTool]
     private let capabilities: JSONValue
     private let taskScripts: [String: [TaskStep]]
+    private let resources: [MCPResource]
+    /// uri → raw `contents` array for resources/read.
+    private let resourceContents: [String: JSONValue]
+    private let prompts: [MCPPrompt]
+    /// prompt name → raw prompts/get result object.
+    private let promptResults: [String: JSONValue]
     /// When set, list methods emit pages of this size with `nextCursor`
     /// (cursor = stringified start index). When `cursorLoop` is true, every
     /// page reports a nextCursor pointing at itself — simulates a hostile
@@ -78,6 +84,7 @@ actor MockMCPServer {
     private(set) var lastResultRequestMeta: JSONValue?
     private(set) var lastElicitationResponse: JSONValue?
     private(set) var cancelObserved = false
+    private(set) var lastPromptArguments: JSONValue?
 
     init(
         transport: any MCPTransport,
@@ -85,7 +92,11 @@ actor MockMCPServer {
         taskScripts: [String: [TaskStep]] = [:],
         capabilities: JSONValue = MockMCPServer.defaultCapabilities,
         listPageSize: Int? = nil,
-        cursorLoop: Bool = false
+        cursorLoop: Bool = false,
+        resources: [MCPResource] = [],
+        resourceContents: [String: JSONValue] = [:],
+        prompts: [MCPPrompt] = [],
+        promptResults: [String: JSONValue] = [:]
     ) {
         self.transport = transport
         self.tools = tools
@@ -93,6 +104,10 @@ actor MockMCPServer {
         self.capabilities = capabilities
         self.listPageSize = listPageSize
         self.cursorLoop = cursorLoop
+        self.resources = resources
+        self.resourceContents = resourceContents
+        self.prompts = prompts
+        self.promptResults = promptResults
     }
 
     func start() {
@@ -174,6 +189,57 @@ actor MockMCPServer {
 
         case "tools/call":
             return handleToolCall(req)
+
+        case "resources/list":
+            let entries: [JSONValue] = resources.map { resource in
+                var object: [String: JSONValue] = [
+                    "uri": .string(resource.uri),
+                    "name": .string(resource.name),
+                ]
+                if let title = resource.title { object["title"] = .string(title) }
+                if let description = resource.description { object["description"] = .string(description) }
+                if let mimeType = resource.mimeType { object["mimeType"] = .string(mimeType) }
+                if let size = resource.size { object["size"] = .int(size) }
+                return .object(object)
+            }
+            return JSONRPCResponse(id: req.id, result: .success(
+                paged(entries, key: "resources", cursor: req.params?["cursor"]?.stringValue)
+            ))
+
+        case "resources/read":
+            guard let uri = req.params?["uri"]?.stringValue, let contents = resourceContents[uri] else {
+                return JSONRPCResponse(id: req.id, result: .failure(.init(code: -32002, message: "Resource not found")))
+            }
+            return JSONRPCResponse(id: req.id, result: .success(.object(["contents": contents])))
+
+        case "prompts/list":
+            let entries: [JSONValue] = prompts.map { prompt in
+                var object: [String: JSONValue] = ["name": .string(prompt.name)]
+                if let title = prompt.title { object["title"] = .string(title) }
+                if let description = prompt.description { object["description"] = .string(description) }
+                if !prompt.arguments.isEmpty {
+                    object["arguments"] = .array(prompt.arguments.map { argument in
+                        var argObject: [String: JSONValue] = [
+                            "name": .string(argument.name),
+                            "required": .bool(argument.required),
+                        ]
+                        if let description = argument.description { argObject["description"] = .string(description) }
+                        return .object(argObject)
+                    })
+                }
+                return .object(object)
+            }
+            return JSONRPCResponse(id: req.id, result: .success(
+                paged(entries, key: "prompts", cursor: req.params?["cursor"]?.stringValue)
+            ))
+
+        case "prompts/get":
+            let name = req.params?["name"]?.stringValue ?? ""
+            lastPromptArguments = req.params?["arguments"]
+            guard let result = promptResults[name] else {
+                return JSONRPCResponse(id: req.id, result: .failure(.init(code: -32602, message: "Unknown prompt: \(name)")))
+            }
+            return JSONRPCResponse(id: req.id, result: .success(result))
 
         case "tasks/get":
             return handleTasksGet(req)

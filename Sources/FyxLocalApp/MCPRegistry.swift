@@ -42,10 +42,16 @@ final class MCPRegistry {
         var listenerTask: Task<Void, Never>?
     }
 
+    private enum RefreshKind: String { case tools, resources, prompts }
+
     private var entries: [MCPServerID: Entry] = [:]
-    /// Debounce for burst list_changed notifications, keyed by server.
-    private var refreshDebounce: [MCPServerID: Task<Void, Never>] = [:]
+    /// Debounce for burst list_changed notifications, keyed by server + kind.
+    private var refreshDebounce: [String: Task<Void, Never>] = [:]
     private(set) var status: [MCPServerID: Status] = [:]
+    /// Server-exposed resources/prompts, fetched at connect and refreshed on
+    /// list_changed. Rendered by the Inspector's MCP section.
+    private(set) var resources: [MCPServerID: [MCPResource]] = [:]
+    private(set) var prompts: [MCPServerID: [MCPPrompt]] = [:]
     private let toolRegistry: ToolRegistry
     /// True after `ensureLoaded` has run once this session — subsequent
     /// calls return immediately so the chat send path stays O(1).
@@ -202,6 +208,15 @@ final class MCPRegistry {
             entries[record.id] = Entry(client: client, adapterNames: registeredNames)
             status[record.id] = .ready(toolCount: tools.count)
             startNotificationListener(id: record.id, client: client, slug: slug)
+            // Resources/prompts are additive surfaces — a failure here must
+            // not fail the connection, so errors degrade to empty lists.
+            let caps = await client.serverCapabilities
+            if caps.supportsResources {
+                resources[record.id] = (try? await client.listResources()) ?? []
+            }
+            if caps.supportsPrompts {
+                prompts[record.id] = (try? await client.listPrompts()) ?? []
+            }
         } catch {
             await client.shutdown()
             // For stdio servers, the child often writes the real reason to
@@ -244,7 +259,11 @@ final class MCPRegistry {
     /// shared registry, flip status to `.disconnected`. Safe to call
     /// even if the server was never connected.
     func disconnect(_ id: MCPServerID) async {
-        refreshDebounce.removeValue(forKey: id)?.cancel()
+        for kind in [RefreshKind.tools, .resources, .prompts] {
+            refreshDebounce.removeValue(forKey: debounceKey(id, kind))?.cancel()
+        }
+        resources[id] = nil
+        prompts[id] = nil
         guard let entry = entries.removeValue(forKey: id) else {
             status[id] = .disconnected
             return
@@ -274,7 +293,11 @@ final class MCPRegistry {
                 guard let self else { return }
                 switch note.method {
                 case "notifications/tools/list_changed":
-                    self.scheduleToolRefresh(id: id, client: client, slug: slug)
+                    self.scheduleRefresh(.tools, id: id, client: client, slug: slug)
+                case "notifications/resources/list_changed":
+                    self.scheduleRefresh(.resources, id: id, client: client, slug: slug)
+                case "notifications/prompts/list_changed":
+                    self.scheduleRefresh(.prompts, id: id, client: client, slug: slug)
                 default:
                     break
                 }
@@ -283,15 +306,53 @@ final class MCPRegistry {
         entries[id]?.listenerTask = listener
     }
 
+    private func debounceKey(_ id: MCPServerID, _ kind: RefreshKind) -> String {
+        "\(id.rawValue)/\(kind.rawValue)"
+    }
+
     /// Coalesces notification bursts: each new notification restarts a short
     /// window; the refresh runs once the burst goes quiet.
-    private func scheduleToolRefresh(id: MCPServerID, client: MCPClient, slug: String) {
-        refreshDebounce[id]?.cancel()
-        refreshDebounce[id] = Task { [weak self] in
+    private func scheduleRefresh(_ kind: RefreshKind, id: MCPServerID, client: MCPClient, slug: String) {
+        let key = debounceKey(id, kind)
+        refreshDebounce[key]?.cancel()
+        refreshDebounce[key] = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(500))
             guard !Task.isCancelled else { return }
-            await self?.refreshTools(id: id, client: client, slug: slug)
+            switch kind {
+            case .tools:
+                await self?.refreshTools(id: id, client: client, slug: slug)
+            case .resources:
+                await self?.refreshResources(id: id, client: client)
+            case .prompts:
+                await self?.refreshPrompts(id: id, client: client)
+            }
         }
+    }
+
+    private func refreshResources(id: MCPServerID, client: MCPClient) async {
+        guard entries[id]?.client === client else { return }
+        guard let updated = try? await client.listResources() else { return }
+        guard entries[id]?.client === client else { return }
+        resources[id] = updated
+    }
+
+    private func refreshPrompts(id: MCPServerID, client: MCPClient) async {
+        guard entries[id]?.client === client else { return }
+        guard let updated = try? await client.listPrompts() else { return }
+        guard entries[id]?.client === client else { return }
+        prompts[id] = updated
+    }
+
+    // MARK: - Resource/prompt pass-throughs for the Inspector UI
+
+    func readResource(serverID: MCPServerID, uri: String) async throws -> [MCPResourceContents] {
+        guard let client = entries[serverID]?.client else { throw MCPClientError.notInitialized }
+        return try await client.readResource(uri: uri)
+    }
+
+    func getPrompt(serverID: MCPServerID, name: String, arguments: [String: String]) async throws -> MCPPromptResult {
+        guard let client = entries[serverID]?.client else { throw MCPClientError.notInitialized }
+        return try await client.getPrompt(name: name, arguments: arguments)
     }
 
     private func refreshTools(id: MCPServerID, client: MCPClient, slug: String) async {
