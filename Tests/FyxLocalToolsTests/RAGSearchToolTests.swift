@@ -22,6 +22,24 @@ struct RAGSearchToolTests {
         #expect(output.outputJSON.contains("0.91"))
     }
 
+    @Test func sourcePathFlowsIntoOutputJSON() async throws {
+        let collection = CollectionID()
+        let retriever = StubRetriever(
+            collectionByName: ["notes": collection],
+            hits: [
+                RAGSearchHit(chunkID: .init(), documentName: "with.md", page: 1, section: nil, text: "a", score: 0.9, sourcePath: "/tmp/with.md"),
+                RAGSearchHit(chunkID: .init(), documentName: "without.md", page: nil, section: nil, text: "b", score: 0.8),
+            ]
+        )
+        let tool = RAGSearchTool(retriever: retriever)
+        let output = try await tool.invoke(arguments: #"{"query":"a","collection":"notes"}"#)
+        let object = try #require(JSONSerialization.jsonObject(with: Data(output.outputJSON.utf8)) as? [String: Any])
+        let hits = try #require(object["hits"] as? [[String: Any]])
+        #expect(hits[0]["sourcePath"] as? String == "/tmp/with.md")
+        // The hit without a path must not carry the key at all.
+        #expect(hits[1]["sourcePath"] == nil)
+    }
+
     @Test func unknownCollectionReturnsErrorOutput() async throws {
         let tool = RAGSearchTool(retriever: StubRetriever(collectionByName: [:], hits: []))
         let output = try await tool.invoke(arguments: #"{"query":"x","collection":"missing"}"#)

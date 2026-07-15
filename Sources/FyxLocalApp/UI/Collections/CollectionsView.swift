@@ -398,6 +398,15 @@ private struct DocumentRow: View {
             }
             Spacer()
         }
+        .contextMenu {
+            if case .openable(let url) = SourceFileLink.availability(document.sourcePath) {
+                Button {
+                    NSWorkspace.shared.activateFileViewerSelecting([url])
+                } label: {
+                    Text("Reveal in Finder", bundle: .module)
+                }
+            }
+        }
     }
 
     private var icon: String {

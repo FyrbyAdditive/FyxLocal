@@ -634,17 +634,24 @@ struct ToolCallResultBlock: View {
             }
             // Dispatch on the display hint so non-JSON-shaped results can
             // render as their own widgets. .chart → ToolChartView (Swift
-            // Charts bar/line/pie); .map → ToolMapView (MapKit). Default
-            // falls back to pretty-printed JSON — same as original behaviour.
-            switch result.display {
-            case .chart:
-                ToolChartView(json: result.outputJSON)
-            case .map:
-                ToolMapView(json: result.outputJSON)
-            default:
-                Text(Self.prettyJSON(for: result.outputJSON))
-                    .font(.system(.caption, design: .monospaced))
-                    .textSelection(.enabled)
+            // Charts bar/line/pie); .map → ToolMapView (MapKit). rag_search
+            // gets a citation hit list keyed off the tool NAME (not a new
+            // display hint) so previously persisted transcripts pick up the
+            // new rendering too. Default falls back to pretty-printed JSON.
+            if call?.name == "rag_search", !result.isError,
+               let ragView = RAGSearchResultView(json: result.outputJSON) {
+                ragView
+            } else {
+                switch result.display {
+                case .chart:
+                    ToolChartView(json: result.outputJSON)
+                case .map:
+                    ToolMapView(json: result.outputJSON)
+                default:
+                    Text(Self.prettyJSON(for: result.outputJSON))
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
             }
         }
     }

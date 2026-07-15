@@ -27,14 +27,19 @@ public struct RAGSearchHit: Sendable, Hashable, Codable {
     public var section: String?
     public var text: String
     public var score: Double
+    /// Absolute path of the original source file, when it was known at
+    /// ingest. Optional Codable → hits in old persisted transcripts decode
+    /// unchanged, and hits without a path serialize without the key.
+    public var sourcePath: String?
 
-    public init(chunkID: ChunkID, documentName: String, page: Int?, section: String?, text: String, score: Double) {
+    public init(chunkID: ChunkID, documentName: String, page: Int?, section: String?, text: String, score: Double, sourcePath: String? = nil) {
         self.chunkID = chunkID
         self.documentName = documentName
         self.page = page
         self.section = section
         self.text = text
         self.score = score
+        self.sourcePath = sourcePath
     }
 }
 

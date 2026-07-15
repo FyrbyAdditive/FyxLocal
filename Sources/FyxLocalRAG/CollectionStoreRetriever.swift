@@ -102,7 +102,8 @@ public struct CollectionStoreRetriever: RAGRetriever {
                 page: chunk.meta.page,
                 section: chunk.meta.section,
                 text: chunk.text,
-                score: Double(hit.score)
+                score: Double(hit.score),
+                sourcePath: document?.sourcePath
             ))
         }
         return output
