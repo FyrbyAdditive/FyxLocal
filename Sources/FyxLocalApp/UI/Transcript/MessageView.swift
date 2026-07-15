@@ -39,18 +39,17 @@ struct MessageView: View {
     /// Whether the pointer is over this row — fades in the hover action bar.
     @State private var isHovering = false
 
-    /// True while the model is mid-turn on *this* message and hasn't started
-    /// emitting visible text yet. Drives the pill + reasoning-block expand.
-    /// Computed once at the top of `body` (see the `let` there) and passed
-    /// explicitly into the row sub-views — calling it on every render of
-    /// every visible row was the post-thinking-commit hot path at 70k.
-    /// Iterates `reversed()` because once text streaming starts, the text
-    /// item is always at the tail of `contentItems` — O(1) common case.
+    /// True while the model is mid-turn on *this* message and nothing is
+    /// visibly streaming — i.e. the tail item is not a non-empty text block.
+    /// That covers the initial think, tool-running phases, AND the silent
+    /// re-think after tool results (the earlier any-text-anywhere check made
+    /// the pill vanish for the rest of the turn as soon as the model said
+    /// one word before its first tool call). Drives the trailing pill and
+    /// the tail reasoning block's active state. Computed once at the top of
+    /// `body` — calling it per visible row was the hot path at 70k.
     private func computeIsActivelyThinking() -> Bool {
         guard message.id == streamingMessageID else { return false }
-        for item in message.contentItems.reversed() {
-            if case .text(let s) = item, !s.isEmpty { return false }
-        }
+        if case .text(let s) = message.contentItems.last, !s.isEmpty { return false }
         return true
     }
 
@@ -168,10 +167,15 @@ struct MessageView: View {
                 .frame(width: 24, alignment: .center)
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(message.contentItems.enumerated()), id: \.offset) { _, item in
+                let tailIndex = message.contentItems.count - 1
+                ForEach(Array(message.contentItems.enumerated()), id: \.offset) { index, item in
                     contentView(
                         for: item,
-                        isActivelyThinking: isActivelyThinking,
+                        // Only the TAIL reasoning block is "active" (auto-
+                        // expand + live styling) — without the index gate a
+                        // later thinking phase would pop every earlier,
+                        // collapsed reasoning block back open.
+                        isActivelyThinking: isActivelyThinking && index == tailIndex,
                         resultsByCallID: resultsByCallID,
                         pairedCallIDs: pairedCallIDs
                     )
