@@ -270,7 +270,9 @@ public struct PptxParser: DocumentParser {
         return ParsedDocument(kind: .pptx, fullText: fullText, sections: sections)
     }
 
-    private static func sortedEntryPaths(in archive: Archive, prefix: String, suffix: String) -> [String] {
+    // Internal (not private): XlsxParser walks xl/worksheets/sheetN.xml with
+    // the same numbered-part pattern.
+    static func sortedEntryPaths(in archive: Archive, prefix: String, suffix: String) -> [String] {
         var matches: [(Int, String)] = []
         for entry in archive {
             let path = entry.path

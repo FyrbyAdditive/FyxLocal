@@ -109,8 +109,11 @@ let package = Package(
                 // at the call site, so this module must be on the FyxLocalRAG
                 // dep list even though we never name it directly in code.
                 .product(name: "Tokenizers", package: "swift-transformers"),
-                // ZIP reader for DOCX/PPTX (Office Open XML are ZIP archives).
+                // ZIP reader for DOCX/PPTX/XLSX/EPUB (all are ZIP archives).
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
+                // XHTML chapter extraction for the EPUB parser (no JS needed,
+                // so no WKWebView round-trip).
+                .product(name: "SwiftSoup", package: "SwiftSoup"),
             ],
             // Bundle the Qwen3-Embedding-0.6B-MLX-8bit embedder (~633 MB) and the
             // Qwen3-Reranker-0.6B-mxfp8 reranker (~614 MB) so the app is

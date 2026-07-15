@@ -34,6 +34,9 @@ public struct FileIngestor: Sendable {
             PDFParser(),
             DocxParser(),
             PptxParser(),
+            XlsxParser(),
+            EpubParser(),
+            ImageOCRParser(),
         ]
         if let pageExtractor {
             list.append(HTMLParser(extractor: pageExtractor))

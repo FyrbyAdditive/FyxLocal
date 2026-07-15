@@ -86,7 +86,9 @@ public struct RAGDocument: Identifiable, Sendable, Hashable, Codable {
 }
 
 public enum DocumentKind: String, Sendable, Hashable, Codable, CaseIterable {
-    case pdf, text, markdown, docx, pptx, code, html, jupyter, rtf
+    // Adding a case: older app builds hide (not crash on) rows of unknown
+    // kinds — decodeDocument's DocumentKind(rawValue:) guard drops them.
+    case pdf, text, markdown, docx, pptx, code, html, jupyter, rtf, xlsx, epub, image
 }
 
 public struct RAGChunk: Identifiable, Sendable, Hashable, Codable {

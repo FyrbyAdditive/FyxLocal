@@ -420,6 +420,9 @@ private struct DocumentRow: View {
         case .html: return "globe"
         case .jupyter: return "book.closed"
         case .rtf: return "doc.text"
+        case .xlsx: return "tablecells"
+        case .epub: return "book"
+        case .image: return "photo"
         }
     }
 }
@@ -476,7 +479,7 @@ private struct IngestDropTarget: View {
                 .foregroundStyle(.secondary)
             Text("Drop files or folders here")
                 .font(.callout.bold())
-            Text("PDF, .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped.")
+            Text("PDF, Office (docx/pptx/xlsx), EPUB, images (OCR), .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

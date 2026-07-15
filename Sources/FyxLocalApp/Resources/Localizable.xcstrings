@@ -8693,43 +8693,43 @@
         }
       }
     },
-    "PDF, .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped.": {
+    "PDF, Office (docx/pptx/xlsx), EPUB, images (OCR), .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped.": {
       "extractionState": "manual",
       "localizations": {
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF, .md, .txt, kildekode. Mapper gennemgås rekursivt; skjulte filer og ikke-understøttede typer springes over."
+            "value": "PDF, Office (docx/pptx/xlsx), EPUB, billeder (OCR), .md, .txt, kildekode. Mapper gennemgås rekursivt; skjulte filer og ikke-understøttede typer springes over."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF, .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped."
+            "value": "PDF, Office (docx/pptx/xlsx), EPUB, images (OCR), .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped."
           }
         },
         "en-GB": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF, .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped."
+            "value": "PDF, Office (docx/pptx/xlsx), EPUB, images (OCR), .md, .txt, source code. Folders are walked recursively; hidden files and unsupported types are skipped."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF, .md, .txt, código fuente. Las carpetas se recorren de forma recursiva; los archivos ocultos y los tipos no admitidos se omiten."
+            "value": "PDF, Office (docx/pptx/xlsx), EPUB, imágenes (OCR), .md, .txt, código fuente. Las carpetas se recorren recursivamente; se omiten los archivos ocultos y los tipos no compatibles."
           }
         },
         "nb": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF, .md, .txt, kildekode. Mapper gjennomgås rekursivt; skjulte filer og ustøttede typer hoppes over."
+            "value": "PDF, Office (docx/pptx/xlsx), EPUB, bilder (OCR), .md, .txt, kildekode. Mapper gjennomgås rekursivt; skjulte filer og typer som ikke støttes hoppes over."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF, .md, .txt, källkod. Mappar genomsöks rekursivt; dolda filer och format som inte stöds hoppas över."
+            "value": "PDF, Office (docx/pptx/xlsx), EPUB, bilder (OCR), .md, .txt, källkod. Mappar genomsöks rekursivt; dolda filer och typer som inte stöds hoppas över."
           }
         }
       }
