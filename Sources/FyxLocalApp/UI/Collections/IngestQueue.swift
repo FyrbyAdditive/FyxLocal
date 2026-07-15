@@ -21,7 +21,12 @@ final class IngestQueue {
         enum Status: Hashable {
             case pending
             case running
+            /// Newly added.
             case succeeded
+            /// Replaced an older version of the same source.
+            case updated
+            /// Unchanged content — dedup skipped it entirely.
+            case skipped
             case failed(String)
             case cancelled
         }
@@ -87,7 +92,7 @@ final class IngestQueue {
     func clearCompleted() {
         entries.removeAll { entry in
             switch entry.status {
-            case .succeeded, .failed, .cancelled: return true
+            case .succeeded, .updated, .skipped, .failed, .cancelled: return true
             default: return false
             }
         }
@@ -98,7 +103,7 @@ final class IngestQueue {
         entries.removeAll { entry in
             guard entry.collectionID == collectionID else { return false }
             switch entry.status {
-            case .succeeded, .failed, .cancelled: return true
+            case .succeeded, .updated, .skipped, .failed, .cancelled: return true
             default: return false
             }
         }
@@ -128,14 +133,19 @@ final class IngestQueue {
                 let outcome: Entry.Status
                 do {
                     let data = try await Self.readData(at: entry.url)
-                    _ = try await self.store.ingest(
+                    let result = try await self.store.ingest(
                         data: data,
                         filename: entry.filename,
+                        sourcePath: entry.url.standardizedFileURL.path,
                         collectionID: entry.collectionID,
                         ingestor: self.ingestor,
                         chunker: Chunker()
                     )
-                    outcome = .succeeded
+                    switch result.outcome {
+                    case .added: outcome = .succeeded
+                    case .updated: outcome = .updated
+                    case .skippedUnchanged: outcome = .skipped
+                    }
                 } catch {
                     outcome = .failed(Self.describe(error))
                 }
@@ -179,6 +189,8 @@ final class IngestQueue {
 struct IngestSummary {
     var total = 0
     var succeeded = 0
+    var updated = 0
+    var skipped = 0
     var failed = 0
     var cancelled = 0
     /// Pending + running.
@@ -204,6 +216,10 @@ struct IngestSummary {
                 currentFilename = entry.filename
             case .succeeded:
                 succeeded += 1
+            case .updated:
+                updated += 1
+            case .skipped:
+                skipped += 1
             case .failed:
                 failed += 1
                 failures.append(entry)

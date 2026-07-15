@@ -63,6 +63,154 @@ struct PersistentCollectionStoreTests {
         try? FileManager.default.removeItem(at: dir)
     }
 
+    @Test func reingestSameBytesSkipsUnchanged() async throws {
+        let (dir, store) = try makeStore()
+        let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)
+        let c = try await store.createCollection(name: "notes", embedder: hash, summary: nil, distance: .cosine)
+        let data = Data("stable content for dedup".utf8)
+
+        let first = try await store.ingest(
+            data: data, filename: "a.txt", sourcePath: "/tmp/a.txt",
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        #expect(first.outcome == .added)
+
+        let second = try await store.ingest(
+            data: data, filename: "a.txt", sourcePath: "/tmp/a.txt",
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        #expect(second.outcome == .skippedUnchanged)
+        #expect(second.document.id == first.document.id)
+
+        let docs = await store.documents(in: c.id)
+        #expect(docs.count == 1)
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    @Test func reingestChangedBytesSamePathReplaces() async throws {
+        let (dir, store) = try makeStore()
+        let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)
+        let c = try await store.createCollection(name: "notes", embedder: hash, summary: nil, distance: .cosine)
+
+        let first = try await store.ingest(
+            data: Data("original text about llamas".utf8), filename: "a.txt", sourcePath: "/tmp/a.txt",
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        let second = try await store.ingest(
+            data: Data("revised text about alpacas".utf8), filename: "a.txt", sourcePath: "/tmp/a.txt",
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        guard case .updated(let replaced) = second.outcome else {
+            Issue.record("expected .updated, got \(second.outcome)")
+            return
+        }
+        #expect(replaced == first.document.id)
+
+        let docs = await store.documents(in: c.id)
+        #expect(docs.count == 1)
+        #expect(docs[0].id == second.document.id)
+        // Old chunks (and their vectors) must be gone.
+        let oldChunks = await store.chunks(of: first.document.id)
+        #expect(oldChunks.isEmpty)
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    @Test func filenameFallbackWhenNoPathReplaces() async throws {
+        let (dir, store) = try makeStore()
+        let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)
+        let c = try await store.createCollection(name: "notes", embedder: hash, summary: nil, distance: .cosine)
+
+        _ = try await store.ingest(
+            data: Data("v1".utf8), filename: "notes.txt", sourcePath: nil,
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        let second = try await store.ingest(
+            data: Data("v2".utf8), filename: "notes.txt", sourcePath: nil,
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        guard case .updated = second.outcome else {
+            Issue.record("expected .updated, got \(second.outcome)")
+            return
+        }
+        let docs = await store.documents(in: c.id)
+        #expect(docs.count == 1)
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    @Test func hashMatchBackfillsSourcePath() async throws {
+        let (dir, store) = try makeStore()
+        let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)
+        let c = try await store.createCollection(name: "notes", embedder: hash, summary: nil, distance: .cosine)
+        let data = Data("same bytes".utf8)
+
+        let first = try await store.ingest(
+            data: data, filename: "a.txt", sourcePath: nil,
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        #expect(first.document.sourcePath == nil)
+
+        _ = try await store.ingest(
+            data: data, filename: "a.txt", sourcePath: "/tmp/a.txt",
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        let docs = await store.documents(in: c.id)
+        #expect(docs.count == 1)
+        #expect(docs[0].sourcePath == "/tmp/a.txt")
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    @Test func sourcePathPersistsOnIngest() async throws {
+        let (dir, store) = try makeStore()
+        let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)
+        let c = try await store.createCollection(name: "notes", embedder: hash, summary: nil, distance: .cosine)
+        let result = try await store.ingest(
+            data: Data("hello".utf8), filename: "doc.txt", sourcePath: "/Users/me/doc.txt",
+            collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+        )
+        #expect(result.document.sourcePath == "/Users/me/doc.txt")
+        let fetched = await store.document(result.document.id)
+        #expect(fetched?.sourcePath == "/Users/me/doc.txt")
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    @Test func deleteDocumentRemovesVectorsAfterFreshOpen() async throws {
+        // Regression: deleteDocument used to consult only the in-memory
+        // vector-store cache, so after a relaunch the vec0 rows were
+        // orphaned and deleted chunks kept coming back in searches.
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("rag-delvec-\(UUID().uuidString)", isDirectory: true)
+        let file = dir.appendingPathComponent("rag.sqlite")
+
+        var collectionID: CollectionID?
+        var documentID: DocumentID?
+        do {
+            let db = try RAGDatabase(fileURL: file)
+            let store = PersistentCollectionStore(
+                database: db,
+                embedderFactory: { _, _, dim in HashEmbedder(modelID: "test-hash:v1", dim: dim) }
+            )
+            let hash = HashEmbedder(modelID: "test-hash:v1", dim: 16)
+            let c = try await store.createCollection(name: "notes", embedder: hash, summary: nil, distance: .cosine)
+            collectionID = c.id
+            let result = try await store.ingest(
+                data: Data("vector orphan check".utf8), filename: "v.txt", sourcePath: nil,
+                collectionID: c.id, ingestor: FileIngestor(), chunker: Chunker()
+            )
+            documentID = result.document.id
+        }
+
+        // Fresh store over the same database — vector-store cache empty.
+        let db = try RAGDatabase(fileURL: file)
+        let store = PersistentCollectionStore(
+            database: db,
+            embedderFactory: { _, _, dim in HashEmbedder(modelID: "test-hash:v1", dim: dim) }
+        )
+        try await store.deleteDocument(documentID!)
+        let hits = try await store.search(query: "vector orphan check", in: collectionID!, topK: 5)
+        #expect(hits.isEmpty)
+        try? FileManager.default.removeItem(at: dir)
+    }
+
     @Test func survivesReopen() async throws {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("rag-reopen-\(UUID().uuidString)", isDirectory: true)

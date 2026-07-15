@@ -187,7 +187,10 @@ struct CollectionsView: View {
         guard let collectionID = selectedCollectionID,
               let queue = environment.ingestQueue else { return 0 }
         return queue.entries.reduce(0) { acc, entry in
-            (entry.collectionID == collectionID && entry.status == .succeeded) ? acc + 1 : acc
+            // .updated changed chunks too, so it must also trigger a reload;
+            // .skipped changed nothing.
+            (entry.collectionID == collectionID
+                && (entry.status == .succeeded || entry.status == .updated)) ? acc + 1 : acc
         }
     }
 
@@ -698,10 +701,13 @@ private struct IngestProgressView: View {
         .accessibilityHint(isExpanded ? Text("Collapse error details") : Text("Expand error details"))
     }
 
-    /// "300 imported, 2 failed, 5 cancelled" — zero-count parts omitted.
+    /// "300 added, 3 updated, 40 unchanged, 2 failed" — zero-count parts
+    /// omitted.
     private func finishedText(_ summary: IngestSummary) -> Text {
         var parts: [Text] = []
-        if summary.succeeded > 0 { parts.append(Text("\(summary.succeeded) imported")) }
+        if summary.succeeded > 0 { parts.append(Text("\(summary.succeeded) added")) }
+        if summary.updated > 0 { parts.append(Text("\(summary.updated) updated")) }
+        if summary.skipped > 0 { parts.append(Text("\(summary.skipped) unchanged")) }
         if summary.failed > 0 { parts.append(Text("\(summary.failed) failed")) }
         if summary.cancelled > 0 { parts.append(Text("\(summary.cancelled) cancelled")) }
         guard var result = parts.first else { return Text("Import complete") }

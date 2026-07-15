@@ -177,16 +177,74 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
     public func ingest(
         data: Data,
         filename: String,
+        sourcePath: String?,
         collectionID: CollectionID,
         ingestor: FileIngestor,
         chunker: Chunker
-    ) async throws -> RAGDocument {
+    ) async throws -> IngestResult {
         guard let collection = collection(collectionID) else { throw IngestError.unknownCollection }
         let embedder = try await embedderForCollection(collection)
         let store = try vectorStoreForCollection(collection)
 
         let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
 
+        // Dedup, before any parse/embed work.
+        // ① Identical content already in this collection → skip entirely
+        //    (unless its previous parse failed — retry those as a replace).
+        if let existing = try findDocument(collectionID: collectionID, contentHash: hash) {
+            if !existing.hadParseError {
+                if existing.document.sourcePath == nil, let sourcePath {
+                    // Cheap upgrade for rows ingested before paths were kept.
+                    try await database.queue.write { db in
+                        try db.execute(
+                            sql: "UPDATE documents SET source_path = ? WHERE id = ?",
+                            arguments: [sourcePath, existing.document.id.rawValue.uuidString]
+                        )
+                    }
+                }
+                return IngestResult(document: existing.document, outcome: .skippedUnchanged)
+            }
+            try await deleteDocumentResolvingStore(existing.document, store: store)
+            let document = try await insertNewDocument(
+                data: data, filename: filename, sourcePath: sourcePath, hash: hash,
+                collectionID: collectionID, collection: collection,
+                ingestor: ingestor, chunker: chunker, embedder: embedder, store: store
+            )
+            return IngestResult(document: document, outcome: .updated(replaced: existing.document.id))
+        }
+        // ② Same source identity, different content → replace.
+        if let previous = try findDocument(collectionID: collectionID, sourcePath: sourcePath, filename: filename) {
+            try await deleteDocumentResolvingStore(previous.document, store: store)
+            let document = try await insertNewDocument(
+                data: data, filename: filename, sourcePath: sourcePath, hash: hash,
+                collectionID: collectionID, collection: collection,
+                ingestor: ingestor, chunker: chunker, embedder: embedder, store: store
+            )
+            return IngestResult(document: document, outcome: .updated(replaced: previous.document.id))
+        }
+        // ③ Genuinely new.
+        let document = try await insertNewDocument(
+            data: data, filename: filename, sourcePath: sourcePath, hash: hash,
+            collectionID: collectionID, collection: collection,
+            ingestor: ingestor, chunker: chunker, embedder: embedder, store: store
+        )
+        return IngestResult(document: document, outcome: .added)
+    }
+
+    /// The original single-document ingest body: parse, chunk, insert,
+    /// embed in batches. Factored out so the dedup paths share it.
+    private func insertNewDocument(
+        data: Data,
+        filename: String,
+        sourcePath: String?,
+        hash: String,
+        collectionID: CollectionID,
+        collection: RAGCollection,
+        ingestor: FileIngestor,
+        chunker: Chunker,
+        embedder: any Embedder,
+        store: SQLiteVecVectorStore
+    ) async throws -> RAGDocument {
         var parseError: String?
         var parsed: ParsedDocument?
         do {
@@ -201,7 +259,7 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
             collectionID: collectionID,
             filename: filename,
             kind: parsed?.kind ?? .text,
-            sourcePath: nil,
+            sourcePath: sourcePath,
             contentHash: hash,
             byteSize: data.count
         )
@@ -292,12 +350,67 @@ public actor PersistentCollectionStore: CollectionStoreProtocol {
 
     public func deleteDocument(_ id: DocumentID) async throws {
         guard let doc = document(id) else { return }
-        if let store = vectorStores[doc.collectionID] {
+        // Resolve the vector store rather than trusting the cache: after a
+        // fresh launch the cache is empty, and the old cache-only lookup
+        // silently orphaned vec0 rows.
+        if let collection = collection(doc.collectionID),
+           let store = try? vectorStoreForCollection(collection) {
             let chunkIDs = chunks(of: id).map(\.id)
             await store.delete(chunkIDs)
         }
         try await database.queue.write { db in
             try db.execute(sql: "DELETE FROM documents WHERE id = ?", arguments: [id.rawValue.uuidString])
+        }
+    }
+
+    /// Delete used by the ingest replace path — the store is already
+    /// resolved there, so vectors always go with the row.
+    private func deleteDocumentResolvingStore(_ doc: RAGDocument, store: SQLiteVecVectorStore) async throws {
+        let chunkIDs = chunks(of: doc.id).map(\.id)
+        await store.delete(chunkIDs)
+        try await database.queue.write { db in
+            try db.execute(sql: "DELETE FROM documents WHERE id = ?", arguments: [doc.id.rawValue.uuidString])
+        }
+    }
+
+    // MARK: - Dedup lookups
+
+    private struct FoundDocument {
+        var document: RAGDocument
+        var hadParseError: Bool
+    }
+
+    private func findDocument(collectionID: CollectionID, contentHash: String) throws -> FoundDocument? {
+        try findDocument(
+            where: "collection_id = ? AND content_hash = ?",
+            arguments: [collectionID.rawValue.uuidString, contentHash]
+        )
+    }
+
+    /// Source identity: (collection, source_path) when a path is known,
+    /// falling back to (collection, filename) for bare-data ingests.
+    private func findDocument(collectionID: CollectionID, sourcePath: String?, filename: String) throws -> FoundDocument? {
+        if let sourcePath {
+            return try findDocument(
+                where: "collection_id = ? AND source_path = ?",
+                arguments: [collectionID.rawValue.uuidString, sourcePath]
+            )
+        }
+        return try findDocument(
+            where: "collection_id = ? AND filename = ? AND source_path IS NULL",
+            arguments: [collectionID.rawValue.uuidString, filename]
+        )
+    }
+
+    private func findDocument(where condition: String, arguments: StatementArguments) throws -> FoundDocument? {
+        try database.queue.read { db in
+            guard let row = try Row.fetchOne(db, sql: """
+                SELECT id, collection_id, filename, kind, source_path, content_hash, ingested_at, byte_size, parse_error
+                FROM documents WHERE \(condition) LIMIT 1
+                """, arguments: arguments) else { return nil }
+            guard let document = Self.decodeDocument(row) else { return nil }
+            let parseError: String? = row["parse_error"]
+            return FoundDocument(document: document, hadParseError: parseError != nil)
         }
     }
 

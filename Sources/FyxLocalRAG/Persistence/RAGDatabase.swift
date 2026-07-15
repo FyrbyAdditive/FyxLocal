@@ -149,6 +149,22 @@ public final class RAGDatabase: Sendable {
             try db.execute(sql: "INSERT INTO chunks_fts(chunks_fts) VALUES ('rebuild')")
         }
 
+        // Lookup indexes for ingest dedup (hash skip + source-identity
+        // replace). Non-unique on purpose: legacy databases may already hold
+        // duplicates; the ingest path prevents new ones.
+        m.registerMigration("v3_dedup_indexes") { db in
+            try db.create(
+                index: "documents_collection_hash_idx",
+                on: "documents",
+                columns: ["collection_id", "content_hash"]
+            )
+            try db.create(
+                index: "documents_collection_source_idx",
+                on: "documents",
+                columns: ["collection_id", "source_path"]
+            )
+        }
+
         return m
     }
 }

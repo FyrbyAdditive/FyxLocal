@@ -4,6 +4,29 @@
 import Foundation
 import FyxLocalCore
 
+/// What an ingest actually did — the queue UI reports these distinctly
+/// ("12 added, 3 updated, 40 unchanged").
+public enum IngestOutcome: Sendable, Hashable {
+    /// New document inserted.
+    case added
+    /// Same source identity with different content: the old document (and
+    /// its chunks + vectors) was deleted and replaced.
+    case updated(replaced: DocumentID)
+    /// Identical content already present — nothing parsed or embedded.
+    case skippedUnchanged
+}
+
+public struct IngestResult: Sendable, Hashable {
+    /// The live document (the existing one when skipped).
+    public var document: RAGDocument
+    public var outcome: IngestOutcome
+
+    public init(document: RAGDocument, outcome: IngestOutcome) {
+        self.document = document
+        self.outcome = outcome
+    }
+}
+
 /// The surface used by `CollectionStoreRetriever` and the UI for managing
 /// document collections. Both `CollectionStore` (in-memory, tests/dev) and
 /// `PersistentCollectionStore` (SQLite + sqlite-vec, production) conform.
@@ -41,14 +64,20 @@ public protocol CollectionStoreProtocol: Actor {
     func chunk(_ id: ChunkID) -> RAGChunk?
 
     /// Parse + chunk + embed + persist a single document into the collection.
+    /// Content-hash dedup: identical content (per collection) is skipped
+    /// without parsing or embedding; the same source identity (`sourcePath`,
+    /// falling back to `filename`) with changed content replaces the old
+    /// document. `sourcePath` is the original file's absolute path when
+    /// known — persisted for citation back-links.
     @discardableResult
     func ingest(
         data: Data,
         filename: String,
+        sourcePath: String?,
         collectionID: CollectionID,
         ingestor: FileIngestor,
         chunker: Chunker
-    ) async throws -> RAGDocument
+    ) async throws -> IngestResult
 
     func deleteDocument(_ id: DocumentID) async throws
 
@@ -134,6 +163,9 @@ public extension CollectionStoreProtocol {
         try await createCollection(name: name, embedder: embedder, summary: summary, distance: distance)
     }
 
+    /// Path-less convenience keeping the historical signature: returns just
+    /// the document. Used by tests and callers without a source file.
+    @discardableResult
     func ingest(
         data: Data,
         filename: String,
@@ -141,6 +173,32 @@ public extension CollectionStoreProtocol {
         ingestor: FileIngestor = FileIngestor(),
         chunker: Chunker = Chunker()
     ) async throws -> RAGDocument {
-        try await ingest(data: data, filename: filename, collectionID: collectionID, ingestor: ingestor, chunker: chunker)
+        try await ingest(
+            data: data,
+            filename: filename,
+            sourcePath: nil,
+            collectionID: collectionID,
+            ingestor: ingestor,
+            chunker: chunker
+        ).document
+    }
+
+    @discardableResult
+    func ingest(
+        data: Data,
+        filename: String,
+        sourcePath: String?,
+        collectionID: CollectionID,
+        ingestor: FileIngestor = FileIngestor(),
+        chunker: Chunker = Chunker()
+    ) async throws -> IngestResult {
+        try await ingest(
+            data: data,
+            filename: filename,
+            sourcePath: sourcePath,
+            collectionID: collectionID,
+            ingestor: ingestor,
+            chunker: chunker
+        )
     }
 }

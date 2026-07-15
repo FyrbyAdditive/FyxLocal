@@ -50,9 +50,52 @@ public actor CollectionStore: CollectionStoreProtocol {
     public func ingest(
         data: Data,
         filename: String,
+        sourcePath: String?,
         collectionID: CollectionID,
-        ingestor: FileIngestor = FileIngestor(),
-        chunker: Chunker = Chunker()
+        ingestor: FileIngestor,
+        chunker: Chunker
+    ) async throws -> IngestResult {
+        let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let existing = (collectionToDocuments[collectionID] ?? []).compactMap { documents[$0] }
+
+        // Mirror of PersistentCollectionStore's dedup so tests/dev behave
+        // identically. ① identical content → skip;
+        if var unchanged = existing.first(where: { $0.contentHash == hash }) {
+            if unchanged.sourcePath == nil, let sourcePath {
+                unchanged.sourcePath = sourcePath
+                documents[unchanged.id] = unchanged
+            }
+            return IngestResult(document: unchanged, outcome: .skippedUnchanged)
+        }
+        // ② same source identity, new content → replace.
+        let previous = existing.first { document in
+            if let sourcePath { return document.sourcePath == sourcePath }
+            return document.sourcePath == nil && document.filename == filename
+        }
+        if let previous {
+            try await deleteDocument(previous.id)
+            let document = try await insertNewDocument(
+                data: data, filename: filename, sourcePath: sourcePath, hash: hash,
+                collectionID: collectionID, ingestor: ingestor, chunker: chunker
+            )
+            return IngestResult(document: document, outcome: .updated(replaced: previous.id))
+        }
+        // ③ new document.
+        let document = try await insertNewDocument(
+            data: data, filename: filename, sourcePath: sourcePath, hash: hash,
+            collectionID: collectionID, ingestor: ingestor, chunker: chunker
+        )
+        return IngestResult(document: document, outcome: .added)
+    }
+
+    private func insertNewDocument(
+        data: Data,
+        filename: String,
+        sourcePath: String?,
+        hash: String,
+        collectionID: CollectionID,
+        ingestor: FileIngestor,
+        chunker: Chunker
     ) async throws -> RAGDocument {
         guard let collection = collections[collectionID] else {
             throw IngestError.unknownCollection
@@ -65,12 +108,11 @@ public actor CollectionStore: CollectionStoreProtocol {
         }
 
         let parsed = try await ingestor.parse(data: data, filename: filename)
-        let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         let document = RAGDocument(
             collectionID: collectionID,
             filename: filename,
             kind: parsed.kind,
-            sourcePath: nil,
+            sourcePath: sourcePath,
             contentHash: hash,
             byteSize: data.count
         )
