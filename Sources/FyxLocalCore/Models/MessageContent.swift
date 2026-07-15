@@ -191,12 +191,25 @@ public struct UsageInfo: Codable, Sendable, Hashable {
     public let inputTokens: Int
     public let outputTokens: Int
     public let reasoningTokens: Int?
+    /// Prompt tokens served from the provider's cache (Anthropic
+    /// cache_read_input_tokens / OpenAI cached_tokens).
     public let cachedInputTokens: Int?
+    /// Prompt tokens written to the provider's cache this request
+    /// (Anthropic cache_creation_input_tokens). Optional decode keeps
+    /// pre-existing persisted messages loading unchanged.
+    public let cacheCreationInputTokens: Int?
 
-    public init(inputTokens: Int, outputTokens: Int, reasoningTokens: Int? = nil, cachedInputTokens: Int? = nil) {
+    public init(
+        inputTokens: Int,
+        outputTokens: Int,
+        reasoningTokens: Int? = nil,
+        cachedInputTokens: Int? = nil,
+        cacheCreationInputTokens: Int? = nil
+    ) {
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
         self.reasoningTokens = reasoningTokens
         self.cachedInputTokens = cachedInputTokens
+        self.cacheCreationInputTokens = cacheCreationInputTokens
     }
 }

@@ -23,7 +23,19 @@ public struct AnthropicMessagesRequestEncoder {
     /// requires the field). Conservative; the model/provider can cap lower.
     public static let defaultMaxTokens = 4096
 
-    public init() {}
+    /// When true, mark up to four cache breakpoints (`cache_control`) so
+    /// Anthropic reuses the stable request prefix across turns and across
+    /// tool-loop iterations. Uses the default 5-minute TTL (no `ttl` field);
+    /// the 1-hour tier costs a 2× write premium and only pays off with ≥3
+    /// reuses spaced beyond 5 minutes — revisit if usage shows long gaps.
+    /// Compat gateways that don't cache (e.g. DeepSeek's Anthropic endpoint)
+    /// document the field as silently ignored. Prompts under the per-model
+    /// token minimum (1024–4096) silently don't cache — also harmless.
+    let promptCaching: Bool
+
+    public init(promptCaching: Bool = false) {
+        self.promptCaching = promptCaching
+    }
 
     /// Anthropic's floor for `thinking.budget_tokens`.
     static let minThinkingBudget = 1_024
@@ -52,15 +64,30 @@ public struct AnthropicMessagesRequestEncoder {
             }
         }
 
+        var messages = try encodeMessages(request.input)
+        if promptCaching {
+            Self.applyCacheBreakpoints(to: &messages)
+        }
         var json: [String: Any] = [
             "model": request.model,
-            "messages": try encodeMessages(request.input),
+            "messages": messages,
             "stream": stream,
             "max_tokens": maxTokens,
         ]
 
         if let instructions = request.instructions, !instructions.isEmpty {
-            json["system"] = instructions
+            if promptCaching {
+                // Array-of-blocks form so the system prompt can carry a
+                // marker; the plain-string form stays untouched when caching
+                // is off (some compat gateways only accept the string form).
+                json["system"] = [[
+                    "type": "text",
+                    "text": instructions,
+                    "cache_control": ["type": "ephemeral"],
+                ]]
+            } else {
+                json["system"] = instructions
+            }
         }
         // frequency/presence penalty and seed have no Anthropic equivalent;
         // only the stop sequences carry over.
@@ -84,11 +111,75 @@ public struct AnthropicMessagesRequestEncoder {
             }
         }
         if !request.tools.isEmpty {
-            json["tools"] = try encodeTools(request.tools)
+            var tools = try encodeTools(request.tools)
+            if promptCaching, !tools.isEmpty {
+                // Tools render ahead of system/messages in the cached prefix;
+                // one marker on the last tool covers the whole array.
+                tools[tools.count - 1]["cache_control"] = ["type": "ephemeral"]
+            }
+            json["tools"] = tools
             json["tool_choice"] = encodeToolChoice(request.toolChoice, parallel: request.parallelToolCalls)
         }
 
         return try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
+    }
+
+    /// Marks up to two history breakpoints:
+    ///  - the last cache-eligible block *before* the final text-bearing user
+    ///    message — that message hosts the moving day header
+    ///    (RequestPayloadBuilder.prependTodayHeader), so the prefix before it
+    ///    is the longest byte-stable span across turns;
+    ///  - the last cache-eligible block overall — inside ChatTurnRunner's
+    ///    grow-only tool loop each iteration then reads the previous
+    ///    iteration's prefix.
+    /// Only text/image/tool_use/tool_result may carry markers (the API
+    /// rejects cache_control on thinking/redacted_thinking); a block is never
+    /// marked twice. Combined with the system and tools markers this stays
+    /// within Anthropic's four-breakpoint limit.
+    static func applyCacheBreakpoints(to messages: inout [[String: Any]]) {
+        let eligible: Set<String> = ["text", "image", "tool_use", "tool_result"]
+
+        // Last eligible (message, block) position strictly before message
+        // index `limit`, scanning backwards.
+        func lastEligible(beforeMessage limit: Int) -> (message: Int, block: Int)? {
+            var m = limit - 1
+            while m >= 0 {
+                if let content = messages[m]["content"] as? [[String: Any]] {
+                    var b = content.count - 1
+                    while b >= 0 {
+                        if let type = content[b]["type"] as? String, eligible.contains(type) {
+                            return (m, b)
+                        }
+                        b -= 1
+                    }
+                }
+                m -= 1
+            }
+            return nil
+        }
+
+        var targets: [(message: Int, block: Int)] = []
+        if let overall = lastEligible(beforeMessage: messages.count) {
+            targets.append(overall)
+        }
+        let finalTextUser = messages.lastIndex { message in
+            (message["role"] as? String) == "user"
+                && ((message["content"] as? [[String: Any]])?
+                    .contains { ($0["type"] as? String) == "text" } ?? false)
+        }
+        if let finalTextUser, let before = lastEligible(beforeMessage: finalTextUser) {
+            targets.append(before)
+        }
+
+        var marked = Set<[Int]>()
+        for target in targets {
+            let key = [target.message, target.block]
+            guard marked.insert(key).inserted else { continue }
+            if var content = messages[target.message]["content"] as? [[String: Any]] {
+                content[target.block]["cache_control"] = ["type": "ephemeral"]
+                messages[target.message]["content"] = content
+            }
+        }
     }
 
     static func thinkingBudget(for effort: ReasoningEffort) -> Int {

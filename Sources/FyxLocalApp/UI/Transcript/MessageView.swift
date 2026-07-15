@@ -207,6 +207,9 @@ struct MessageView: View {
             if let cached = usage.cachedInputTokens, cached > 0 {
                 parts.append("\(cached) cached")
             }
+            if let written = usage.cacheCreationInputTokens, written > 0 {
+                parts.append("\(written) cache write")
+            }
             if let reasoning = usage.reasoningTokens, reasoning > 0 {
                 parts.append("\(reasoning) reasoning")
             }

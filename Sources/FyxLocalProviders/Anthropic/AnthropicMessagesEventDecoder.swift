@@ -44,6 +44,8 @@ public final class AnthropicMessagesEventDecoder {
     private var blocks: [Int: BlockState] = [:]
     private var messageID: String = ""
     private var inputTokens: Int = 0
+    private var cacheReadTokens: Int?
+    private var cacheCreationTokens: Int?
 
     public init() {}
 
@@ -56,6 +58,8 @@ public final class AnthropicMessagesEventDecoder {
             let p = try JSONDecoder().decode(MessageStart.self, from: data)
             messageID = p.message.id
             inputTokens = p.message.usage?.input_tokens ?? 0
+            cacheReadTokens = p.message.usage?.cache_read_input_tokens
+            cacheCreationTokens = p.message.usage?.cache_creation_input_tokens
             return .responseStarted(id: p.message.id)
 
         case "content_block_start":
@@ -141,7 +145,17 @@ public final class AnthropicMessagesEventDecoder {
         case "message_delta":
             let p = try JSONDecoder().decode(MessageDelta.self, from: data)
             let out = p.usage?.output_tokens ?? 0
-            return .usage(UsageInfo(inputTokens: inputTokens, outputTokens: out))
+            // Some gateways only populate usage on the delta — prefer its
+            // values when present, falling back to what message_start carried.
+            if let delta = p.usage?.input_tokens { inputTokens = delta }
+            if let delta = p.usage?.cache_read_input_tokens { cacheReadTokens = delta }
+            if let delta = p.usage?.cache_creation_input_tokens { cacheCreationTokens = delta }
+            return .usage(UsageInfo(
+                inputTokens: inputTokens,
+                outputTokens: out,
+                cachedInputTokens: cacheReadTokens,
+                cacheCreationInputTokens: cacheCreationTokens
+            ))
 
         case "message_stop":
             return .completed
@@ -171,7 +185,11 @@ public final class AnthropicMessagesEventDecoder {
         struct M: Decodable {
             let id: String
             let usage: U?
-            struct U: Decodable { let input_tokens: Int? }
+            struct U: Decodable {
+                let input_tokens: Int?
+                let cache_read_input_tokens: Int?
+                let cache_creation_input_tokens: Int?
+            }
         }
         let message: M
     }
@@ -205,7 +223,12 @@ public final class AnthropicMessagesEventDecoder {
 
     private struct MessageDelta: Decodable {
         let usage: U?
-        struct U: Decodable { let output_tokens: Int? }
+        struct U: Decodable {
+            let output_tokens: Int?
+            let input_tokens: Int?
+            let cache_read_input_tokens: Int?
+            let cache_creation_input_tokens: Int?
+        }
     }
 
     private struct ErrorEvent: Decodable {

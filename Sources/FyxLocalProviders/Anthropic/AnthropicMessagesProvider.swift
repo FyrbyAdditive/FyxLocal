@@ -19,6 +19,8 @@ public struct AnthropicMessagesProvider: LLMProvider {
     public let session: URLSession
     public let secretStore: SecretStore
     public let extraHeaders: [String: String]
+    /// Emit cache_control breakpoints (see AnthropicMessagesRequestEncoder).
+    public let promptCaching: Bool
 
     /// The Anthropic API version header value. Pinned; bump when adopting
     /// newer wire features.
@@ -29,13 +31,15 @@ public struct AnthropicMessagesProvider: LLMProvider {
         baseURL: URL,
         session: URLSession = .shared,
         secretStore: SecretStore,
-        extraHeaders: [String: String] = [:]
+        extraHeaders: [String: String] = [:],
+        promptCaching: Bool = false
     ) {
         self.id = id
         self.baseURL = baseURL
         self.session = session
         self.secretStore = secretStore
         self.extraHeaders = extraHeaders
+        self.promptCaching = promptCaching
     }
 
     public func listModels() async throws -> [ModelInfo] {
@@ -148,7 +152,7 @@ public struct AnthropicMessagesProvider: LLMProvider {
         urlReq.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         try await applyAuth(&urlReq)
         for (k, v) in extraHeaders { urlReq.setValue(v, forHTTPHeaderField: k) }
-        urlReq.httpBody = try AnthropicMessagesRequestEncoder().encode(request, stream: true)
+        urlReq.httpBody = try AnthropicMessagesRequestEncoder(promptCaching: promptCaching).encode(request, stream: true)
         return urlReq
     }
 

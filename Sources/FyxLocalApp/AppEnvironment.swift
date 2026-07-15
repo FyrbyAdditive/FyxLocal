@@ -392,7 +392,8 @@ final class AppEnvironment {
                 id: record.id,
                 baseURL: record.baseURL,
                 session: session,
-                secretStore: secretStore
+                secretStore: secretStore,
+                promptCaching: record.promptCachingResolved
             )
         case .ollama:
             return OllamaProvider(

@@ -8611,6 +8611,47 @@
         }
       }
     },
+    "Prompt caching": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt-cache"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt caching"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt caching"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caché de prompts"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt-cache"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promptcache"
+          }
+        }
+      }
+    },
     "Propose adding, editing, deleting, or completing reminders — you confirm each change.": {
       "extractionState": "manual",
       "localizations": {
@@ -9468,6 +9509,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Försök igen"
+          }
+        }
+      }
+    },
+    "Reuses the stable part of long conversations across requests — faster and cheaper on Anthropic. Gateways that don't support it ignore the setting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genbruger den stabile del af lange samtaler på tværs af forespørgsler — hurtigere og billigere med Anthropic. Gateways uden understøttelse ignorerer indstillingen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reuses the stable part of long conversations across requests — faster and cheaper on Anthropic. Gateways that don't support it ignore the setting."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reuses the stable part of long conversations across requests — faster and cheaper on Anthropic. Gateways that don't support it ignore the setting."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reutiliza la parte estable de conversaciones largas entre solicitudes: más rápido y económico con Anthropic. Las pasarelas que no lo admiten ignoran este ajuste."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gjenbruker den stabile delen av lange samtaler på tvers av forespørsler — raskere og billigere med Anthropic. Gatewayer uten støtte ignorerer innstillingen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Återanvänder den stabila delen av långa konversationer mellan förfrågningar — snabbare och billigare med Anthropic. Gatewayer som saknar stöd ignorerar inställningen."
           }
         }
       }

@@ -95,6 +95,12 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
     /// files (resolves to `.openAIResponses`, the only kind that existed
     /// before). Fixed at creation; the card shows it read-only.
     public var apiKind: LLMAPIKind
+    /// Anthropic prompt caching (cache_control breakpoints). nil = automatic:
+    /// on for `.anthropicMessages` providers (compat gateways that don't
+    /// cache document the field as ignored), moot for other kinds. The
+    /// Settings toggle writes an explicit value as the escape hatch for
+    /// stricter gateways.
+    public var promptCaching: Bool?
 
     /// Default per-request timeout. Doubled from the previous implicit
     /// URLSession.shared default of 60s.
@@ -110,7 +116,8 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         sampling: ProviderSamplingDefaults = .init(),
         context: ProviderContextSettings = .init(),
         requestTimeout: TimeInterval = ProviderRecord.defaultRequestTimeout,
-        apiKind: LLMAPIKind = .openAIResponses
+        apiKind: LLMAPIKind = .openAIResponses,
+        promptCaching: Bool? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -122,11 +129,12 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         self.context = context
         self.requestTimeout = requestTimeout
         self.apiKind = apiKind
+        self.promptCaching = promptCaching
     }
 
     // Custom Decodable to tolerate missing optional fields on old state files.
     private enum CodingKeys: String, CodingKey {
-        case id, displayName, baseURL, defaultModel, capability, modelOverrides, sampling, context, requestTimeout, apiKind
+        case id, displayName, baseURL, defaultModel, capability, modelOverrides, sampling, context, requestTimeout, apiKind, promptCaching
     }
 
     public init(from decoder: Decoder) throws {
@@ -141,10 +149,17 @@ public struct ProviderRecord: Identifiable, Sendable, Hashable, Codable {
         self.context = try c.decode(ProviderContextSettings.self, forKey: .context, default: .init())
         self.requestTimeout = try c.decode(TimeInterval.self, forKey: .requestTimeout, default: ProviderRecord.defaultRequestTimeout)
         self.apiKind = try c.decode(LLMAPIKind.self, forKey: .apiKind, default: .openAIResponses)
+        self.promptCaching = try c.decodeIfPresent(Bool.self, forKey: .promptCaching)
     }
 }
 
 extension ProviderRecord {
+    /// Effective prompt-caching switch: the explicit user choice, or the
+    /// automatic default (on for Anthropic-kind providers).
+    public var promptCachingResolved: Bool {
+        promptCaching ?? (apiKind == .anthropicMessages)
+    }
+
     /// The user's saved override for a model id, if any.
     public func modelOverride(for modelID: String) -> ModelOverride? {
         modelOverrides.first { $0.modelID == modelID }

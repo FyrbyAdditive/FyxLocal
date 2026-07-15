@@ -309,6 +309,26 @@ private struct ProviderCard: View {
                         record = updated
                     }
                 ))
+
+                if record.apiKind == .anthropicMessages {
+                    Divider().padding(.vertical, 4)
+                    Toggle(isOn: Binding(
+                        get: { record.promptCachingResolved },
+                        set: {
+                            var updated = record
+                            updated.promptCaching = $0
+                            record = updated
+                        }
+                    )) {
+                        Text("Prompt caching", bundle: .module)
+                    }
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    Text("Reuses the stable part of long conversations across requests — faster and cheaper on Anthropic. Gateways that don't support it ignore the setting.", bundle: .module)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
         }
     }
 
