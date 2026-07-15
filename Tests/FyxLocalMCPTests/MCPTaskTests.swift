@@ -170,9 +170,25 @@ struct MCPTaskTests {
         await server.shutdown()
     }
 
-    @Test func optionalTaskSupportUsesPlainCall() async throws {
+    @Test func optionalTaskSupportUsesTaskPath() async throws {
+        // .optional tools take the task path when the server supports it —
+        // they gain live progress + server-side cancellation for free.
         let (client, server) = try await makeClientServer(
-            tools: [MCPTool(name: "echo", description: "", inputSchema: .object([:]), taskSupport: .optional)]
+            tools: [MCPTool(name: "echo", description: "", inputSchema: .object([:]), taskSupport: .optional)],
+            taskScripts: ["echo": [.completed("echo: x")]]
+        )
+        let result = try await client.callTool(name: "echo", arguments: .object(["msg": .string("x")]))
+        #expect(result.content == [.text("echo: x")])
+        let augmented = await server.sawTaskAugmentation["echo"]
+        #expect(augmented == true)
+        await client.shutdown()
+        await server.shutdown()
+    }
+
+    @Test func optionalTaskSupportFallsBackToPlainCallWithoutCapability() async throws {
+        let (client, server) = try await makeClientServer(
+            tools: [MCPTool(name: "echo", description: "", inputSchema: .object([:]), taskSupport: .optional)],
+            capabilities: .object(["tools": .object([:])])
         )
         let result = try await client.callTool(name: "echo", arguments: .object(["msg": .string("x")]))
         #expect(result.content == [.text("echo: x")])

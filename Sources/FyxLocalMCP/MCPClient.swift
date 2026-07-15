@@ -169,12 +169,6 @@ public actor MCPClient {
     }
 
     public func listTools() async throws -> [MCPTool] {
-        let response = try await call(method: "tools/list", params: nil)
-        guard case .success(let value) = response.result else {
-            if case .failure(let e) = response.result { throw MCPClientError.rpcError(code: e.code, message: e.message) }
-            throw MCPClientError.unexpectedResult
-        }
-        guard let tools = value["tools"]?.arrayValue else { throw MCPClientError.unexpectedResult }
         // An MCP server is untrusted: bound the tool count and per-field lengths
         // so a hostile/buggy server can't exhaust memory or flood the prompt.
         let maxTools = 1000
@@ -182,8 +176,8 @@ public actor MCPClient {
         let maxDescLen = 8_192
         var output: [MCPTool] = []
         var taskSupportCache: [String: MCPTaskSupport] = [:]
-        for tool in tools.prefix(maxTools) {
-            guard let name = tool["name"]?.stringValue, !name.isEmpty else { continue }
+        try await paginatedList(method: "tools/list", itemsKey: "tools", itemCap: maxTools) { tool in
+            guard let name = tool["name"]?.stringValue, !name.isEmpty else { return }
             let description = tool["description"]?.stringValue ?? ""
             let schema = tool["inputSchema"] ?? .object([:])
             let taskSupport = tool["execution"]?["taskSupport"]?.stringValue
@@ -201,13 +195,50 @@ public actor MCPClient {
         return output
     }
 
+    /// Drives a cursor-paginated list method (`tools/list`, `resources/list`,
+    /// `prompts/list`), invoking `handle` per raw item across pages. Bounded
+    /// by `itemCap` total items and a page cap that guards against a hostile
+    /// server feeding an endless (or circular) cursor chain.
+    private func paginatedList(
+        method: String,
+        itemsKey: String,
+        itemCap: Int,
+        handle: (JSONValue) -> Void
+    ) async throws {
+        let maxPages = 50
+        var cursor: String?
+        var pages = 0
+        var seen = 0
+        repeat {
+            let params: JSONValue? = cursor.map { .object(["cursor": .string($0)]) }
+            let response = try await call(method: method, params: params)
+            guard case .success(let value) = response.result else {
+                if case .failure(let e) = response.result {
+                    throw MCPClientError.rpcError(code: e.code, message: e.message)
+                }
+                throw MCPClientError.unexpectedResult
+            }
+            guard let items = value[itemsKey]?.arrayValue else { throw MCPClientError.unexpectedResult }
+            for item in items {
+                guard seen < itemCap else { return }
+                seen += 1
+                handle(item)
+            }
+            cursor = value["nextCursor"]?.stringValue
+            pages += 1
+        } while cursor != nil && pages < maxPages
+    }
+
     public func callTool(
         name: String,
         arguments: JSONValue,
         onTaskStatus: MCPTaskStatusHandler? = nil
     ) async throws -> MCPToolCallResult {
+        // Task-augment whenever the server and tool allow it — `.optional`
+        // tools gain live progress + server-side cancellation for free.
+        let support = toolTaskSupport[name] ?? .forbidden
         let useTaskPath = serverCapabilities.supportsTaskAugmentedToolCalls
-            && toolTaskSupport[name] == .required
+            && support != .forbidden
         guard useTaskPath else {
             // Plain call. A task-required tool on a server without the tasks
             // capability lands here too; the server's error (e.g. "requires

@@ -94,7 +94,7 @@ struct MCPToolAdapterTests {
             )
         }
         #expect(adapter(.required).preferredTimeout == .seconds(600))
-        #expect(adapter(.optional).preferredTimeout == nil)
+        #expect(adapter(.optional).preferredTimeout == .seconds(600))
         #expect(adapter(.forbidden).preferredTimeout == nil)
 
         await client.shutdown()

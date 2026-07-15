@@ -45,6 +45,9 @@ public struct OpenAIChatCompletionsRequestEncoder {
         if !request.tools.isEmpty {
             json["tools"] = try encodeTools(request.tools)
             json["tool_choice"] = encodeToolChoice(request.toolChoice)
+            // Parity with the Responses encoder. Kept inside the tools branch:
+            // OpenAI rejects the parameter when no tools are present.
+            json["parallel_tool_calls"] = request.parallelToolCalls
         }
         return try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
     }

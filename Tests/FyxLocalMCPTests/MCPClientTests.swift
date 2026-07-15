@@ -60,5 +60,47 @@ struct MCPClientTests {
     }
 }
 
+@Suite("MCPClient pagination", .serialized)
+struct MCPClientPaginationTests {
+    private func tools(_ count: Int) -> [MCPTool] {
+        (0..<count).map {
+            MCPTool(name: String(format: "tool%03d", $0), description: "", inputSchema: .object([:]))
+        }
+    }
+
+    @Test func multiPageToolListJoinsPagesInOrder() async throws {
+        let (ct, st) = await makeInMemoryTransportPair()
+        let server = MockMCPServer(transport: st, tools: tools(7), listPageSize: 3)
+        await server.start()
+        let client = MCPClient(transport: ct)
+        try await client.start()
+
+        let listed = try await client.listTools()
+        #expect(listed.count == 7)
+        #expect(listed.map(\.name) == (0..<7).map { String(format: "tool%03d", $0) })
+
+        await client.shutdown()
+        await server.shutdown()
+    }
+
+    @Test func circularCursorChainIsBounded() async throws {
+        // A hostile server that always promises another page must not spin
+        // the client forever — the page cap ends the loop.
+        let (ct, st) = await makeInMemoryTransportPair()
+        let server = MockMCPServer(transport: st, tools: tools(5), listPageSize: 5, cursorLoop: true)
+        await server.start()
+        let client = MCPClient(transport: ct)
+        try await client.start()
+
+        let listed = try await client.listTools()
+        // 50-page cap × 5 tools/page = 250 items delivered, all duplicates of
+        // the same 5 — what matters is that the call RETURNED.
+        #expect(listed.count <= 250)
+
+        await client.shutdown()
+        await server.shutdown()
+    }
+}
+
 // MockMCPServer lives in MockMCPServer.swift (extended with tasks +
 // elicitation support for the 2025-11-25 spec tests).

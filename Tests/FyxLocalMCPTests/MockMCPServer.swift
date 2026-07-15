@@ -55,6 +55,12 @@ actor MockMCPServer {
     private let tools: [MCPTool]
     private let capabilities: JSONValue
     private let taskScripts: [String: [TaskStep]]
+    /// When set, list methods emit pages of this size with `nextCursor`
+    /// (cursor = stringified start index). When `cursorLoop` is true, every
+    /// page reports a nextCursor pointing at itself — simulates a hostile
+    /// server with a circular cursor chain.
+    private let listPageSize: Int?
+    private let cursorLoop: Bool
     private var task: Task<Void, Never>?
 
     private var taskRecords: [String: TaskRecord] = [:]
@@ -77,12 +83,16 @@ actor MockMCPServer {
         transport: any MCPTransport,
         tools: [MCPTool],
         taskScripts: [String: [TaskStep]] = [:],
-        capabilities: JSONValue = MockMCPServer.defaultCapabilities
+        capabilities: JSONValue = MockMCPServer.defaultCapabilities,
+        listPageSize: Int? = nil,
+        cursorLoop: Bool = false
     ) {
         self.transport = transport
         self.tools = tools
         self.taskScripts = taskScripts
         self.capabilities = capabilities
+        self.listPageSize = listPageSize
+        self.cursorLoop = cursorLoop
     }
 
     func start() {
@@ -153,7 +163,9 @@ actor MockMCPServer {
                     "execution": .object(["taskSupport": .string(tool.taskSupport.rawValue)]),
                 ])
             }
-            return JSONRPCResponse(id: req.id, result: .success(.object(["tools": .array(entries)])))
+            return JSONRPCResponse(id: req.id, result: .success(
+                paged(entries, key: "tools", cursor: req.params?["cursor"]?.stringValue)
+            ))
 
         case "tools/call":
             return handleToolCall(req)
@@ -359,5 +371,25 @@ actor MockMCPServer {
 
     private func relatedTaskMeta(_ taskId: String) -> JSONValue {
         .object(["io.modelcontextprotocol/related-task": .object(["taskId": .string(taskId)])])
+    }
+
+    /// Slices `entries` per `listPageSize`; whole list in one page when unset.
+    private func paged(_ entries: [JSONValue], key: String, cursor: String?) -> JSONValue {
+        guard let pageSize = listPageSize else {
+            return .object([key: .array(entries)])
+        }
+        let start = cursor.flatMap(Int.init) ?? 0
+        if cursorLoop {
+            // Same page forever, always promising more.
+            let page = Array(entries.prefix(pageSize))
+            return .object([key: .array(page), "nextCursor": .string(String(start))])
+        }
+        let end = min(start + pageSize, entries.count)
+        let page = (start < end) ? Array(entries[start..<end]) : []
+        var object: [String: JSONValue] = [key: .array(page)]
+        if end < entries.count {
+            object["nextCursor"] = .string(String(end))
+        }
+        return .object(object)
     }
 }

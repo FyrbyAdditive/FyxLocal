@@ -16,10 +16,11 @@ import FyxLocalCore
 /// - The server may issue an `Mcp-Session-Id` header in the initialize
 ///   response; we echo it on every subsequent request.
 ///
-/// Auth is header-based only. If the server requires auth, the user must
-/// set an `Authorization` (or similar) header in the server's HTTPConfig.
-/// OAuth 2.1 (PKCE / DCR / RFC 8707 + Keychain token storage) is
-/// deliberately out of scope for this pass.
+/// Auth: either a static `Authorization` header (bearer/basic tokens from
+/// the Keychain, injected by MCPRegistry via `extraHeaders`) or OAuth 2.1
+/// (PKCE / DCR / RFC 8707, see OAuth/) driven by the registry's
+/// OAuthCoordinator through `setAuthorizationRefresher` — a 401 triggers a
+/// transparent token refresh and a single retry.
 public actor HTTPMCPTransport: MCPTransport {
     public let url: URL
     public let extraHeaders: [String: String]

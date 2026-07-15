@@ -23,10 +23,11 @@ public struct MCPToolAdapter: ProgressReportingTool {
     }
 
     /// Task-augmented calls exist for long-running work; give them ten
-    /// minutes instead of the registry's default. Only `.required` tools
-    /// take the task path (see MCPClient.callTool).
+    /// minutes instead of the registry's default. Both `.required` and
+    /// `.optional` tools take the task path when the server supports it
+    /// (see MCPClient.callTool).
     public var preferredTimeout: Duration? {
-        mcpTool.taskSupport == .required ? .seconds(600) : nil
+        mcpTool.taskSupport != .forbidden ? .seconds(600) : nil
     }
 
     public func definition(for language: PromptLanguage) -> ToolDefinition {

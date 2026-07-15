@@ -67,6 +67,26 @@ struct OpenAIChatCompletionsRequestEncoderTests {
         #expect(json["tool_choice"] as? String == "required")
     }
 
+    @Test func parallelToolCallsEmittedOnlyWithTools() throws {
+        // Parity with the Responses encoder; OpenAI rejects the parameter
+        // when no tools are present.
+        let withTools = ChatRequest(
+            model: "m",
+            input: [.message(role: .user, content: [.inputText("hi")])],
+            parallelToolCalls: false,
+            tools: [ToolDefinition(name: "get_time", description: "now", parametersSchema: .emptyObject)]
+        )
+        let json = try object(try encoder.encode(withTools, stream: true))
+        #expect(json["parallel_tool_calls"] as? Bool == false)
+
+        let withoutTools = ChatRequest(
+            model: "m",
+            input: [.message(role: .user, content: [.inputText("hi")])]
+        )
+        let bare = try object(try encoder.encode(withoutTools, stream: true))
+        #expect(bare["parallel_tool_calls"] == nil)
+    }
+
     @Test func strictToolEncodesStrictFlag() throws {
         let req = ChatRequest(
             model: "m",
