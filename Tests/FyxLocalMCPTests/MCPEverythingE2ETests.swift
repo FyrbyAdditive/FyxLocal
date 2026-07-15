@@ -107,6 +107,36 @@ struct MCPEverythingE2ETests {
         await client.shutdown()
     }
 
+    @Test(.timeLimit(.minutes(2))) func resourcesAndPromptsRoundTrip() async throws {
+        let (client, _) = try await startClient()
+        defer { Task { await client.shutdown() } }
+
+        let caps = await client.serverCapabilities
+        #expect(caps.supportsResources)
+        #expect(caps.supportsPrompts)
+
+        // Resource count varies across everything-server releases; cursor
+        // pagination is covered by the MockMCPServer unit tests.
+        let resources = try await client.listResources()
+        #expect(!resources.isEmpty)
+        if let textResource = resources.first(where: { $0.mimeType?.hasPrefix("text/") == true }) {
+            let contents = try await client.readResource(uri: textResource.uri)
+            #expect(!contents.isEmpty)
+            if case .text(_, _, let text) = contents[0] {
+                #expect(!text.isEmpty)
+            }
+        }
+
+        let prompts = try await client.listPrompts()
+        #expect(!prompts.isEmpty)
+        if let simple = prompts.first(where: { $0.arguments.isEmpty }) {
+            let result = try await client.getPrompt(name: simple.name, arguments: [:])
+            #expect(!result.messages.isEmpty)
+        }
+
+        await client.shutdown()
+    }
+
     @Test(.timeLimit(.minutes(2))) func plainToolsStillWork() async throws {
         let (client, _) = try await startClient()
         defer { Task { await client.shutdown() } }
