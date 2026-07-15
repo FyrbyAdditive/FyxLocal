@@ -168,9 +168,6 @@ struct MessageView: View {
                 .frame(width: 24, alignment: .center)
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 8) {
-                if isActivelyThinking {
-                    ThinkingPill()
-                }
                 ForEach(Array(message.contentItems.enumerated()), id: \.offset) { _, item in
                     contentView(
                         for: item,
@@ -178,6 +175,15 @@ struct MessageView: View {
                         resultsByCallID: resultsByCallID,
                         pairedCallIDs: pairedCallIDs
                     )
+                }
+                // The pill trails the streamed content (reasoning block, tool
+                // boxes) rather than leading it: the transcript's sticky-
+                // bottom scroll pins the row's BOTTOM edge, so a leading pill
+                // slid off the top of the viewport as soon as the reasoning
+                // summary outgrew the window. At the tail it stays visible
+                // just above the composer for the whole thinking phase.
+                if isActivelyThinking {
+                    ThinkingPill()
                 }
                 if let failureError, let onRetry {
                     FailureRetryBanner(message: failureError, onRetry: onRetry)
