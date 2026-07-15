@@ -83,6 +83,27 @@ struct MCPClientPaginationTests {
         await server.shutdown()
     }
 
+    @Test(.timeLimit(.minutes(1))) func notificationsStreamDeliversListChanged() async throws {
+        let (ct, st) = await makeInMemoryTransportPair()
+        let server = MockMCPServer(transport: st, tools: [])
+        await server.start()
+        let client = MCPClient(transport: ct)
+        try await client.start()
+
+        let received = Task {
+            for await note in await client.notifications() {
+                if note.method == "notifications/tools/list_changed" { return true }
+            }
+            return false
+        }
+        await server.sendToolsListChanged()
+        let got = await received.value
+        #expect(got)
+
+        await client.shutdown()
+        await server.shutdown()
+    }
+
     @Test func circularCursorChainIsBounded() async throws {
         // A hostile server that always promises another page must not spin
         // the client forever — the page cap ends the loop.

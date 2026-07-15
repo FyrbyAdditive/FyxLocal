@@ -37,9 +37,14 @@ final class MCPRegistry {
     private struct Entry {
         let client: MCPClient
         var adapterNames: [String]
+        /// Consumes the client's notification stream (single-consumer — the
+        /// registry owns it) to react to list_changed notifications.
+        var listenerTask: Task<Void, Never>?
     }
 
     private var entries: [MCPServerID: Entry] = [:]
+    /// Debounce for burst list_changed notifications, keyed by server.
+    private var refreshDebounce: [MCPServerID: Task<Void, Never>] = [:]
     private(set) var status: [MCPServerID: Status] = [:]
     private let toolRegistry: ToolRegistry
     /// True after `ensureLoaded` has run once this session — subsequent
@@ -182,11 +187,12 @@ final class MCPRegistry {
         }
         do {
             try await client.start()
+            let slug = serverSlug(record.displayName)
             let tools = try await client.listTools()
             var registeredNames: [String] = []
             for tool in tools {
                 let adapter = MCPToolAdapter(
-                    serverName: serverSlug(record.displayName),
+                    serverName: slug,
                     mcpTool: tool,
                     client: client
                 )
@@ -195,6 +201,7 @@ final class MCPRegistry {
             }
             entries[record.id] = Entry(client: client, adapterNames: registeredNames)
             status[record.id] = .ready(toolCount: tools.count)
+            startNotificationListener(id: record.id, client: client, slug: slug)
         } catch {
             await client.shutdown()
             // For stdio servers, the child often writes the real reason to
@@ -237,10 +244,12 @@ final class MCPRegistry {
     /// shared registry, flip status to `.disconnected`. Safe to call
     /// even if the server was never connected.
     func disconnect(_ id: MCPServerID) async {
+        refreshDebounce.removeValue(forKey: id)?.cancel()
         guard let entry = entries.removeValue(forKey: id) else {
             status[id] = .disconnected
             return
         }
+        entry.listenerTask?.cancel()
         // Resolve any pending elicitation sheet for this server with
         // .cancel BEFORE shutting the client down, so the cancel response
         // can still be delivered over the transport.
@@ -250,6 +259,72 @@ final class MCPRegistry {
         }
         await entry.client.shutdown()
         status[id] = .disconnected
+    }
+
+    // MARK: - list_changed auto-refresh
+
+    /// Consumes the client's notification stream (single-consumer; the
+    /// registry is its sole owner) and reacts to list_changed notifications
+    /// with a debounced re-list. Without this, a server that adds or removes
+    /// tools after connect silently serves a stale tool set until reconnect.
+    private func startNotificationListener(id: MCPServerID, client: MCPClient, slug: String) {
+        let listener = Task { [weak self] in
+            let stream = await client.notifications()
+            for await note in stream {
+                guard let self else { return }
+                switch note.method {
+                case "notifications/tools/list_changed":
+                    self.scheduleToolRefresh(id: id, client: client, slug: slug)
+                default:
+                    break
+                }
+            }
+        }
+        entries[id]?.listenerTask = listener
+    }
+
+    /// Coalesces notification bursts: each new notification restarts a short
+    /// window; the refresh runs once the burst goes quiet.
+    private func scheduleToolRefresh(id: MCPServerID, client: MCPClient, slug: String) {
+        refreshDebounce[id]?.cancel()
+        refreshDebounce[id] = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            await self?.refreshTools(id: id, client: client, slug: slug)
+        }
+    }
+
+    private func refreshTools(id: MCPServerID, client: MCPClient, slug: String) async {
+        // The client identity guards against a disconnect/reconnect racing
+        // this refresh — a stale client must not touch the new entry.
+        guard entries[id]?.client === client else { return }
+        guard let tools = try? await client.listTools() else {
+            // Transient failure: keep serving the old tool set rather than
+            // flipping the server card to failed.
+            return
+        }
+        guard entries[id]?.client === client else { return }
+        var registeredNames: [String] = []
+        for tool in tools {
+            let adapter = MCPToolAdapter(serverName: slug, mcpTool: tool, client: client)
+            await toolRegistry.register(adapter)
+            registeredNames.append(adapter.name)
+        }
+        guard var entry = entries[id], entry.client === client else { return }
+        for name in Self.staleAdapterNames(current: entry.adapterNames, updated: registeredNames) {
+            await toolRegistry.unregister(name: name)
+        }
+        entry.adapterNames = registeredNames
+        entries[id] = entry
+        status[id] = .ready(toolCount: tools.count)
+    }
+
+    /// Adapter names registered before that no longer exist in the updated
+    /// list. (Updated tools are re-registered wholesale — register-by-name
+    /// overwrites replace changed schemas in place.)
+    nonisolated static func staleAdapterNames(current: [String], updated: [String]) -> [String] {
+        let updatedSet = Set(updated)
+        return current.filter { !updatedSet.contains($0) }
     }
 
     /// Disconnect + reconnect in sequence. Used when the user edits the

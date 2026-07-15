@@ -157,6 +157,9 @@ public actor MCPClient {
         cancelledIDs.removeAll()
     }
 
+    /// Server-initiated notifications (list_changed and friends). The stream
+    /// is SINGLE-CONSUMER: in the app, MCPRegistry's notification listener
+    /// owns it — nothing else should call this on a registry-managed client.
     public func notifications() -> AsyncStream<JSONRPCNotification> {
         notificationStream ?? AsyncStream { _ in }
     }

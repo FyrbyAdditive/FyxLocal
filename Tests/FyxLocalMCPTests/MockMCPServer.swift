@@ -104,6 +104,11 @@ actor MockMCPServer {
         await transport.close()
     }
 
+    /// Emits a tools list_changed notification to the client.
+    func sendToolsListChanged() async {
+        try? await transport.send(.notification(.init(method: "notifications/tools/list_changed")))
+    }
+
     /// Sends a server→client request and awaits the client's response.
     /// Used directly by tests (unknown methods, standalone elicitation) and
     /// by the input_required flow.
